@@ -3527,6 +3527,15 @@ function convertToItems(rows) {
       : (actual != null ? Math.round((budget - actual) * 100) / 100 : 0);
     return {
       id:            Date.now() + idx * 17 + Math.random(),
+      itemKey: [
+    normalizeText(row.description),
+  normalizeText(row.businessUnit),
+  normalizeText(row.planMonth),
+  normalizeText(row.currency),
+  String(row.rate || ""),
+  String(row.quantity || ""),
+  normalizeText(row.billingFreq),
+].join("|"),
       description: normalizeText(row.description),
       expenseType: normalizeText(row.expenseType),
       itemType:      row.itemType      || "",
