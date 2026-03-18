@@ -3567,6 +3567,7 @@ function ImportModal({ onImport, onCancel }) {
   const [fetching,    setFetching]    = useState(false);
   const [step,        setStep]        = useState(1);
   const [dlMsg,       setDlMsg]       = useState("");
+  const [isImporting, setIsImporting] = useState(false);
 
   const handleDownloadTemplate = () => {
     const result = triggerDownload("SMG_Budget_Template.csv", buildCSVContent(), "text/csv");
@@ -3656,6 +3657,8 @@ function ImportModal({ onImport, onCancel }) {
   };
 
   const handleImport = async () => {
+  if (isImporting) return;
+
   const { rows, error } = parseCSVText(csvText);
   if (error) {
     setParseErr(error);
@@ -3668,7 +3671,12 @@ function ImportModal({ onImport, onCancel }) {
     return;
   }
 
-  await onImport(convertToItems(rows));
+  try {
+    setIsImporting(true);
+    await onImport(convertToItems(rows));
+  } finally {
+    setIsImporting(false);
+  }
 };
 
   const panelBg = "linear-gradient(145deg,#0C1722,#0F1B2B)";
@@ -3893,10 +3901,30 @@ function ImportModal({ onImport, onCancel }) {
 
           <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
             <button onClick={onCancel} style={btnSecondary}>Cancel</button>
-            <button onClick={handleImport} disabled={validErrs.length > 0}
-              style={{ ...btnPrimary, background: validErrs.length > 0 ? "rgba(16,185,129,0.3)" : "linear-gradient(135deg,#10b981,#059669)", boxShadow: validErrs.length > 0 ? "none" : "0 4px 16px rgba(16,185,129,0.3)", cursor: validErrs.length > 0 ? "not-allowed" : "pointer" }}>
-              ✅ Import {parseCSVText(csvText).rows.length} Items
-            </button>
+           <button
+  onClick={handleImport}
+  disabled={validErrs.length > 0 || isImporting}
+  style={{
+    ...btnPrimary,
+    background:
+      validErrs.length > 0 || isImporting
+        ? "rgba(16,185,129,0.3)"
+        : "linear-gradient(135deg,#10b981,#059669)",
+    boxShadow:
+      validErrs.length > 0 || isImporting
+        ? "none"
+        : "0 4px 16px rgba(16,185,129,0.3)",
+    cursor:
+      validErrs.length > 0 || isImporting
+        ? "not-allowed"
+        : "pointer",
+    opacity: isImporting ? 0.7 : 1,
+  }}
+>
+  {isImporting
+    ? "⏳ Importing..."
+    : `✅ Import ${parseCSVText(csvText).rows.length} Items`}
+</button> 
           </div>
         </div>
       )}
