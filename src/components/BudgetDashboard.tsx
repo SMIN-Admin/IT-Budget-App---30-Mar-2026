@@ -8306,69 +8306,94 @@ if (itemsLoading) {
            {modal === "import" && (
   <ImportModal
     onImport={async (newItems) => {
-      try {
-        const BATCH_SIZE = 25;
+  try {
+    const BATCH_SIZE = 25;
 
-        const itemsToImport = newItems.map((item, index) => {
-          const stableItemKey =
-            item.itemKey ||
-            `import_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 8)}`;
+    const existingKeySet = new Set(
+      items
+        .map((i) => i.itemKey)
+        .filter(Boolean)
+        .map((k) => String(k).toLowerCase())
+    );
 
-          const { id, ...rest } = item;
+    const dedupedItems = newItems.filter((item) => {
+      const key = String(item.itemKey || "").toLowerCase();
+      return key && !existingKeySet.has(key);
+    });
 
-          return {
-            ...rest,
-            itemKey: stableItemKey,
-          };
-        });
+    if (dedupedItems.length === 0) {
+      alert("All selected CSV rows already exist. Nothing new to import.");
+      return;
+    }
 
-        for (let i = 0; i < itemsToImport.length; i += BATCH_SIZE) {
-          const batch = itemsToImport.slice(i, i + BATCH_SIZE);
+    const itemsToImport = dedupedItems.map((item, index) => {
+      const stableItemKey =
+        item.itemKey ||
+        `import_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 8)}`;
 
-          const results = await Promise.allSettled(
-            batch.map((item) => createBudgetItem(item))
-          );
+      const { id, ...rest } = item;
 
-          const failed = results
-            .map((result, idx) =>
-              result.status === "rejected"
-                ? {
-                    item: batch[idx],
-                    error:
-                      result.reason?.message ||
-                      String(result.reason) ||
-                      "Unknown import error",
-                  }
-                : null
-            )
-            .filter(Boolean);
+      return {
+        ...rest,
+        itemKey: stableItemKey,
+      };
+    });
 
-          if (failed.length > 0) {
-            console.error("Import batch failed:", failed);
-            throw new Error(String(failed[0]?.error || "Import failed"));
-          }
+    for (let i = 0; i < itemsToImport.length; i += BATCH_SIZE) {
+      const batch = itemsToImport.slice(i, i + BATCH_SIZE);
 
-          await new Promise((resolve) => setTimeout(resolve, 75));
-        }
+      const results = await Promise.allSettled(
+        batch.map((item) => createBudgetItem(item))
+      );
 
-        const freshItems = await fetchBudgetItems();
-        setItems(freshItems);
+      const failed = results
+        .map((result, idx) =>
+          result.status === "rejected"
+            ? {
+                item: batch[idx],
+                error:
+                  result.reason?.message ||
+                  String(result.reason) ||
+                  "Unknown import error",
+              }
+            : null
+        )
+        .filter(Boolean);
 
-        addAuditEntry("Bulk Import", {
-          count: itemsToImport.length,
-          note: "CSV/Excel import",
-        });
-
-        setModal(null);
-      } catch (error) {
-        console.error("Import failed:", error);
-        alert(
-          error instanceof Error
-            ? error.message
-            : "Failed to import items to database."
-        );
+      if (failed.length > 0) {
+        console.error("Import batch failed:", failed);
+        throw new Error(String(failed[0]?.error || "Import failed"));
       }
-    }}
+
+      await new Promise((resolve) => setTimeout(resolve, 75));
+    }
+
+    const freshItems = await fetchBudgetItems();
+    setItems(freshItems);
+
+    addAuditEntry("Bulk Import", {
+      count: itemsToImport.length,
+      skipped: newItems.length - itemsToImport.length,
+      note: "CSV/Excel import",
+    });
+
+    setModal(null);
+
+    alert(
+      `${itemsToImport.length} item(s) imported successfully.` +
+        (newItems.length - itemsToImport.length > 0
+          ? ` ${newItems.length - itemsToImport.length} duplicate item(s) were skipped.`
+          : "")
+    );
+  } catch (error) {
+    console.error("Import failed:", error);
+    alert(
+      error instanceof Error
+        ? error.message
+        : "Failed to import items to database."
+    );
+  }
+}}
     onCancel={() => setModal(null)}
   />
 )}

@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const itemKey = body.itemKey;
+    const itemKey = String(body.itemKey || "").trim();
 
     if (!itemKey) {
       return NextResponse.json(
@@ -54,21 +54,36 @@ export async function POST(req: NextRequest) {
 
     const { id, _new, ...cleanBody } = body;
 
+    const existingSnap = await adminDb
+      .collection("budgetItems")
+      .where("itemKey", "==", itemKey)
+      .limit(1)
+      .get();
+
+    if (!existingSnap.empty) {
+      const existingDoc = existingSnap.docs[0];
+
+      return NextResponse.json({
+        ok: true,
+        id: existingDoc.id,
+        skipped: true,
+        message: "Duplicate item skipped",
+      });
+    }
+
     const payload = {
       ...cleanBody,
+      itemKey,
       createdBy: user.email,
-      createdAt: body.createdAt || new Date(),
+      createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    await adminDb
-      .collection("budgetItems")
-      .doc(String(itemKey))
-      .set(payload, { merge: true });
+    const docRef = await adminDb.collection("budgetItems").add(payload);
 
     return NextResponse.json({
       ok: true,
-      id: String(itemKey),
+      id: docRef.id,
     });
   } catch (error: any) {
     console.error("POST budget-items error:", error);
