@@ -937,7 +937,17 @@ function BudgetTable({ items, allItems, onEdit, onUpdateActual, onDelete, onDele
   const cols = ["","Description","BU","Paying BU","Category","Plan Month","FY","Qty","Currency","Rate","Total","Budget SGD","Actual SGD","Savings","Billing","Status","Outside Budget","Remarks","Actions"];
   const sortableCols = new Set(Object.keys(SORT_MAP));
 
-  const btnBase = { border:"none", borderRadius:6, padding:"4px 10px", cursor:"pointer", fontSize:11, fontWeight:600 };
+  const btnBase = {
+  padding: "2px 6px",
+  fontSize: 10,
+  borderRadius: 4,
+  lineHeight: 1,
+  height: 22,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  whiteSpace: "nowrap"
+}
 
   return (
     <div>
@@ -1110,7 +1120,13 @@ function BudgetTable({ items, allItems, onEdit, onUpdateActual, onDelete, onDele
                       <span style={{ color:"#213547", fontSize:11 }}>—</span>
                     )}
                   </td>
-                  <td style={{ padding:"8px 10px", display:"flex", gap:6, borderRadius:"0 8px 8px 0", alignItems:"center", flexWrap:"wrap" }}>
+                  <td style={{
+  padding:"4px 6px",
+  display:"flex",
+  gap:4,
+  alignItems:"center",
+  flexWrap:"nowrap"   // 🔥 IMPORTANT
+}}>
                     {canEditBudget && (
                       <button onClick={() => onEdit(item)} style={{ ...btnBase, background:"#213547", color:"#f1f5f9" }}>Edit</button>
                     )}
@@ -1675,7 +1691,14 @@ function Dashboard({ items, onDrillDown }) {
                     <div style={{ color:"#88A0B8", fontSize:11 }}>out of 100</div>
                   </div>
                 </div>
-                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                <div
+  style={{
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 6,
+    alignItems: "center",
+  }}
+>
                   {[
                     {label:"Completion rate", val:completedPct},
                     {label:"Budget accuracy", val:Math.max(0,100-Math.abs(100-utilPct))},
@@ -6458,7 +6481,21 @@ function ExceptionsPage({ items }) {
 
 
 // ─── RECONCILIATION PAGE ──────────────────────────────────────────────────────
-function ReconciliationPage({ items, signoffs, setSignoffs, onAddAuditEntry }) {
+function ReconciliationPage({
+  items,
+  signoffs,
+  setSignoffs,
+  onAddAuditEntry,
+  canDelete,
+  canApproveReject,
+}: {
+  items: any[];
+  signoffs: Record<string, any>;
+  setSignoffs: any;
+  onAddAuditEntry?: any;
+  canDelete: boolean;
+  canApproveReject: boolean;
+}) {
   const T = { fontFamily:"'Montserrat',sans-serif" };
   const fys = [...new Set(items.map(i=>i.fy||getFY(i.planMonth)).filter(Boolean))].sort();
   const bus  = [...new Set(items.map(i=>i.businessUnit).filter(Boolean))].sort();
@@ -6531,41 +6568,125 @@ function ReconciliationPage({ items, signoffs, setSignoffs, onAddAuditEntry }) {
 
       {/* Summary KPIs */}
       <div style={{ display:"flex", gap:12, marginBottom:16, flexWrap:"wrap" }}>
-        {[["Budget",`S$${totalBudget.toLocaleString()}`,"#5EEAD4"],["Actual",`S$${totalActual.toLocaleString()}`,"#10b981"],["Variance",`${totalVariance>=0?"":"−"}S$${Math.abs(totalVariance).toLocaleString()}`,totalVariance>=0?"#10b981":"#ef4444"],["Variance %",`${variancePct}%`,variancePct>=0?"#10b981":"#ef4444"],["Items with Actual",withActual.length,"#a78bfa"],["Approved",approvedCount,"#10b981"],["Rejected",rejectedCount,"#ef4444"]].map(([l,v,c])=>(
-          <div key={l} style={{ background:"rgba(0,0,0,0.3)", borderRadius:10, padding:"12px 16px", border:`1px solid ${c}22`, flex:1, minWidth:90 }}>
-            <div style={{ color:c, fontWeight:900, fontSize:17, ...T }}>{v}</div>
-            <div style={{ color:"#9FB3C8", fontSize:11, ...T }}>{l}</div>
-          </div>
-        ))}
-      </div>
+  {[
+    ["Budget", `S$${totalBudget.toLocaleString()}`, "#5EEAD4"],
+    ["Actual", `S$${totalActual.toLocaleString()}`, "#10b981"],
+    [
+      "Variance",
+      `${totalVariance >= 0 ? "" : "−"}S$${Math.abs(totalVariance).toLocaleString()}`,
+      totalVariance >= 0 ? "#10b981" : "#ef4444",
+    ],
+    ["Variance %", `${variancePct}%`, variancePct >= 0 ? "#10b981" : "#ef4444"],
+    ["Items with Actual", withActual.length, "#a78bfa"],
+    ["Approved", approvedCount, "#10b981"],
+    ["Rejected", rejectedCount, "#ef4444"],
+  ].map(([l,v,c]) => (
+    <div key={String(l)} style={{ background:"rgba(0,0,0,0.3)", borderRadius:10, padding:"12px 16px", border:`1px solid ${c}22`, flex:1, minWidth:90 }}>
+      <div style={{ color:String(c), fontWeight:900, fontSize:17, ...T }}>{v}</div>
+      <div style={{ color:"#9FB3C8", fontSize:11, ...T }}>{l}</div>
+    </div>
+  ))}
+</div>
 
       {/* Category summary */}
-      <div style={card}>
-        <div style={{ color:"#5EEAD4", fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:14 }}>Summary by Category</div>
-        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, ...T }}>
-          <thead><tr style={{ background:"#09131D" }}>
-            {["Category","Budget SGD","Actual SGD","Variance","Variance %"].map(h=><th key={h} style={{ padding:"8px 10px", color:"#5EEAD4", fontWeight:700, textAlign:"left" }}>{h}</th>)}
-          </tr></thead>
-          <tbody>
-            {catSummary.map((x,i)=>(
-              <tr key={x.c} style={{ background:i%2===0?"#1e293b":"#1a2744" }}>
-                <td style={{ padding:"7px 10px", color:"#f1f5f9", fontWeight:600 }}>{x.c}</td>
-                <td style={{ padding:"7px 10px", color:"#5EEAD4" }}>S${x.b.toLocaleString()}</td>
-                <td style={{ padding:"7px 10px", color:"#10b981" }}>{x.a>0?`S$${x.a.toLocaleString()}`:"—"}</td>
-                <td style={{ padding:"7px 10px", color:x.variance>=0?"#10b981":"#ef4444" }}>{x.variance!==0?`${x.variance>=0?"":"−"}S$${Math.abs(x.variance).toLocaleString()}`:"—"}</td>
-                <td style={{ padding:"7px 10px", color:x.pct>=0?"#10b981":"#ef4444" }}>{x.b>0?`${x.pct}%`:"—"}</td>
-              </tr>
-            ))}
-            <tr style={{ background:"#09131D", borderTop:"2px solid #5EEAD4" }}>
-              <td style={{ padding:"8px 10px", color:"#f1f5f9", fontWeight:800 }}>TOTAL</td>
-              <td style={{ padding:"8px 10px", color:"#5EEAD4", fontWeight:800 }}>S${totalBudget.toLocaleString()}</td>
-              <td style={{ padding:"8px 10px", color:"#10b981", fontWeight:800 }}>S${totalActual.toLocaleString()}</td>
-              <td style={{ padding:"8px 10px", color:totalVariance>=0?"#10b981":"#ef4444", fontWeight:800 }}>{totalVariance>=0?"":"−"}S${Math.abs(totalVariance).toLocaleString()}</td>
-              <td style={{ padding:"8px 10px", color:variancePct>=0?"#10b981":"#ef4444", fontWeight:800 }}>{variancePct}%</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+<div style={card}>
+  <div
+    style={{
+      color: "#5EEAD4",
+      fontSize: 11,
+      fontWeight: 800,
+      textTransform: "uppercase",
+      letterSpacing: "0.08em",
+      marginBottom: 14,
+    }}
+  >
+    Summary by Category
+  </div>
+
+  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, ...T }}>
+    <thead>
+      <tr style={{ background: "#09131D" }}>
+        {["Category", "Budget SGD", "Actual SGD", "Variance", "Variance %"].map((h) => (
+          <th
+            key={h}
+            style={{
+              padding: "8px 10px",
+              color: "#5EEAD4",
+              fontWeight: 700,
+              textAlign: "left",
+            }}
+          >
+            {h}
+          </th>
+        ))}
+      </tr>
+    </thead>
+
+    <tbody>
+      {catSummary.map((x, i) => (
+        <tr key={x.c} style={{ background: i % 2 === 0 ? "#1e293b" : "#1a2744" }}>
+          <td style={{ padding: "7px 10px", color: "#f1f5f9", fontWeight: 600 }}>
+            {x.c}
+          </td>
+          <td style={{ padding: "7px 10px", color: "#5EEAD4" }}>
+            S${x.b.toLocaleString()}
+          </td>
+          <td style={{ padding: "7px 10px", color: "#10b981" }}>
+            {x.a > 0 ? `S$${x.a.toLocaleString()}` : "—"}
+          </td>
+          <td
+            style={{
+              padding: "7px 10px",
+              color: x.variance >= 0 ? "#10b981" : "#ef4444",
+            }}
+          >
+            {x.variance !== 0
+              ? `${x.variance >= 0 ? "" : "−"}S$${Math.abs(x.variance).toLocaleString()}`
+              : "—"}
+          </td>
+          <td
+            style={{
+              padding: "7px 10px",
+              color: x.pct >= 0 ? "#10b981" : "#ef4444",
+            }}
+          >
+            {x.b > 0 ? `${x.pct}%` : "—"}
+          </td>
+        </tr>
+      ))}
+
+      <tr style={{ background: "#09131D", borderTop: "2px solid #5EEAD4" }}>
+        <td style={{ padding: "8px 10px", color: "#f1f5f9", fontWeight: 800 }}>
+          TOTAL
+        </td>
+        <td style={{ padding: "8px 10px", color: "#5EEAD4", fontWeight: 800 }}>
+          S${totalBudget.toLocaleString()}
+        </td>
+        <td style={{ padding: "8px 10px", color: "#10b981", fontWeight: 800 }}>
+          S${totalActual.toLocaleString()}
+        </td>
+        <td
+          style={{
+            padding: "8px 10px",
+            color: totalVariance >= 0 ? "#10b981" : "#ef4444",
+            fontWeight: 800,
+          }}
+        >
+          {totalVariance >= 0 ? "" : "−"}S${Math.abs(totalVariance).toLocaleString()}
+        </td>
+        <td
+          style={{
+            padding: "8px 10px",
+            color: variancePct >= 0 ? "#10b981" : "#ef4444",
+            fontWeight: 800,
+          }}
+        >
+          {variancePct}%
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
       {/* Line-item sign-off */}
       <div style={card}>
@@ -6609,8 +6730,18 @@ function ReconciliationPage({ items, signoffs, setSignoffs, onAddAuditEntry }) {
           <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, ...T }}>
             <thead><tr style={{ background:"#09131D" }}>
               <th style={{ padding:"8px 10px", width:36 }}>
-                <input type="checkbox" checked={allSelected} onChange={toggleAll} disabled={!canDelete}
-                  style={{ width:14, height:14, cursor:"pointer", accentColor:"#5EEAD4" }} />
+                <input
+  type="checkbox"
+  checked={allSelected}
+  onChange={toggleAll}
+  disabled={!canDelete}
+  style={{
+    width: 14,
+    height: 14,
+    cursor: canDelete ? "pointer" : "not-allowed",
+    accentColor: "#5EEAD4"
+  }}
+/>
               </th>
               {["Description","BU","Category","Budget SGD","Actual SGD","Variance","Variance %","Sign-Off"].map(h=>(
                 <th key={h} style={{ padding:"8px 10px", color:"#5EEAD4", fontWeight:700, textAlign:"left", whiteSpace:"nowrap" }}>{h}</th>
@@ -6627,8 +6758,18 @@ function ReconciliationPage({ items, signoffs, setSignoffs, onAddAuditEntry }) {
                 return (
                   <tr key={item.id} style={{ background:rowBg }}>
                     <td style={{ padding:"7px 10px", textAlign:"center" }}>
-                      <input type="checkbox" checked={selected.has(item.id)} onChange={()=>toggleOne(item.id)}
-                        style={{ width:14, height:14, cursor:"pointer", accentColor:"#5EEAD4" }} />
+                      <input
+  type="checkbox"
+  checked={selected.has(item.id)}
+  onChange={() => toggleOne(item.id)}
+  disabled={!canDelete}
+  style={{
+    width: 14,
+    height: 14,
+    cursor: canDelete ? "pointer" : "not-allowed",
+    accentColor: "#5EEAD4"
+  }}
+/>
                     </td>
                     <td style={{ padding:"7px 10px", color:"#f1f5f9", fontWeight:600, maxWidth:180, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{item.description}</td>
                     <td style={{ padding:"7px 10px", color:"#9FB3C8" }}>{item.businessUnit}</td>
@@ -6638,31 +6779,145 @@ function ReconciliationPage({ items, signoffs, setSignoffs, onAddAuditEntry }) {
                     <td style={{ padding:"7px 10px", color:v>=0?"#10b981":"#ef4444" }}>{v>=0?"":"−"}S${Math.abs(v).toLocaleString()}</td>
                     <td style={{ padding:"7px 10px", color:vp>=0?"#10b981":"#ef4444" }}>{b>0?`${vp}%`:"—"}</td>
                     <td style={{ padding:"7px 10px" }}>
-                      {status === "approved" ? (
-                        <div style={{ display:"flex", gap:5, alignItems:"center" }}>
-                          <span style={{ background:"rgba(16,185,129,0.2)", border:"1px solid rgba(16,185,129,0.5)", borderRadius:6, color:"#10b981", padding:"3px 10px", fontSize:11, fontWeight:700 }}>✅ Approved</span>
-                          <button onClick={()=>{ setSignoffs(p=>({...p,[item.id]:undefined})); onAddAuditEntry && onAddAuditEntry("Reconciliation Sign-off Cleared", { item:item.description, fy:item.fy||getFY(item.planMonth) }); }}
-                            style={{ background:"none", border:"none", color:"#374151", cursor:"pointer", fontSize:11, padding:"2px 4px" }} title="Clear">✕</button>
-                        </div>
-                      ) : status === "rejected" ? (
-                        <div style={{ display:"flex", gap:5, alignItems:"center" }}>
-                          <span style={{ background:"rgba(239,68,68,0.15)", border:"1px solid rgba(239,68,68,0.4)", borderRadius:6, color:"#ef4444", padding:"3px 10px", fontSize:11, fontWeight:700 }}>✕ Rejected</span>
-                          <button onClick={()=>{ setSignoffs(p=>({...p,[item.id]:undefined})); onAddAuditEntry && onAddAuditEntry("Reconciliation Sign-off Cleared", { item:item.description, fy:item.fy||getFY(item.planMonth) }); }}
-                            style={{ background:"none", border:"none", color:"#374151", cursor:"pointer", fontSize:11, padding:"2px 4px" }} title="Clear">✕</button>
-                        </div>
-                      ) : (
-                        <div style={{ display:"flex", gap:5 }}>
-                          <button onClick={()=>{ setSignoffs(p=>({...p,[item.id]:"approved"})); onAddAuditEntry && onAddAuditEntry("Reconciliation Approved", { count:1, items:item.description, fy:item.fy||getFY(item.planMonth), budget:Math.round(b), actual:Math.round(a) }); }}
-                            style={{ background:"rgba(16,185,129,0.15)", border:"1px solid rgba(16,185,129,0.4)", borderRadius:6, color:"#10b981", padding:"3px 10px", cursor:"pointer", fontSize:11, fontWeight:700, ...T }}>
-                            ✅ Approve
-                          </button>
-                          <button onClick={()=>{ setSignoffs(p=>({...p,[item.id]:"rejected"})); onAddAuditEntry && onAddAuditEntry("Reconciliation Rejected", { count:1, items:item.description, fy:item.fy||getFY(item.planMonth), budget:Math.round(b), actual:Math.round(a) }); }}
-                            style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.35)", borderRadius:6, color:"#ef4444", padding:"3px 10px", cursor:"pointer", fontSize:11, fontWeight:700, ...T }}>
-                            ✕ Reject
-                          </button>
-                        </div>
-                      )}
-                    </td>
+  {status === "approved" ? (
+    <div style={{ display:"flex", gap:5, alignItems:"center" }}>
+      <span
+        style={{
+          background:"rgba(16,185,129,0.2)",
+          border:"1px solid rgba(16,185,129,0.5)",
+          borderRadius:6,
+          color:"#10b981",
+          padding:"3px 10px",
+          fontSize:11,
+          fontWeight:700
+        }}
+      >
+        ✅ Approved
+      </span>
+      {canApproveReject && (
+        <button
+          onClick={() => {
+            setSignoffs((p) => ({ ...p, [item.id]: undefined }));
+            onAddAuditEntry &&
+              onAddAuditEntry("Reconciliation Sign-off Cleared", {
+                item: item.description,
+                fy: item.fy || getFY(item.planMonth),
+              });
+          }}
+          style={{
+            background:"none",
+            border:"none",
+            color:"#374151",
+            cursor:"pointer",
+            fontSize:11,
+            padding:"2px 4px"
+          }}
+          title="Clear"
+        >
+          ✕
+        </button>
+      )}
+    </div>
+  ) : status === "rejected" ? (
+    <div style={{ display:"flex", gap:5, alignItems:"center" }}>
+      <span
+        style={{
+          background:"rgba(239,68,68,0.15)",
+          border:"1px solid rgba(239,68,68,0.4)",
+          borderRadius:6,
+          color:"#ef4444",
+          padding:"3px 10px",
+          fontSize:11,
+          fontWeight:700
+        }}
+      >
+        ✕ Rejected
+      </span>
+      {canApproveReject && (
+        <button
+          onClick={() => {
+            setSignoffs((p) => ({ ...p, [item.id]: undefined }));
+            onAddAuditEntry &&
+              onAddAuditEntry("Reconciliation Sign-off Cleared", {
+                item: item.description,
+                fy: item.fy || getFY(item.planMonth),
+              });
+          }}
+          style={{
+            background:"none",
+            border:"none",
+            color:"#374151",
+            cursor:"pointer",
+            fontSize:11,
+            padding:"2px 4px"
+          }}
+          title="Clear"
+        >
+          ✕
+        </button>
+      )}
+    </div>
+  ) : canApproveReject ? (
+    <div style={{ display:"flex", gap:5 }}>
+      <button
+        onClick={() => {
+          setSignoffs((p) => ({ ...p, [item.id]: "approved" }));
+          onAddAuditEntry &&
+            onAddAuditEntry("Reconciliation Approved", {
+              count: 1,
+              items: item.description,
+              fy: item.fy || getFY(item.planMonth),
+              budget: Math.round(b),
+              actual: Math.round(a),
+            });
+        }}
+        style={{
+          background:"rgba(16,185,129,0.15)",
+          border:"1px solid rgba(16,185,129,0.4)",
+          borderRadius:6,
+          color:"#10b981",
+          padding:"3px 10px",
+          cursor:"pointer",
+          fontSize:11,
+          fontWeight:700,
+          ...T
+        }}
+      >
+        ✅ Approve
+      </button>
+      <button
+        onClick={() => {
+          setSignoffs((p) => ({ ...p, [item.id]: "rejected" }));
+          onAddAuditEntry &&
+            onAddAuditEntry("Reconciliation Rejected", {
+              count: 1,
+              items: item.description,
+              fy: item.fy || getFY(item.planMonth),
+              budget: Math.round(b),
+              actual: Math.round(a),
+            });
+        }}
+        style={{
+          background:"rgba(239,68,68,0.1)",
+          border:"1px solid rgba(239,68,68,0.35)",
+          borderRadius:6,
+          color:"#ef4444",
+          padding:"3px 10px",
+          cursor:"pointer",
+          fontSize:11,
+          fontWeight:700,
+          ...T
+        }}
+      >
+        ✕ Reject
+      </button>
+    </div>
+  ) : (
+    <span style={{ color:"#6B7280", fontSize:11 }}>
+      No action
+    </span>
+  )}
+</td>
                   </tr>
                 );
               })}
