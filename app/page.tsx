@@ -125,7 +125,15 @@ export default async function HomePage() {
 
       {/* MAIN CONTENT */}
       <div style={{ padding: "0" }}>
-        <BudgetDashboard />
+        <BudgetDashboard
+  user={{
+    uid: user.uid,
+    email: user.email,
+    name: user.name || "",
+    role: user.role || "viewer",
+    isActive: user.isActive ?? true,
+  }}
+/>
       </div>
     </main>
   );
