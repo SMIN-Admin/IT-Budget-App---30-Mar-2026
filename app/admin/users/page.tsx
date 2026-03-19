@@ -9,5 +9,5 @@ export default async function AdminUsersPage() {
     redirect("/");
   }
 
-  return <UserAdminPage currentUser={user} />;
+  return <UserAdminPage currentUserEmail={user.email} />;
 }

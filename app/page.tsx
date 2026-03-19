@@ -12,6 +12,7 @@ export default async function HomePage() {
         background: "#071521",
       }}
     >
+      {/* HEADER */}
       <div
         style={{
           height: "52px",
@@ -25,6 +26,7 @@ export default async function HomePage() {
           boxShadow: "0 2px 10px rgba(0,0,0,0.18)",
         }}
       >
+        {/* LEFT: USER INFO */}
         <div
           style={{
             display: "flex",
@@ -54,8 +56,20 @@ export default async function HomePage() {
             {user.name?.slice(0, 1) || "U"}
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
-            <span style={{ color: "#eafcff", fontSize: "13px", fontWeight: 600 }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              lineHeight: 1.1,
+            }}
+          >
+            <span
+              style={{
+                color: "#eafcff",
+                fontSize: "13px",
+                fontWeight: 600,
+              }}
+            >
               {user.name}
             </span>
             <span style={{ color: "#7fb7c7", fontSize: "11px" }}>
@@ -64,25 +78,52 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <form action="/api/auth/logout" method="post" style={{ margin: 0 }}>
-          <button
-            style={{
-              height: "34px",
-              padding: "0 14px",
-              cursor: "pointer",
-              borderRadius: "10px",
-              border: "1px solid rgba(84, 214, 255, 0.28)",
-              background: "rgba(84, 214, 255, 0.08)",
-              color: "#dffbff",
-              fontSize: "13px",
-              fontWeight: 600,
-            }}
-          >
-            Logout
-          </button>
-        </form>
+        {/* RIGHT: ADMIN + LOGOUT */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* Admin Button */}
+          {user.role === "admin" && (
+            <a
+              href="/admin/users"
+              style={{
+                height: "34px",
+                padding: "0 14px",
+                display: "inline-flex",
+                alignItems: "center",
+                textDecoration: "none",
+                borderRadius: "10px",
+                border: "1px solid rgba(84, 214, 255, 0.28)",
+                background: "rgba(84, 214, 255, 0.08)",
+                color: "#dffbff",
+                fontSize: "13px",
+                fontWeight: 600,
+              }}
+            >
+              Admin Panel
+            </a>
+          )}
+
+          {/* Logout */}
+          <form action="/api/auth/logout" method="post" style={{ margin: 0 }}>
+            <button
+              style={{
+                height: "34px",
+                padding: "0 14px",
+                cursor: "pointer",
+                borderRadius: "10px",
+                border: "1px solid rgba(84, 214, 255, 0.28)",
+                background: "rgba(84, 214, 255, 0.08)",
+                color: "#dffbff",
+                fontSize: "13px",
+                fontWeight: 600,
+              }}
+            >
+              Logout
+            </button>
+          </form>
+        </div>
       </div>
 
+      {/* MAIN CONTENT */}
       <div style={{ padding: "0" }}>
         <BudgetDashboard />
       </div>

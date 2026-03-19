@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     }
 
     const decoded = await adminAuth.verifyIdToken(idToken);
-    const email = decoded.email || "";
+    const email = String(decoded.email || "").trim().toLowerCase();
 
     if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
       return NextResponse.json(
@@ -21,8 +21,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const userRef = adminDb.collection("users").doc(decoded.uid);
-    const userSnap = await userRef.get();
+    if (!email) {
+      return NextResponse.json(
+        { error: "Invalid email from Google" },
+        { status: 400 }
+      );
+    }
+
+    // 1. First try new email-based user document
+    let userRef = adminDb.collection("users").doc(email);
+    let userSnap = await userRef.get();
+
+    // 2. Fallback to old UID-based user document
+    if (!userSnap.exists) {
+      userRef = adminDb.collection("users").doc(decoded.uid);
+      userSnap = await userRef.get();
+    }
+
+    // 3. Final fallback: query by email field
+    if (!userSnap.exists) {
+      const querySnap = await adminDb
+        .collection("users")
+        .where("email", "==", email)
+        .limit(1)
+        .get();
+
+      if (!querySnap.empty) {
+        userSnap = querySnap.docs[0];
+        userRef = userSnap.ref;
+      }
+    }
 
     if (!userSnap.exists) {
       return NextResponse.json(
@@ -70,6 +98,9 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: "Authentication failed" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Authentication failed" },
+      { status: 401 }
+    );
   }
 }
