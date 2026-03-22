@@ -24,12 +24,13 @@ export async function PUT(req: NextRequest, { params }: Params) {
     const { _new, id: bodyId, ...cleanBody } = body;
 
     await adminDb.collection("budgetItems").doc(String(id)).set(
-      {
-        ...cleanBody,
-        updatedAt: new Date(),
-      },
-      { merge: true }
-    );
+  {
+    ...cleanBody,
+    updatedAt: new Date(),
+    updatedBy: user.email,
+  },
+  { merge: true }
+);
 
     return NextResponse.json({ ok: true });
   } catch (error: any) {
