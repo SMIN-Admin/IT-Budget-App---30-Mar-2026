@@ -382,11 +382,11 @@ function useLocalStorage(key, initial) {
 
 
 // ── Audit log helper ──────────────────────────────────────────────────────
-function createAuditEntry(action, details, user="Finance User") {
+function createAuditEntry(action, details, user) {
   return {
     id: Date.now() + Math.random(),
     ts: new Date().toISOString(),
-    user,
+    user: user || "Unknown",
     action,
     details,
   };
@@ -6387,7 +6387,7 @@ function ExceptionsPage({ items }) {
       if (actual!=null && budget>0 && actual > budget*1.2) results.push({ ...item, ruleCode:"OVERSPEND", ruleLabel:"Actual >20% over budget", severity:"HIGH", detail:`Budget S$${Math.round(budget).toLocaleString()} → Actual S$${Math.round(actual).toLocaleString()} (${Math.round((actual-budget)/budget*100)}% over)` });
       if (od!==null && od<-14 && actual==null && (!item.status || item.status==="")) results.push({ ...item, ruleCode:"OVERDUE", ruleLabel:"Overdue — no actual recorded (pending)", severity:"MEDIUM", detail:`Plan month ${item.planMonth} was ${Math.abs(od)} days ago` });
       if (item.outsideBudget && actual!=null && actual>10000) results.push({ ...item, ruleCode:"OUTSIDE_HIGH", ruleLabel:"Outside-budget spend >S$10,000", severity:"HIGH", detail:`Unplanned spend of S$${Math.round(actual).toLocaleString()}` });
-      const missing = [!item.vendor&&"Vendor", !item.billingFreq&&"Billing Freq", !item.itemCategory&&"Category"].filter(Boolean);
+      const missing = [!item.billingFreq && "Billing Freq", !item.itemCategory && "Category"].filter(Boolean);
       if (missing.length>0) results.push({ ...item, ruleCode:"MISSING_FIELDS", ruleLabel:"Missing mandatory fields", severity:"LOW", detail:`Missing: ${missing.join(", ")}` });
     });
     return results;
@@ -6990,50 +6990,126 @@ function AuditLogPage({ auditLog, onExport }) {
     </div>
   );
 }
-
 // ─── BUDGET FREEZE PAGE ───────────────────────────────────────────────────────
-function BudgetFreezePage({ items, frozenPeriods, setFrozenPeriods, onAddAuditEntry, setItems }) {
+function BudgetFreezePage({
+  items,
+  frozenPeriods,
+  setFrozenPeriods,
+  onAddAuditEntry,
+  setItems,
+  role,
+  currentUserEmail,
+}: {
+  items: any[];
+  frozenPeriods: any;
+  setFrozenPeriods: any;
+  onAddAuditEntry: any;
+  setItems: any;
+  role: string;
+  currentUserEmail?: string;
+}) {
   const T = { fontFamily:"'Montserrat',sans-serif" };
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [showPinSetup, setShowPinSetup] = useState(!frozenPeriods.pin);
   const [actionPeriod, setActionPeriod] = useState("");
-  const [actionMode, setActionMode] = useState(null); // "lock" | "unlock"
+  const [actionMode, setActionMode] = useState<"lock" | "unlock" | null>(null);
   const [enteredPin, setEnteredPin] = useState("");
   const [pinError, setPinError] = useState("");
   const [reason, setReason] = useState("");
 
-  const fys = [...new Set(items.map(i=>i.fy||getFY(i.planMonth)).filter(Boolean))].sort();
+  const fys = [...new Set(items.map((i:any) => i.fy || getFY(i.planMonth)).filter(Boolean))].sort();
   const locked = frozenPeriods.periods || {};
 
   const handleSetPin = () => {
-    if (pin.length < 4) { setPinError("PIN must be at least 4 characters"); return; }
-    if (pin !== confirmPin) { setPinError("PINs do not match"); return; }
-    setFrozenPeriods(prev=>({...prev, pin}));
-    setShowPinSetup(false); setPin(""); setConfirmPin(""); setPinError("");
+    if (pin.length < 4) {
+      setPinError("PIN must be at least 4 characters");
+      return;
+    }
+    if (pin !== confirmPin) {
+      setPinError("PINs do not match");
+      return;
+    }
+    setFrozenPeriods((prev:any) => ({ ...prev, pin }));
+    setShowPinSetup(false);
+    setPin("");
+    setConfirmPin("");
+    setPinError("");
     onAddAuditEntry("Period Lock PIN Set", { note:"Freeze PIN configured" });
   };
 
   const handleAction = () => {
-    if (enteredPin !== frozenPeriods.pin) { setPinError("Incorrect PIN"); return; }
-    if (!actionPeriod) { setPinError("Select a period"); return; }
-    if (!reason.trim()) { setPinError("Reason is required for audit"); return; }
-    const isLocking = actionMode==="lock";
-    setFrozenPeriods(prev=>({ ...prev, periods:{ ...prev.periods, [actionPeriod]:isLocking?{ lockedAt:new Date().toISOString(), reason, lockedBy:"Finance User" }:null } }));
-    onAddAuditEntry(isLocking?"Period Locked":"Period Unlocked", { period:actionPeriod, reason, by:"Finance User" });
-    setEnteredPin(""); setReason(""); setActionMode(null); setPinError(""); setActionPeriod("");
+    if (enteredPin !== frozenPeriods.pin) {
+      setPinError("Incorrect PIN");
+      return;
+    }
+    if (!actionPeriod) {
+      setPinError("Select a period");
+      return;
+    }
+    if (!reason.trim()) {
+      setPinError("Reason is required for audit");
+      return;
+    }
+
+    const isLocking = actionMode === "lock";
+
+    setFrozenPeriods((prev:any) => ({
+      ...prev,
+      periods: {
+        ...prev.periods,
+        [actionPeriod]: isLocking
+          ? {
+              lockedAt: new Date().toISOString(),
+              reason,
+              lockedBy: currentUserEmail || "Unknown",
+            }
+          : null,
+      },
+    }));
+
+    onAddAuditEntry(
+      isLocking ? "Period Locked" : "Period Unlocked",
+      {
+        period: actionPeriod,
+        reason,
+        by: currentUserEmail || "Unknown",
+      }
+    );
+
+    setEnteredPin("");
+    setReason("");
+    setActionMode(null);
+    setPinError("");
+    setActionPeriod("");
   };
 
-  const card = { background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, border:"1px solid rgba(94,234,212,0.12)", padding:"20px 22px", marginBottom:16 };
+  const card = {
+    background:"linear-gradient(145deg,#0F1B2B,#0C1722)",
+    borderRadius:14,
+    border:"1px solid rgba(94,234,212,0.12)",
+    padding:"20px 22px",
+    marginBottom:16
+  };
 
   return (
     <div style={T}>
-      <h2 style={{ color:"#E6FFFD", fontSize:18, fontWeight:900, margin:"0 0 20px 0" }}>🔒 Budget Period Freeze</h2>
+      <h2 style={{ color:"#E6FFFD", fontSize:18, fontWeight:900, margin:"0 0 20px 0" }}>
+        🔒 Budget Period Freeze
+      </h2>
 
       {/* Rules callout */}
       <div style={{ ...card, background:"rgba(94,234,212,0.04)", border:"1px solid rgba(94,234,212,0.25)", marginBottom:16 }}>
-        <div style={{ color:"#5EEAD4", fontWeight:800, fontSize:12, marginBottom:10 }}>Freeze Rules</div>
-        {[["✅","Actuals can always be added/updated — even in locked periods"],["✅","New items added during a locked period are automatically marked as Outside Budget"],["🔒","Existing budget amounts, descriptions, and fields cannot be edited in locked periods"],["🔍","All lock/unlock actions are logged in the Audit Log with reason and timestamp"],["🔑","A PIN is required to lock or unlock any period"]].map(([icon,txt],i)=>(
+        <div style={{ color:"#5EEAD4", fontWeight:800, fontSize:12, marginBottom:10 }}>
+          Freeze Rules
+        </div>
+        {[
+          ["✅","Actuals can always be added/updated — even in locked periods"],
+          ["✅","New items added during a locked period are automatically marked as Outside Budget"],
+          ["🔒","Existing budget amounts, descriptions, and fields cannot be edited in locked periods"],
+          ["🔍","All lock/unlock actions are logged in the Audit Log with reason and timestamp"],
+          ["🔑","A PIN is required to lock or unlock any period"]
+        ].map(([icon,txt],i)=>(
           <div key={i} style={{ display:"flex", gap:8, marginBottom:6 }}>
             <span style={{ fontSize:14, flexShrink:0 }}>{icon}</span>
             <span style={{ color:"#8AA0B7", fontSize:12 }}>{txt}</span>
@@ -7041,83 +7117,252 @@ function BudgetFreezePage({ items, frozenPeriods, setFrozenPeriods, onAddAuditEn
         ))}
       </div>
 
-      {/* PIN setup */}
-      {showPinSetup ? (
-        <div style={card}>
-          <div style={{ color:"#f59e0b", fontWeight:800, fontSize:13, marginBottom:16 }}>🔑 Set Freeze PIN (one-time setup)</div>
-          <div style={{ display:"flex", gap:12, flexWrap:"wrap", alignItems:"flex-end" }}>
-            <div><label style={{ color:"#9FB3C8", fontSize:11, fontWeight:700, display:"block", marginBottom:4 }}>PIN</label>
-              <input type="password" value={pin} onChange={e=>{setPin(e.target.value);setPinError("");}} placeholder="Min 4 characters" style={{ background:"#09131D", border:"1px solid #213547", borderRadius:8, color:"#f1f5f9", padding:"8px 12px", fontSize:13, width:180 }} /></div>
-            <div><label style={{ color:"#9FB3C8", fontSize:11, fontWeight:700, display:"block", marginBottom:4 }}>Confirm PIN</label>
-              <input type="password" value={confirmPin} onChange={e=>{setConfirmPin(e.target.value);setPinError("");}} placeholder="Repeat PIN" style={{ background:"#09131D", border:"1px solid #213547", borderRadius:8, color:"#f1f5f9", padding:"8px 12px", fontSize:13, width:180 }} /></div>
-            <button onClick={handleSetPin} style={{ background:"linear-gradient(135deg,#f59e0b,#d97706)", border:"none", borderRadius:9, color:"#fff", padding:"9px 20px", cursor:"pointer", fontWeight:700, fontSize:13, ...T }}>Set PIN</button>
-          </div>
-          {pinError && <div style={{ color:"#ef4444", fontSize:12, marginTop:8 }}>{pinError}</div>}
-        </div>
-      ) : (
-        <div style={{ display:"flex", gap:12, marginBottom:16 }}>
-          <button onClick={()=>{setActionMode("lock");setPinError("");setEnteredPin("");setReason("");}}
-            style={{ flex:1, background:actionMode==="lock"?"linear-gradient(135deg,#1a0a0a,#2a1010)":"linear-gradient(145deg,#0F1B2B,#0C1722)", border:`1px solid ${actionMode==="lock"?"#ef4444":"rgba(94,234,212,0.2)"}`, borderRadius:10, color:actionMode==="lock"?"#f87171":"#9FB3C8", padding:"14px", cursor:"pointer", fontWeight:700, fontSize:14, ...T }}>
-            🔒 Lock a Period
-          </button>
-          <button onClick={()=>{setActionMode("unlock");setPinError("");setEnteredPin("");setReason("");}}
-            style={{ flex:1, background:actionMode==="unlock"?"linear-gradient(135deg,#0a1a0a,#102a10)":"linear-gradient(145deg,#0F1B2B,#0C1722)", border:`1px solid ${actionMode==="unlock"?"#10b981":"rgba(94,234,212,0.2)"}`, borderRadius:10, color:actionMode==="unlock"?"#10b981":"#9FB3C8", padding:"14px", cursor:"pointer", fontWeight:700, fontSize:14, ...T }}>
-            🔓 Unlock a Period
-          </button>
-          <button onClick={()=>{setShowPinSetup(true); setFrozenPeriods(prev=>({...prev,pin:""}));}}
-            style={{ background:"rgba(71,85,105,0.2)", border:"1px solid rgba(71,85,105,0.4)", borderRadius:10, color:"#94a3b8", padding:"14px 18px", cursor:"pointer", fontSize:12, ...T }}>
-            Change PIN
-          </button>
-        </div>
-      )}
+      {role === "admin" && (
+        <>
+          {/* PIN setup */}
+          {showPinSetup ? (
+            <div style={card}>
+              <div style={{ color:"#f59e0b", fontWeight:800, fontSize:13, marginBottom:16 }}>
+                🔑 Set Freeze PIN (one-time setup)
+              </div>
 
-      {/* Lock/Unlock form */}
-      {actionMode && (
-        <div style={{ ...card, border:`1px solid ${actionMode==="lock"?"rgba(239,68,68,0.4)":"rgba(16,185,129,0.4)"}` }}>
-          <div style={{ color:actionMode==="lock"?"#ef4444":"#10b981", fontWeight:800, fontSize:13, marginBottom:14 }}>
-            {actionMode==="lock"?"🔒 Lock Period — No budget edits (actuals still allowed)":"🔓 Unlock Period — Full editing restored"}
-          </div>
-          <div style={{ display:"flex", gap:12, flexWrap:"wrap", alignItems:"flex-end" }}>
-            <div>
-              <label style={{ color:"#9FB3C8", fontSize:11, fontWeight:700, display:"block", marginBottom:4 }}>Period</label>
-              <select value={actionPeriod} onChange={e=>{setActionPeriod(e.target.value);setPinError("");}}
-                style={{ background:"#09131D", border:"1px solid #213547", borderRadius:8, color:"#f1f5f9", padding:"8px 12px", fontSize:13, ...T }}>
-                <option value="">— Select FY Period —</option>
-                {fys.filter(f=>actionMode==="lock"?!locked[f]:locked[f]).map(f=><option key={f} value={f}>{f}</option>)}
-              </select>
+              <div style={{ display:"flex", gap:12, flexWrap:"wrap", alignItems:"flex-end" }}>
+                <div>
+                  <label style={{ color:"#9FB3C8", fontSize:11, fontWeight:700, display:"block", marginBottom:4 }}>
+                    PIN
+                  </label>
+                  <input
+                    type="password"
+                    value={pin}
+                    onChange={e => {
+                      setPin(e.target.value);
+                      setPinError("");
+                    }}
+                    placeholder="Min 4 characters"
+                    style={{
+                      background:"#09131D",
+                      border:"1px solid #213547",
+                      borderRadius:8,
+                      color:"#f1f5f9",
+                      padding:"8px 12px",
+                      fontSize:13,
+                      width:180
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ color:"#9FB3C8", fontSize:11, fontWeight:700, display:"block", marginBottom:4 }}>
+                    Confirm PIN
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPin}
+                    onChange={e => {
+                      setConfirmPin(e.target.value);
+                      setPinError("");
+                    }}
+                    placeholder="Repeat PIN"
+                    style={{
+                      background:"#09131D",
+                      border:"1px solid #213547",
+                      borderRadius:8,
+                      color:"#f1f5f9",
+                      padding:"8px 12px",
+                      fontSize:13,
+                      width:180
+                    }}
+                  />
+                </div>
+
+                <button
+                  onClick={handleSetPin}
+                  style={{
+                    background:"linear-gradient(135deg,#f59e0b,#d97706)",
+                    border:"none",
+                    borderRadius:9,
+                    color:"#fff",
+                    padding:"9px 20px",
+                    cursor:"pointer",
+                    fontWeight:700,
+                    fontSize:13,
+                    ...T
+                  }}
+                >
+                  Set PIN
+                </button>
+              </div>
+
+              {pinError && (
+                <div style={{ color:"#ef4444", fontSize:12, marginTop:8 }}>
+                  {pinError}
+                </div>
+              )}
             </div>
-            <div style={{ flex:1, minWidth:200 }}>
-              <label style={{ color:"#9FB3C8", fontSize:11, fontWeight:700, display:"block", marginBottom:4 }}>Reason (required for audit)</label>
-              <input value={reason} onChange={e=>{setReason(e.target.value);setPinError("");}} placeholder={actionMode==="lock"?"e.g. FY2026-H1 sign-off complete":"e.g. Budget revision approved by CFO"} style={{ width:"100%", background:"#09131D", border:"1px solid #213547", borderRadius:8, color:"#f1f5f9", padding:"8px 12px", fontSize:13, boxSizing:"border-box" }} />
+          ) : (
+            <div style={{ display:"flex", gap:12, marginBottom:16 }}>
+              <button
+                onClick={() => {
+                  setActionMode("lock");
+                  setPinError("");
+                  setEnteredPin("");
+                  setReason("");
+                }}
+                style={{
+                  flex:1,
+                  background:actionMode==="lock"
+                    ? "linear-gradient(135deg,#1a0a0a,#2a1010)"
+                    : "linear-gradient(145deg,#0F1B2B,#0C1722)",
+                  border:`1px solid ${actionMode==="lock" ? "#ef4444" : "rgba(94,234,212,0.2)"}`,
+                  borderRadius:10,
+                  color:actionMode==="lock" ? "#f87171" : "#9FB3C8",
+                  padding:"14px",
+                  cursor:"pointer",
+                  fontWeight:700,
+                  fontSize:14,
+                  ...T
+                }}
+              >
+                🔒 Lock a Period
+              </button>
+
+              <button
+                onClick={() => {
+                  setActionMode("unlock");
+                  setPinError("");
+                  setEnteredPin("");
+                  setReason("");
+                }}
+                style={{
+                  flex:1,
+                  background:actionMode==="unlock"
+                    ? "linear-gradient(135deg,#0a1a0a,#102a10)"
+                    : "linear-gradient(145deg,#0F1B2B,#0C1722)",
+                  border:`1px solid ${actionMode==="unlock" ? "#10b981" : "rgba(94,234,212,0.2)"}`,
+                  borderRadius:10,
+                  color:actionMode==="unlock" ? "#10b981" : "#9FB3C8",
+                  padding:"14px",
+                  cursor:"pointer",
+                  fontWeight:700,
+                  fontSize:14,
+                  ...T
+                }}
+              >
+                🔓 Unlock a Period
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowPinSetup(true);
+                  setFrozenPeriods((prev:any) => ({ ...prev, pin:"" }));
+                }}
+                style={{
+                  background:"rgba(71,85,105,0.2)",
+                  border:"1px solid rgba(71,85,105,0.4)",
+                  borderRadius:10,
+                  color:"#94a3b8",
+                  padding:"14px 18px",
+                  cursor:"pointer",
+                  fontSize:12,
+                  ...T
+                }}
+              >
+                Change PIN
+              </button>
             </div>
-            <div>
-              <label style={{ color:"#9FB3C8", fontSize:11, fontWeight:700, display:"block", marginBottom:4 }}>PIN</label>
-              <input type="password" value={enteredPin} onChange={e=>{setEnteredPin(e.target.value);setPinError("");}} placeholder="Enter PIN" style={{ background:"#09131D", border:`1px solid ${pinError?"#ef4444":"#213547"}`, borderRadius:8, color:"#f1f5f9", padding:"8px 12px", fontSize:13, width:140 }} />
+          )}
+
+          {/* Lock/Unlock form */}
+          {actionMode && (
+            <div style={{ ...card, border:`1px solid ${actionMode==="lock" ? "rgba(239,68,68,0.4)" : "rgba(16,185,129,0.4)"}` }}>
+              <div style={{ color:actionMode==="lock" ? "#ef4444" : "#10b981", fontWeight:800, fontSize:13, marginBottom:14 }}>
+                {actionMode==="lock"
+                  ? "🔒 Lock Period — No budget edits (actuals still allowed)"
+                  : "🔓 Unlock Period — Full editing restored"}
+              </div>
+
+              <div style={{ display:"flex", gap:12, flexWrap:"wrap", alignItems:"flex-end" }}>
+                <div>
+                  <label style={{ color:"#9FB3C8", fontSize:11, fontWeight:700, display:"block", marginBottom:4 }}>
+                    Period
+                  </label>
+                  <select
+                    value={actionPeriod}
+                    onChange={e => {
+                      setActionPeriod(e.target.value);
+                      setPinError("");
+                    }}
+                    style={{ background:"#09131D", border:"1px solid #213547", borderRadius:8, color:"#f1f5f9", padding:"8px 12px", fontSize:13, ...T }}
+                  >
+                    <option value="">— Select FY Period —</option>
+                    {fys.filter(f => actionMode==="lock" ? !locked[f] : locked[f]).map(f => (
+                      <option key={f} value={f}>{f}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ flex:1, minWidth:200 }}>
+                  <label style={{ color:"#9FB3C8", fontSize:11, fontWeight:700, display:"block", marginBottom:4 }}>
+                    Reason (required for audit)
+                  </label>
+                  <input
+                    value={reason}
+                    onChange={e => {
+                      setReason(e.target.value);
+                      setPinError("");
+                    }}
+                    placeholder={actionMode==="lock" ? "e.g. FY2026-H1 sign-off complete" : "e.g. Budget revision approved by CFO"}
+                    style={{ width:"100%", background:"#09131D", border:"1px solid #213547", borderRadius:8, color:"#f1f5f9", padding:"8px 12px", fontSize:13, boxSizing:"border-box" }}
+                  />
+                </div>
+                <div>
+                  <label style={{ color:"#9FB3C8", fontSize:11, fontWeight:700, display:"block", marginBottom:4 }}>
+                    PIN
+                  </label>
+                  <input
+                    type="password"
+                    value={enteredPin}
+                    onChange={e => {
+                      setEnteredPin(e.target.value);
+                      setPinError("");
+                    }}
+                    placeholder="Enter PIN"
+                    style={{ background:"#09131D", border:`1px solid ${pinError ? "#ef4444" : "#213547"}`, borderRadius:8, color:"#f1f5f9", padding:"8px 12px", fontSize:13, width:140 }}
+                  />
+                </div>
+
+                <button
+                  onClick={handleAction}
+                  style={{ background:actionMode==="lock" ? "linear-gradient(135deg,#ef4444,#b91c1c)" : "linear-gradient(135deg,#10b981,#059669)", border:"none", borderRadius:9, color:"#fff", padding:"9px 22px", cursor:"pointer", fontWeight:700, fontSize:13, ...T }}
+                >
+                  {actionMode==="lock" ? "Confirm Lock" : "Confirm Unlock"}
+                </button>
+              </div>
+
+              {pinError && <div style={{ color:"#ef4444", fontSize:12, marginTop:8 }}>{pinError}</div>}
             </div>
-            <button onClick={handleAction}
-              style={{ background:actionMode==="lock"?"linear-gradient(135deg,#ef4444,#b91c1c)":"linear-gradient(135deg,#10b981,#059669)", border:"none", borderRadius:9, color:"#fff", padding:"9px 22px", cursor:"pointer", fontWeight:700, fontSize:13, ...T }}>
-              {actionMode==="lock"?"Confirm Lock":"Confirm Unlock"}
-            </button>
-          </div>
-          {pinError && <div style={{ color:"#ef4444", fontSize:12, marginTop:8 }}>{pinError}</div>}
-        </div>
+          )}
+        </>
       )}
 
       {/* Period status table */}
       <div style={card}>
-        <div style={{ color:"#5EEAD4", fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:14 }}>All Budget Periods</div>
+        <div style={{ color:"#5EEAD4", fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:14 }}>
+          All Budget Periods
+        </div>
         {fys.length===0 ? <div style={{ color:"#374151", fontSize:12 }}>No periods found.</div> : (
           <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, ...T }}>
             <thead><tr style={{ background:"#09131D" }}>
-              {["Period","Items","Total Budget SGD","Status","Locked At","Locked By","Reason"].map(h=><th key={h} style={{ padding:"8px 10px", color:"#5EEAD4", fontWeight:700, textAlign:"left", whiteSpace:"nowrap" }}>{h}</th>)}
-            </tr></thead>
+              {["Period","Items","Total Budget SGD","Status","Locked At","Locked By","Reason"].map(h => (
+                <th key={h} style={{ padding:"8px 10px", color:"#5EEAD4", fontWeight:700, textAlign:"left", whiteSpace:"nowrap" }}>{h}</th>
+              ))}</tr></thead>
             <tbody>
               {fys.map((f,i)=>{
                 const lockInfo = locked[f];
-                const fyItems = items.filter(it=>(it.fy||getFY(it.planMonth))===f);
-                const budget = Math.round(fyItems.reduce((s,it)=>s+(parseFloat(it.budget)||0),0));
+                const fyItems = items.filter((it:any)=>(it.fy||getFY(it.planMonth))===f);
+                const budget = Math.round(fyItems.reduce((s:any,it:any)=>s+(parseFloat(it.budget)||0),0));
                 return (
-                  <tr key={f} style={{ background:lockInfo?(i%2===0?"rgba(239,68,68,0.05)":"rgba(239,68,68,0.08)"):(i%2===0?"#1e293b":"#1a2744") }}>
+                  <tr key={f} style={{ background:lockInfo ? (i%2===0 ? "rgba(239,68,68,0.05)" : "rgba(239,68,68,0.08)") : (i%2===0 ? "#1e293b" : "#1a2744") }}>
                     <td style={{ padding:"8px 10px", color:"#f1f5f9", fontWeight:700 }}>{f}</td>
                     <td style={{ padding:"8px 10px", color:"#9FB3C8" }}>{fyItems.length}</td>
                     <td style={{ padding:"8px 10px", color:"#5EEAD4" }}>S${budget.toLocaleString()}</td>
@@ -7126,9 +7371,9 @@ function BudgetFreezePage({ items, frozenPeriods, setFrozenPeriods, onAddAuditEn
                         ? <span style={{ background:"rgba(239,68,68,0.15)", color:"#f87171", borderRadius:6, padding:"3px 10px", fontWeight:700, fontSize:11 }}>🔒 Locked</span>
                         : <span style={{ background:"rgba(16,185,129,0.1)", color:"#10b981", borderRadius:6, padding:"3px 10px", fontWeight:700, fontSize:11 }}>🔓 Open</span>}
                     </td>
-                    <td style={{ padding:"8px 10px", color:"#6B7280" }}>{lockInfo?fmtTs(lockInfo.lockedAt):"—"}</td>
-                    <td style={{ padding:"8px 10px", color:"#6B7280" }}>{lockInfo?.lockedBy||"—"}</td>
-                    <td style={{ padding:"8px 10px", color:"#6B7280", fontSize:11 }}>{lockInfo?.reason||"—"}</td>
+                    <td style={{ padding:"8px 10px", color:"#6B7280" }}>{lockInfo ? fmtTs(lockInfo.lockedAt) : "—"}</td>
+                    <td style={{ padding:"8px 10px", color:"#6B7280" }}>{lockInfo?.lockedBy || "—"}</td>
+                    <td style={{ padding:"8px 10px", color:"#6B7280", fontSize:11 }}>{lockInfo?.reason || "—"}</td>
                   </tr>
                 );
               })}
@@ -7139,7 +7384,6 @@ function BudgetFreezePage({ items, frozenPeriods, setFrozenPeriods, onAddAuditEn
     </div>
   );
 }
-
 
 // ─── CURRENCY EXPOSURE REPORT ─────────────────────────────────────────────────
 function CurrencyExposurePage({ items }) {
@@ -7939,31 +8183,28 @@ function BiblePage() {
     </div>
   );
 }
-
-const TABS = [
-  { id:"dashboard",   label:"🏠 Home"              },
-  { id:"budget",      label:"💼 My Budget"          },
-  { id:"pnl",         label:"📊 P&L Tracker"        },
-  { id:"cashflow",    label:"💸 Cash Flow"           },
-  { id:"payments",    label:"📅 Payment Schedule"    },
-  { id:"comparison",  label:"⚖️ Period Compare"      },
-  { id:"reports",     label:"📑 Reports"             },
-  { id:"renewals",    label:"🔔 Renewals"            },
-  { id:"bualloc",     label:"🗃️ Team Allocation"    },
-  { id:"exceptions",  label:"⚠️ Out of Policy"       },
-  { id:"reconcile",   label:"✅ Reconciliation"      },
-  { id:"freeze",      label:"🔒 Lock Period"         },
-  { id:"planning",    label:"🗓️ Forward Plan"        },
-  { id:"fx",          label:"💱 FX Rates"            },
-  { id:"ai",          label:"🤖 AI Insights"         },
-  { id:"sop",         label:"📖 Playbook"            },
-  { id:"bible",       label:"📜 Bible"               },
-  { id:"auditlog",    label:"🔍 Audit Trail"         },
-];
-
 export default function App({ user }: { user: any }) {
 const role = user?.role || "viewer";
-
+const TABS = [
+  { id:"dashboard", label:"🏠 Home" },
+  { id:"budget", label:"💼 My Budget" },
+  { id:"pnl", label:"📊 P&L Tracker" },
+  { id:"cashflow", label:"🪰 Cash Flow" },
+  { id:"payments", label:"📅 Payment Schedule" },
+  { id:"comparison", label:"⚖️ Period Compare" },
+  { id:"reports", label:"📄 Reports" },
+  { id:"renewals", label:"🔔 Renewals" },
+  { id:"bualloc", label:"💳 Team Allocation" },
+  { id:"exceptions", label:"⚠️ Out of Policy" },
+  { id:"reconcile", label:"✅ Reconciliation" },
+  ...(role === "admin" ? [{ id:"freeze", label:"🔒 Lock Period" }] : []),
+  { id:"planning", label:"🗂 Forward Plan" },
+  { id:"fx", label:"💱 FX Rates" },
+  { id:"ai", label:"🤖 AI Insights" },
+  { id:"sop", label:"📖 Playbook" },
+  { id:"bible", label:"📜 Bible" },
+  { id:"auditlog", label:"🔍 Audit Trail" },
+];
 const canManageUsers = role === "admin";
 const canEditBudget = role === "admin" || role === "budget_collaborator";
 const canImport = role === "admin" || role === "budget_collaborator";
@@ -8020,8 +8261,11 @@ useEffect(() => {
   const [geminiKey, setGeminiKey] = useState("");
 
   const addAuditEntry = useCallback((action, details) => {
-    setAuditLog(prev => [...prev.slice(-999), createAuditEntry(action, details)]);
-  }, []);
+  setAuditLog((prev) => [
+    ...prev.slice(-999),
+    createAuditEntry(action, details, user?.email || "Unknown"),
+  ]);
+}, [user]);
 
   // Helper: check if a FY period is locked
   const isFrozen = useCallback((fy) => {
@@ -8559,7 +8803,17 @@ if (itemsLoading) {
         {tab === "exceptions" && <ExceptionsPage items={items} />}
         {tab === "reconcile"  && <ReconciliationPage items={items} signoffs={reconcileSignoffs} setSignoffs={setReconcileSignoffs} onAddAuditEntry={addAuditEntry} />}
         {tab === "auditlog"   && <AuditLogPage auditLog={auditLog} />}
-        {tab === "freeze"     && <BudgetFreezePage items={items} frozenPeriods={frozenPeriods} setFrozenPeriods={setFrozenPeriods} onAddAuditEntry={addAuditEntry} setItems={setItems} />}
+       {tab === "freeze" && role === "admin" && (
+  <BudgetFreezePage
+    items={items}
+    frozenPeriods={frozenPeriods}
+    setFrozenPeriods={setFrozenPeriods}
+    onAddAuditEntry={addAuditEntry}
+    setItems={setItems}
+    role={role}
+    currentUserEmail={user?.email || "Unknown"}
+  />
+)}
         {tab === "bualloc"    && <BUAllocationPage items={items} />}
         {tab === "sop" && <SOPPage onNavigate={handleTabClick} />}
         {tab === "bible" && <BiblePage />}
