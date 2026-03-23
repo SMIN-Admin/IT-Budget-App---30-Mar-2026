@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "../../../src/lib/firebase-admin";
 import { getCurrentUser } from "../../../src/lib/auth";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser();
 
@@ -10,17 +10,76 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const snapshot = await adminDb
-      .collection("budgetItems")
-      .orderBy("createdAt", "desc")
-      .get();
+    const { searchParams } = new URL(req.url);
 
-    const items = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const limitParam = Number(searchParams.get("limit") || "50");
+    const limit = Math.min(Math.max(limitParam, 1), 100);
 
-    return NextResponse.json({ items });
+    const fy = String(searchParams.get("fy") || "").trim();
+    const businessUnit = String(searchParams.get("businessUnit") || "").trim();
+    const status = String(searchParams.get("status") || "").trim();
+    const cursor = String(searchParams.get("cursor") || "").trim();
+
+    let query: FirebaseFirestore.Query = adminDb.collection("budgetItems");
+
+    if (fy) {
+      query = query.where("fy", "==", fy);
+    }
+
+    if (businessUnit) {
+      query = query.where("businessUnit", "==", businessUnit);
+    }
+
+    if (status) {
+      query = query.where("status", "==", status);
+    }
+
+    query = query.orderBy("createdAt", "desc");
+
+    if (cursor) {
+      const cursorDate = new Date(cursor);
+      if (!isNaN(cursorDate.getTime())) {
+        query = query.startAfter(cursorDate);
+      }
+    }
+
+    query = query.limit(limit + 1);
+
+    const snapshot = await query.get();
+
+    const docs = snapshot.docs;
+    const hasMore = docs.length > limit;
+    const pageDocs = hasMore ? docs.slice(0, limit) : docs;
+
+    const items = pageDocs.map((doc) => {
+      const data = doc.data() as any;
+
+      return {
+        id: doc.id,
+        ...data,
+        createdAt:
+          data.createdAt && typeof data.createdAt.toDate === "function"
+            ? data.createdAt.toDate().toISOString()
+            : data.createdAt || null,
+        updatedAt:
+          data.updatedAt && typeof data.updatedAt.toDate === "function"
+            ? data.updatedAt.toDate().toISOString()
+            : data.updatedAt || null,
+      };
+    });
+
+    const lastDoc = pageDocs[pageDocs.length - 1];
+    const lastData = lastDoc?.data() as any;
+    const nextCursor =
+      hasMore && lastData?.createdAt && typeof lastData.createdAt.toDate === "function"
+        ? lastData.createdAt.toDate().toISOString()
+        : null;
+
+    return NextResponse.json({
+      items,
+      hasMore,
+      nextCursor,
+    });
   } catch (error: any) {
     console.error("GET budget-items error:", error);
     return NextResponse.json(

@@ -1397,10 +1397,36 @@ function DashboardTrendChart({ monthlyTrend }) {
   );
 }
 
-function Dashboard({ items, onDrillDown }) {
+function Dashboard({ items, itemStats, onDrillDown }) {
   const [selectedFYs,      setSelectedFYs]      = useState(["all"]);
   const [selectedBUs,      setSelectedBUs]      = useState(["all"]);
   const [selectedPayingBUs,setSelectedPayingBUs] = useState(["all"]);
+  const [dashboardStats, setDashboardStats] = useState(itemStats);
+  useEffect(() => {
+  const fetchFilteredStats = async () => {
+    try {
+      const fy = selectedFYs.includes("all") ? "all" : selectedFYs[0];
+      const businessUnit = selectedBUs.includes("all") ? "all" : selectedBUs[0];
+      const payingBU = selectedPayingBUs.includes("all") ? "all" : selectedPayingBUs[0];
+
+      const res = await fetch(
+        `/api/budget-items/stats?fy=${encodeURIComponent(fy)}&businessUnit=${encodeURIComponent(businessUnit)}&payingBU=${encodeURIComponent(payingBU)}`
+      );
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setDashboardStats(data);
+      } else {
+        console.error("Failed to fetch filtered stats:", data?.error);
+      }
+    } catch (err) {
+      console.error("Stats fetch error:", err);
+    }
+  };
+
+  fetchFilteredStats();
+}, [selectedFYs, selectedBUs, selectedPayingBUs]);
 
   const fyOptions = useMemo(() => {
     const s = new Set(items.map(i => i.fy || getFY(i.planMonth)).filter(Boolean));
@@ -1419,23 +1445,17 @@ function Dashboard({ items, onDrillDown }) {
   }, [items, selectedFYs, selectedBUs, selectedPayingBUs]);
 
   // ── KPIs ──
-  const totalBudget      = filtered.reduce((s,i) => s+(parseFloat(i.budget)||0), 0);
-  const totalActual      = filtered.filter(i=>i.actual!=null).reduce((s,i) => s+i.actual, 0);
-  const totalSavings     = filtered.filter(i=>i.actual!=null && i.actual>0).reduce((s,i) => {
-    const sav = (i.budget||0) - i.actual;
-    return s + sav;
-  }, 0);
-  const utilPct          = totalBudget > 0 ? Math.round((totalActual/totalBudget)*100) : 0;
-  const variance         = totalBudget - totalActual;
-  const completed        = filtered.filter(i=>i.status==="Completed").length;
-  const pending          = filtered.filter(i=>!i.status||i.status==="").length;
-  const cancelled = filtered.filter(i => ["Cancel", "Cancelled"].includes(i.status)).length;
-  const outOfBudget      = filtered.filter(i=>i.outsideBudget).length;
-  const movedToHalf      = filtered.filter(i=>i.status==="Move to another half").length;
-  // Total Items = sum of ALL status buckets. "Outside Budget" is an attribute (flag), not a status,
-  // so an Outside Budget item is already counted inside its status (Pending/Completed/etc.).
-  // completed + pending + cancelled + movedToHalf + otherStatuses = filtered.length (always correct).
-  const totalItems = filtered.length;
+const totalBudget = dashboardStats?.totalBudget || 0;
+const totalActual = dashboardStats?.totalActual || 0;
+const totalSavings = dashboardStats?.totalSavings || 0;
+const utilPct = dashboardStats?.utilPct || 0;
+const variance = dashboardStats?.variance || 0;
+const completed = dashboardStats?.completed || 0;
+const pending = dashboardStats?.pending || 0;
+const cancelled = dashboardStats?.cancelled || 0;
+const outOfBudget = dashboardStats?.outOfBudget || 0;
+const movedToHalf = dashboardStats?.movedToHalf || 0;
+const totalItems = dashboardStats?.totalCount || 0;
   const capexTotal       = Math.round(filtered.filter(i=>i.expenseType==="Capex").reduce((s,i)=>s+(parseFloat(i.budget)||0),0));
   const opexTotal        = Math.round(filtered.filter(i=>i.expenseType==="Opex").reduce((s,i)=>s+(parseFloat(i.budget)||0),0));
   const capexPct         = totalBudget>0 ? Math.round((capexTotal/totalBudget)*100) : 0;
@@ -1573,11 +1593,14 @@ function Dashboard({ items, onDrillDown }) {
         <div style={{ marginLeft:"auto", display:"flex", gap:20 }}>
           <div style={{ textAlign:"right" }}>
             <div style={{ fontSize:10, color:"#88A0B8", textTransform:"uppercase", fontWeight:700 }}>Showing</div>
-            <div style={{ fontSize:14, color:"#a5b4fc", fontWeight:800 }}>{filtered.length} items · {filterLabel}</div>
+            <div style={{ fontSize:14, color:"#a5b4fc", fontWeight:800 }}>{dashboardStats?.totalCount || 0} items · {filterLabel}</div>
           </div>
           <div style={{ textAlign:"right" }}>
             <div style={{ fontSize:10, color:"#88A0B8", textTransform:"uppercase", fontWeight:700 }}>Utilisation</div>
-            <div style={{ fontSize:18, color: utilPct>100?"#f87171":utilPct>80?"#f59e0b":"#4ade80", fontWeight:800 }}>{utilPct}%</div>
+            <div style={{ fontSize:18, color:
+  (dashboardStats?.utilPct || 0) > 100 ? "#f87171" :
+  (dashboardStats?.utilPct || 0) > 80 ? "#f59e0b" :
+  "#4ade80", fontWeight:800 }}>{dashboardStats?.utilPct || 0}%</div>
           </div>
         </div>
       </div>
@@ -1621,7 +1644,7 @@ function Dashboard({ items, onDrillDown }) {
       {/* ── Row 2: Secondary KPIs ── */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:14 }}>
         {[
-          { icon:"📋", label:"Total Items",          value:totalItems,        color:"#7C8CFF", onClick:() => drill({tab:"budget"}), sub: outOfBudget>0?`incl. ${outOfBudget} outside budget`:undefined },
+          { icon:"📋", label:"Total Items",          value:dashboardStats?.totalCount || 0,        color:"#7C8CFF", onClick:() => drill({tab:"budget"}), sub: outOfBudget>0?`incl. ${outOfBudget} outside budget`:undefined },
           { icon:"✔️", label:"Completed",             value:completed,         color:"#4ade80", onClick:() => drill({tab:"budget",status:"Completed"}) },
           { icon:"⏳", label:"Pending",                value:pending,           color:"#9fb3c8", onClick:() => drill({tab:"budget",status:"Pending"}) },
           { icon:"❌", label:"Cancelled",              value:cancelled,         color:"#f87171", onClick:() => drill({tab:"budget",status:"Cancel"}) },
@@ -3552,32 +3575,94 @@ function normalizeBillingFreq(value) {
 function normalizeText(value) {
   return String(value || "").trim();
 }
-function convertToItems(rows) {
+function normalizePlanMonthKey(value: any) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+
+  const lower = raw.toLowerCase();
+
+  const monthMap: Record<string, string> = {
+    jan: "Jan",
+    feb: "Feb",
+    mar: "Mar",
+    apr: "Apr",
+    may: "May",
+    jun: "Jun",
+    jul: "Jul",
+    aug: "Aug",
+    sep: "Sep",
+    oct: "Oct",
+    nov: "Nov",
+    dec: "Dec",
+  };
+
+  const match = lower.match(
+    /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\s\-_/]*(\d{2}|\d{4})$/
+  );
+
+  if (match) {
+    const mon = monthMap[match[1]];
+    let yr = match[2];
+    if (yr.length === 4) yr = yr.slice(-2);
+    return `${mon}-${yr}`;
+  }
+
+  return raw;
+}
+
+function buildItemKey(item: any) {
+  return [
+    String(item.description || "").trim().toLowerCase(),
+    String(item.businessUnit || "").trim().toLowerCase(),
+    normalizePlanMonthKey(item.planMonth),
+    String(item.currency || "").trim().toUpperCase(),
+    String(item.rate ?? "").trim(),
+    String(item.quantity ?? "").trim(),
+    String(item.billingFreq || "").trim().toLowerCase(),
+  ].join("|");
+}
+function convertToItems(rows: any[]) {
   return rows.map((row, idx) => {
-    const isOutside = ["true", "yes", "1"].includes(String(row.outsideBudget || "").toLowerCase().trim());
-    const actual    = toActual(row.actual);
-    // Outside budget: budget always 0; savings = 0 - actual (negative unplanned spend)
-    const budget  = isOutside ? 0 : (parseFloat(row.budget) || calcBudget(row.rate, row.quantity, row.currency, DEFAULT_CONVERSION_RATES));
+    const isOutside = ["true", "yes", "1"].includes(
+      String(row.outsideBudget || "").toLowerCase().trim()
+    );
+
+    const actual = toActual(row.actual);
+
+    // Normalize plan month first so itemKey and FY are consistent
+    const normalizedPlanMonth = normalizePlanMonthKey(row.planMonth);
+
+    // Outside budget: budget always 0; savings = 0 - actual
+    const budget = isOutside
+      ? 0
+      : parseFloat(row.budget) ||
+        calcBudget(row.rate, row.quantity, row.currency, DEFAULT_CONVERSION_RATES);
+
     const savings = isOutside
-      ? (actual != null ? -actual : 0)
-      : (actual != null ? Math.round((budget - actual) * 100) / 100 : 0);
-    return {
-      id:            Date.now() + idx * 17 + Math.random(),
+      ? actual != null
+        ? -actual
+        : 0
+      : actual != null
+        ? Math.round((budget - actual) * 100) / 100
+        : 0;
+
+    const item = {
+      id: Date.now() + idx * 17 + Math.random(),
       description: normalizeText(row.description),
       expenseType: normalizeText(row.expenseType),
-      itemType:      row.itemType      || "",
-      itemCategory:  row.itemCategory  || "",
-      subCategory:   row.subCategory   || "",
-      businessUnit:  row.businessUnit  || "",
-      location:      row.location      || "",
-      country:       row.country       || "",
-      payingBU:      row.payingBU      || "",
-      planMonth:     row.planMonth     || "",
-      quantity:      parseFloat(row.quantity) || 0,
-      rate:          parseFloat(row.rate)     || 0,
-      currency:      row.currency      || "SGD",
-      convRate:      DEFAULT_CONVERSION_RATES[row.currency] || 1,
-      total:         calcTotal(row.rate, row.quantity),
+      itemType: row.itemType || "",
+      itemCategory: row.itemCategory || "",
+      subCategory: row.subCategory || "",
+      businessUnit: row.businessUnit || "",
+      location: row.location || "",
+      country: row.country || "",
+      payingBU: row.payingBU || "",
+      planMonth: normalizedPlanMonth,
+      quantity: parseFloat(row.quantity) || 0,
+      rate: parseFloat(row.rate) || 0,
+      currency: row.currency || "SGD",
+      convRate: DEFAULT_CONVERSION_RATES[row.currency] || 1,
+      total: calcTotal(row.rate, row.quantity),
       budget,
       actual,
       savings,
@@ -3586,13 +3671,17 @@ function convertToItems(rows) {
       remarks: normalizeText(row.remarks),
       billingFreq: normalizeBillingFreq(row.billingFreq),
       outsideBudget: isOutside,
-      fy:            getFY(row.planMonth),
-      pnlBreakup:    getPnLBreakup(row.billingFreq || "One Time Cost"),
+      fy: getFY(normalizedPlanMonth),
+      pnlBreakup: getPnLBreakup(row.billingFreq || "One Time Cost"),
+    };
+
+    return {
+      ...item,
+      itemKey: buildItemKey(item),
     };
   });
 }
-
-function ImportModal({ onImport, onCancel }) {
+function ImportModal({ onImport, onCancel, isImporting }) {
   const [source,      setSource]      = useState("csv");
   const [csvText,     setCsvText]     = useState("");
   const [gsUrl,       setGsUrl]       = useState("");
@@ -3929,10 +4018,23 @@ function ImportModal({ onImport, onCancel }) {
 
           <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
             <button onClick={onCancel} style={btnSecondary}>Cancel</button>
-            <button onClick={handleImport} disabled={validErrs.length > 0}
-              style={{ ...btnPrimary, background: validErrs.length > 0 ? "rgba(16,185,129,0.3)" : "linear-gradient(135deg,#10b981,#059669)", boxShadow: validErrs.length > 0 ? "none" : "0 4px 16px rgba(16,185,129,0.3)", cursor: validErrs.length > 0 ? "not-allowed" : "pointer" }}>
-              ✅ Import {parseCSVText(csvText).rows.length} Items
-            </button>
+            <button
+    onClick={handleImport}
+    disabled={validErrs.length > 0 || isImporting}
+    style={{
+      ...btnPrimary,
+      opacity: isImporting ? 0.6 : 1,
+      cursor: isImporting ? "not-allowed" : "pointer",
+      background:
+        validErrs.length > 0 || isImporting
+          ? "rgba(16,185,129,0.3)"
+          : "linear-gradient(135deg,#10b981,#0ea5e9)",
+    }}
+  >
+    {isImporting
+      ? "Importing..."
+      : `✔ Import ${parseCSVText(csvText).rows.length} Items`}
+  </button>
           </div>
         </div>
       )}
@@ -7764,27 +7866,106 @@ const visibleTabs = TABS;
 
 const [items, setItems] = useState<any[]>([]);
 const [itemsLoading, setItemsLoading] = useState(true);
+const [itemsHasMore, setItemsHasMore] = useState(false);
+const [itemsNextCursor, setItemsNextCursor] = useState<string | null>(null);
 const [isSaving, setIsSaving] = useState(false);
-useEffect(() => {
-  const loadItems = async () => {
-    try {
-      const data = await fetchBudgetItems();
+const [isImporting, setIsImporting] = useState(false);
+const [itemStats, setItemStats] = useState({
+  totalCount: 0,
+  totalBudget: 0,
+  totalActual: 0,
+});
+const loadInitialItems = async () => {
+  try {
+    setItemsLoading(true);
 
-      if (data.length > 0) {
-  setItems(data);
-} else {
-  setItems([]);
-}
-    } catch (error) {
-      console.error("Failed to load budget items:", error);
-      setItems([]);
-    } finally {
-      setItemsLoading(false);
+    const res = await fetch("/api/budget-items?limit=50", {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Failed to load budget items");
     }
-  };
 
-  loadItems();
+    setItems(Array.isArray(data.items) ? data.items : []);
+    setItemsHasMore(Boolean(data.hasMore));
+    setItemsNextCursor(data.nextCursor || null);
+  } catch (error) {
+    console.error("Failed to load initial budget items:", error);
+    setItems([]);
+    setItemsHasMore(false);
+    setItemsNextCursor(null);
+  } finally {
+    setItemsLoading(false);
+  }
+};
+const loadItemStats = async () => {
+  try {
+    const res = await fetch("/api/budget-items/stats", {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Failed to load budget item stats");
+    }
+
+    setItemStats({
+      totalCount: Number(data.totalCount) || 0,
+      totalBudget: Number(data.totalBudget) || 0,
+      totalActual: Number(data.totalActual) || 0,
+    });
+  } catch (error) {
+    console.error("Failed to load budget item stats:", error);
+    setItemStats({
+      totalCount: 0,
+      totalBudget: 0,
+      totalActual: 0,
+    });
+  }
+};
+const loadMoreItems = async () => {
+  if (!itemsHasMore || !itemsNextCursor || itemsLoading) return;
+
+  try {
+    setItemsLoading(true);
+
+    const res = await fetch(
+      `/api/budget-items?limit=50&cursor=${encodeURIComponent(itemsNextCursor)}`,
+      {
+        method: "GET",
+        cache: "no-store",
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Failed to load more budget items");
+    }
+
+    const newItems = Array.isArray(data.items) ? data.items : [];
+
+    setItems((prev) => [...prev, ...newItems]);
+    setItemsHasMore(Boolean(data.hasMore));
+    setItemsNextCursor(data.nextCursor || null);
+  } catch (error) {
+    console.error("Failed to load more budget items:", error);
+  } finally {
+    setItemsLoading(false);
+  }
+};
+
+useEffect(() => {
+  loadInitialItems();
+  loadItemStats();
 }, []);
+
   // Custom dropdown options added by users via "Add New"
   const [customOptions, setCustomOptions] = useLocalStorage("itbudget_options_v2", {
     itemType: [], itemCategory: [], subCategory: [],
@@ -8305,7 +8486,13 @@ if (itemsLoading) {
           </div>
         )}
 
-        {tab === "dashboard" && <Dashboard items={items} onDrillDown={handleDrillDown} />}
+        {tab === "dashboard" && (
+  <Dashboard
+    items={items}
+    itemStats={itemStats}
+    onDrillDown={handleDrillDown}
+  />
+)}
         {tab === "budget" && (
           <BudgetTable
   items={filteredItems}
@@ -8326,6 +8513,31 @@ if (itemsLoading) {
   canApproveReject={canApproveReject}
 />
         )}
+        {tab === "budget" && !itemsLoading && itemsHasMore && (
+  <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
+    <button
+      onClick={loadMoreItems}
+      style={{
+        background: "linear-gradient(135deg,#0f766e,#115e59)",
+        border: "1px solid rgba(94,234,212,0.35)",
+        borderRadius: 10,
+        color: "#E6FFFD",
+        padding: "10px 18px",
+        cursor: "pointer",
+        fontWeight: 700,
+        fontSize: 13,
+      }}
+    >
+      Load More
+    </button>
+  </div>
+)}
+
+{tab === "budget" && itemsLoading && items.length > 0 && (
+  <div style={{ textAlign: "center", color: "#8AA0B7", marginTop: 12 }}>
+    Loading more items...
+  </div>
+)}
         {tab === "pnl" && <PnLView items={items} />}
         {tab === "comparison" && <ComparisonPage items={items} onDrillDown={handleDrillDown}
           periodA={cmpPeriodA} setPeriodA={setCmpPeriodA}
@@ -8405,87 +8617,95 @@ if (itemsLoading) {
             )}
            {modal === "import" && canImport && (
   <ImportModal
+  isImporting={isImporting}
     onImport={async (newItems) => {
-      try {
-        const BATCH_SIZE = 25;
+  if (isImporting) return;
 
-        const existingKeySet = new Set(
-          items
-            .map((i) => i.itemKey)
-            .filter(Boolean)
-            .map((k) => String(k).toLowerCase())
-        );
+  setIsImporting(true);
 
-        const dedupedItems = newItems.filter((item) => {
-          const key = String(item.itemKey || "").toLowerCase();
-          return key && !existingKeySet.has(key);
-        });
+  try {
+    const BATCH_SIZE = 25;
 
-        if (dedupedItems.length === 0) {
-          alert("All selected CSV rows already exist. Nothing new to import.");
-          return;
-        }
+    const existingKeySet = new Set(
+      items
+        .map((i) => i.itemKey)
+        .filter(Boolean)
+        .map((k) => String(k).toLowerCase())
+    );
 
-        const itemsToImport = dedupedItems.map((item, index) => {
-          const stableItemKey =
-            item.itemKey ||
-            `import_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 8)}`;
+    const dedupedItems = newItems.filter((item) => {
+      const key = String(item.itemKey || "").toLowerCase();
+      return key && !existingKeySet.has(key);
+    });
 
-          const { id, ...rest } = item;
+    if (dedupedItems.length === 0) {
+      alert("All selected CSV rows already exist. Nothing new to import.");
+      return;
+    }
 
-          return {
-            ...rest,
-            itemKey: stableItemKey,
-          };
-        });
+    const itemsToImport = dedupedItems.map((item, index) => {
+      const stableItemKey =
+        item.itemKey ||
+        `import_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 8)}`;
 
-        for (let i = 0; i < itemsToImport.length; i += BATCH_SIZE) {
-          const batch = itemsToImport.slice(i, i + BATCH_SIZE);
+      const { id, ...rest } = item;
 
-          const results = await Promise.allSettled(
-            batch.map((item) => createBudgetItem(item))
-          );
+      return {
+        ...rest,
+        itemKey: stableItemKey,
+      };
+    });
 
-          const failed = results
-            .map((result, idx) =>
-              result.status === "rejected"
-                ? {
-                    item: batch[idx],
-                    error:
-                      result.reason?.message ||
-                      String(result.reason) ||
-                      "Unknown import error",
-                  }
-                : null
-            )
-            .filter(Boolean);
+    for (let i = 0; i < itemsToImport.length; i += BATCH_SIZE) {
+      const batch = itemsToImport.slice(i, i + BATCH_SIZE);
 
-          if (failed.length > 0) {
-            console.error("Import batch failed:", failed);
-            throw new Error(String(failed[0]?.error || "Import failed"));
-          }
+      const results = await Promise.allSettled(
+        batch.map((item) => createBudgetItem(item))
+      );
 
-          await new Promise((resolve) => setTimeout(resolve, 75));
-        }
+      const failed = results
+        .map((result, idx) =>
+          result.status === "rejected"
+            ? {
+                item: batch[idx],
+                error:
+                  result.reason?.message ||
+                  String(result.reason) ||
+                  "Unknown import error",
+              }
+            : null
+        )
+        .filter(Boolean);
 
-        const freshItems = await fetchBudgetItems();
-        setItems(freshItems);
-
-        addAuditEntry("Bulk Import", {
-          count: itemsToImport.length,
-          note: "CSV/Excel import",
-        });
-
-        setModal(null);
-      } catch (error) {
-        console.error("Import failed:", error);
-        alert(
-          error instanceof Error
-            ? error.message
-            : "Failed to import items to database."
-        );
+      if (failed.length > 0) {
+        console.error("Import batch failed:", failed);
+        throw new Error(String(failed[0]?.error || "Import failed"));
       }
-    }}
+
+      await new Promise((resolve) => setTimeout(resolve, 75));
+    }
+
+    await loadInitialItems();
+    await loadItemStats();
+
+
+    addAuditEntry("Bulk Import", {
+      count: itemsToImport.length,
+      note: "CSV/Excel import",
+    });
+
+    setModal(null);
+  } catch (error) {
+    console.error("Import failed:", error);
+    alert(
+      error instanceof Error
+        ? error.message
+        : "Failed to import items to database."
+    );
+  } finally {
+    setIsImporting(false);
+  }
+}}
     onCancel={() => setModal(null)}
   />
 )}
