@@ -22,17 +22,17 @@ export async function GET(req: NextRequest) {
 
     let query: FirebaseFirestore.Query = adminDb.collection("budgetItems");
 
-    if (fy) {
-      query = query.where("fy", "==", fy);
-    }
+    if (fy && fy !== "all") {
+  query = query.where("fy", "==", fy);
+}
 
-    if (businessUnit) {
-      query = query.where("businessUnit", "==", businessUnit);
-    }
+if (businessUnit && businessUnit !== "all") {
+  query = query.where("businessUnit", "==", businessUnit);
+}
 
-    if (status) {
-      query = query.where("status", "==", status);
-    }
+if (status && status !== "all") {
+  query = query.where("status", "==", status);
+}
 
     query = query.orderBy("createdAt", "desc");
 

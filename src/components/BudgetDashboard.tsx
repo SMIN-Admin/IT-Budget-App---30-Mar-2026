@@ -1403,6 +1403,8 @@ function Dashboard({ items, itemStats, onDrillDown }) {
   const [selectedBUs,      setSelectedBUs]      = useState(["all"]);
   const [selectedPayingBUs,setSelectedPayingBUs] = useState(["all"]);
   const [dashboardStats, setDashboardStats] = useState(itemStats);
+  const [summary, setSummary] = useState<any>(null);
+const [summaryLoading, setSummaryLoading] = useState(false);
   useEffect(() => {
   const loadFyOptions = async () => {
     try {
@@ -1451,6 +1453,38 @@ function Dashboard({ items, itemStats, onDrillDown }) {
   fetchFilteredStats();
 }, [selectedFYs, selectedBUs, selectedPayingBUs]);
 
+// ✅ ADD HERE (new block)
+useEffect(() => {
+  const loadSummary = async () => {
+    try {
+      setSummaryLoading(true);
+
+      const fy = selectedFYs.includes("all") ? "all" : selectedFYs[0];
+      const businessUnit = selectedBUs.includes("all") ? "all" : selectedBUs[0];
+      const payingBU = selectedPayingBUs.includes("all") ? "all" : selectedPayingBUs[0];
+
+      const res = await fetch(
+        `/api/budget-items/dashboard-summary?fy=${encodeURIComponent(fy)}&businessUnit=${encodeURIComponent(businessUnit)}&payingBU=${encodeURIComponent(payingBU)}`,
+        { cache: "no-store" }
+      );
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setSummary(data);
+      } else {
+        console.error("Summary fetch failed:", data?.error);
+      }
+    } catch (err) {
+      console.error("Summary fetch error:", err);
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  loadSummary();
+}, [selectedFYs, selectedBUs, selectedPayingBUs]);
+
   const buOptions      = useMemo(() => [...new Set(items.map(i => i.businessUnit).filter(Boolean))].sort(), [items]);
   const payingBUOptions = useMemo(() => [...new Set(items.map(i => i.payingBU).filter(Boolean))].sort(), [items]);
 
@@ -1464,22 +1498,39 @@ function Dashboard({ items, itemStats, onDrillDown }) {
   }, [items, selectedFYs, selectedBUs, selectedPayingBUs]);
 
   // ── KPIs ──
-const totalBudget = dashboardStats?.totalBudget || 0;
-const totalActual = dashboardStats?.totalActual || 0;
-const totalSavings = dashboardStats?.totalSavings || 0;
-const utilPct = dashboardStats?.utilPct || 0;
-const variance = dashboardStats?.variance || 0;
-const completed = dashboardStats?.completed || 0;
-const pending = dashboardStats?.pending || 0;
-const cancelled = dashboardStats?.cancelled || 0;
+const totalBudget =
+  (summary?.expData || []).reduce((sum, x) => sum + (Number(x?.value) || 0), 0);
+
+const totalActual =
+  (summary?.buData || []).reduce((sum, x) => sum + (Number(x?.actual) || 0), 0);
+
+const totalSavings = Math.round(totalBudget - totalActual);
+const utilPct = totalBudget > 0 ? Math.round((totalActual / totalBudget) * 100) : 0;
+const variance = Math.round(totalBudget - totalActual);
+
+const completed =
+  summary?.statusData?.find((x: any) => x.name === "Completed")?.value || 0;
+
+const pending =
+  summary?.statusData?.find((x: any) => x.name === "Pending")?.value || 0;
+
+const cancelled =
+  summary?.statusData?.find((x: any) => x.name === "Cancelled")?.value || 0;
+
 const outOfBudget = dashboardStats?.outOfBudget || 0;
 const movedToHalf = dashboardStats?.movedToHalf || 0;
 const totalItems = dashboardStats?.totalCount || 0;
-  const capexTotal       = Math.round(filtered.filter(i=>i.expenseType==="Capex").reduce((s,i)=>s+(parseFloat(i.budget)||0),0));
-  const opexTotal        = Math.round(filtered.filter(i=>i.expenseType==="Opex").reduce((s,i)=>s+(parseFloat(i.budget)||0),0));
-  const capexPct         = totalBudget>0 ? Math.round((capexTotal/totalBudget)*100) : 0;
-  const upcomingRenewals = filtered.filter(i => { const d=getDaysUntil(i.planMonth); return d!==null&&d>=0&&d<=30&&i.status!=="Completed"&&i.status!=="Cancel"; }).length;
-  const overdueItems     = filtered.filter(i => { const d=getDaysUntil(i.planMonth); return d!==null&&d<0&&!i.actual&&i.status!=="Cancel"; }).length;
+
+const capexTotal =
+  summary?.expData?.find((x: any) => x.name === "Capex")?.value || 0;
+
+const opexTotal =
+  summary?.expData?.find((x: any) => x.name === "Opex")?.value || 0;
+
+const capexPct = totalBudget > 0 ? Math.round((capexTotal / totalBudget) * 100) : 0;
+
+const upcomingRenewals = summary?.upcomingRenewals || 0;
+const overdueItems = summary?.overdueItems || 0;
 
   // ── Chart data ──
   const buData = useMemo(() => {
@@ -7898,10 +7949,13 @@ const loadInitialItems = async () => {
   try {
     setItemsLoading(true);
 
-    const res = await fetch("/api/budget-items?limit=50", {
-      method: "GET",
-      cache: "no-store",
-    });
+    const res = await fetch(
+  `/api/budget-items?limit=50&fy=${encodeURIComponent(filterFY)}&businessUnit=${encodeURIComponent(filterBU)}&status=${encodeURIComponent(filterStatus)}`,
+  {
+    method: "GET",
+    cache: "no-store",
+  }
+);
 
     const data = await res.json();
 
@@ -7955,7 +8009,7 @@ const loadMoreItems = async () => {
     setItemsLoading(true);
 
     const res = await fetch(
-      `/api/budget-items?limit=50&cursor=${encodeURIComponent(itemsNextCursor)}`,
+      `/api/budget-items?limit=50&fy=${encodeURIComponent(filterFY)}&businessUnit=${encodeURIComponent(filterBU)}&status=${encodeURIComponent(filterStatus)}&cursor=${encodeURIComponent(itemsNextCursor)}`,
       {
         method: "GET",
         cache: "no-store",
