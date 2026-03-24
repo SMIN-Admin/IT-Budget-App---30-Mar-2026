@@ -1398,10 +1398,33 @@ function DashboardTrendChart({ monthlyTrend }) {
 }
 
 function Dashboard({ items, itemStats, onDrillDown }) {
+  const [fyOptions, setFyOptions] = useState<string[]>([]);
   const [selectedFYs,      setSelectedFYs]      = useState(["all"]);
   const [selectedBUs,      setSelectedBUs]      = useState(["all"]);
   const [selectedPayingBUs,setSelectedPayingBUs] = useState(["all"]);
   const [dashboardStats, setDashboardStats] = useState(itemStats);
+  useEffect(() => {
+  const loadFyOptions = async () => {
+    try {
+      const res = await fetch("/api/budget-items/fy-options", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setFyOptions(Array.isArray(data.fyOptions) ? data.fyOptions : []);
+      } else {
+        console.error("Failed to load FY options:", data?.error);
+      }
+    } catch (err) {
+      console.error("FY options fetch error:", err);
+    }
+  };
+
+  loadFyOptions();
+}, []);
   useEffect(() => {
   const fetchFilteredStats = async () => {
     try {
@@ -1428,10 +1451,6 @@ function Dashboard({ items, itemStats, onDrillDown }) {
   fetchFilteredStats();
 }, [selectedFYs, selectedBUs, selectedPayingBUs]);
 
-  const fyOptions = useMemo(() => {
-    const s = new Set(items.map(i => i.fy || getFY(i.planMonth)).filter(Boolean));
-    return Array.from(s).sort();
-  }, [items]);
   const buOptions      = useMemo(() => [...new Set(items.map(i => i.businessUnit).filter(Boolean))].sort(), [items]);
   const payingBUOptions = useMemo(() => [...new Set(items.map(i => i.payingBU).filter(Boolean))].sort(), [items]);
 
