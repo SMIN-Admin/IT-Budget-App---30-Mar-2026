@@ -8087,6 +8087,30 @@ useEffect(() => {
   const [filterFY, setFilterFY] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterOutsideBudget, setFilterOutsideBudget] = useState(false);
+  const [fyList, setFyList] = useState<string[]>([]);
+
+useEffect(() => {
+  const loadFyList = async () => {
+    try {
+      const res = await fetch("/api/budget-items/fy-options", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setFyList(Array.isArray(data.fyOptions) ? data.fyOptions : []);
+      } else {
+        console.error("Failed to load My Budget FY list:", data?.error);
+      }
+    } catch (err) {
+      console.error("My Budget FY list fetch error:", err);
+    }
+  };
+
+  loadFyList();
+}, []);
 
   const renewalCount = useMemo(() => items.filter(i => {
     const d = getDaysUntil(i.planMonth);
@@ -8304,7 +8328,7 @@ useEffect(() => {
   }
 }, [items, addAuditEntry]);
   const buList = useMemo(() => [...new Set(items.map(i => i.businessUnit).filter(Boolean))].sort(), [items]);
-  const fyList = useMemo(() => [...new Set(items.map(i => i.fy || getFY(i.planMonth)).filter(Boolean))].sort(), [items]);
+  
 if (itemsLoading) {
   return (
     <div style={{ padding: 30, color: "white" }}>
