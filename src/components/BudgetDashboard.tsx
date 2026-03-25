@@ -5397,13 +5397,21 @@ function SaaSDashboard({ items }) {
 }
 
 // ─── EXCEPTIONS & ANOMALY REPORT ─────────────────────────────────────────────
-function ExceptionsPage({ items }) {
+function ExceptionsPage({ items, fyOptions }) {
   const T = { fontFamily:"'Montserrat',sans-serif" };
-  const fys = ["all", ...[...new Set(items.map(i=>i.fy||getFY(i.planMonth)).filter(Boolean))].sort()];
+  const fys = ["all", ...(Array.isArray(fyOptions) ? fyOptions : [])];
   const bus  = ["all", ...[...new Set(items.map(i=>i.businessUnit).filter(Boolean))].sort()];
   const [filterFY, setFilterFY] = useState("all");
   const [filterBU, setFilterBU] = useState("all");
   const [filterSev, setFilterSev] = useState("all"); // "all" | "HIGH" | "MEDIUM" | "LOW"
+
+  useEffect(() => {
+  if (filterFY === "all") return;
+  if (!fys.includes(filterFY)) {
+    setFilterFY("all");
+  }
+}, [fys, filterFY]);
+
 
   const scoped = items.filter(i=>
     (filterFY==="all" || (i.fy||getFY(i.planMonth))===filterFY) &&
@@ -7999,7 +8007,7 @@ if (itemsLoading) {
         )}
         {tab === "cashflow"   && <CashFlowForecast items={items} />}
         {tab === "payments"   && <PaymentSchedulePage items={items} />}
-        {tab === "exceptions" && <ExceptionsPage items={items} />}
+        {tab === "exceptions" && <ExceptionsPage items={items} fyOptions={globalFyOptions} />}
         {tab === "reconcile"  && <ReconciliationPage items={items} signoffs={reconcileSignoffs} setSignoffs={setReconcileSignoffs} onAddAuditEntry={addAuditEntry} />}
         {tab === "auditlog"   && <AuditLogPage auditLog={auditLog} />}
        {tab === "freeze" && role === "admin" && (
