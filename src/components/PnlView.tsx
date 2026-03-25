@@ -166,14 +166,14 @@ function exportPnLCSV(itemsWithPnL, showMonths, colTotals, filename) {
 }
 
 
-function PnLView({ items }) {
+function PnlView({ items, fyOptions }) {
   const [selectedBUs,  setSelectedBUs]  = useState(["all"]);
   const [selectedFYs,  setSelectedFYs]  = useState(["all"]);
   const [filterCategory, setFilterCategory] = useState("all");
 
   const buList  = useMemo(() => [...new Set(items.map(i => i.businessUnit).filter(Boolean))].sort(), [items]);
   const catList = useMemo(() => [...new Set(items.map(i => i.itemCategory).filter(Boolean))].sort(), [items]);
-  const fyList  = useMemo(() => [...new Set(items.map(i => i.fy || getFY(i.planMonth)).filter(Boolean))].sort(), [items]);
+  const fyList = Array.isArray(fyOptions) ? fyOptions : [];
 
   const toggleBU = (v) => {
     if (v === "all") { setSelectedBUs(["all"]); return; }
@@ -507,4 +507,4 @@ function PnLView({ items }) {
     </div>
   );
 }
-export default PnLView;
+export default PnlView;

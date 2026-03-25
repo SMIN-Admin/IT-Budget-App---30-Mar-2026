@@ -1995,12 +1995,9 @@ function DrillLink({ label, onClick }) {
   );
 }
 
-function ComparisonPage({ items, onDrillDown, periodA, setPeriodA, periodB, setPeriodB, groupBy, setGroupBy, mode, setMode }) {
+function ComparisonPage({ items, fyOptions, onDrillDown, periodA, setPeriodA, periodB, setPeriodB, groupBy, setGroupBy, mode, setMode }) {
 
-  const fyOptions = useMemo(() => {
-    const s = new Set(items.map(i=>i.fy||getFY(i.planMonth)).filter(Boolean));
-    return Array.from(s).sort();
-  }, [items]);
+  const fyList = Array.isArray(fyOptions) ? fyOptions : [];
 
   const itemsA = useMemo(() => periodA ? getItemsForFY(items,periodA) : [], [items,periodA]);
   const itemsB = useMemo(() => periodB ? getItemsForFY(items,periodB) : [], [items,periodB]);
@@ -7258,6 +7255,7 @@ const [itemsHasMore, setItemsHasMore] = useState(false);
 const [itemsNextCursor, setItemsNextCursor] = useState<string | null>(null);
 const [isSaving, setIsSaving] = useState(false);
 const [isImporting, setIsImporting] = useState(false);
+const [globalFyOptions, setGlobalFyOptions] = useState<string[]>([]);
 const [itemStats, setItemStats] = useState({
   totalCount: 0,
   totalBudget: 0,
@@ -7351,6 +7349,26 @@ const loadMoreItems = async () => {
     setItemsLoading(false);
   }
 };
+
+useEffect(() => {
+  const loadFYOptions = async () => {
+    try {
+      const res = await fetch("/api/budget-items/fy-options", {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setGlobalFyOptions(Array.isArray(data.fyOptions) ? data.fyOptions : []);
+      }
+    } catch (err) {
+      console.error("FY options fetch error:", err);
+    }
+  };
+
+  loadFYOptions();
+}, []);
+
+
 
 useEffect(() => {
   loadInitialItems();
@@ -7953,14 +7971,17 @@ if (itemsLoading) {
     Loading more items...
   </div>
 )}
-        {tab === "pnl" && <PnlView items={items} />}
-        {tab === "comparison" && <ComparisonPage items={items} onDrillDown={handleDrillDown}
-          periodA={cmpPeriodA} setPeriodA={setCmpPeriodA}
-          periodB={cmpPeriodB} setPeriodB={setCmpPeriodB}
-          groupBy={cmpGroupBy} setGroupBy={setCmpGroupBy}
-          mode={cmpMode}       setMode={setCmpMode}
-        />}
-        {tab === "reports" && <Reports items={items} initGroupBy={rptGroupBy} initFilterFY={rptFilterFY} onGroupByChange={setRptGroupBy} onFilterFYChange={setRptFilterFY} />}
+        {tab === "pnl" && <PnlView items={items} fyOptions={globalFyOptions} />}
+        {tab === "comparison" && <ComparisonPage
+  items={items}
+  fyOptions={globalFyOptions}   // ✅ ADD THIS LINE
+  onDrillDown={handleDrillDown}
+  periodA={cmpPeriodA} setPeriodA={setCmpPeriodA}
+  periodB={cmpPeriodB} setPeriodB={setCmpPeriodB}
+  groupBy={cmpGroupBy} setGroupBy={setCmpGroupBy}
+  mode={cmpMode} setMode={setCmpMode}
+/>}
+        {tab === "reports" && <Reports items={items} fyOptions={globalFyOptions} initGroupBy={rptGroupBy} initFilterFY={rptFilterFY} onGroupByChange={setRptGroupBy} onFilterFYChange={setRptFilterFY} />}
         {tab === "renewals" && (
           <div>
             <h2 style={{ color:"#f1f5f9", marginBottom:16, fontSize:18, fontWeight:800 }}>🔔 Renewal Alerts</h2>

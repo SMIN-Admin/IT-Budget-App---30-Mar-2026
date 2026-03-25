@@ -144,7 +144,7 @@ function ReportRow({ label, budget, actual, savings, items }) {
 }
 
 
-function Reports({ items, initGroupBy, initFilterFY, onGroupByChange, onFilterFYChange }) {
+function Reports({ items, fyOptions, initGroupBy, initFilterFY, onGroupByChange, onFilterFYChange }) {
   const [groupBy,  setGroupByState]  = useState(initGroupBy  || "businessUnit");
   const [filterFY, setFilterFYState] = useState(initFilterFY || "all");
   const setGroupBy  = (v) => { setGroupByState(v);  onGroupByChange  && onGroupByChange(v); };
@@ -154,7 +154,7 @@ function Reports({ items, initGroupBy, initFilterFY, onGroupByChange, onFilterFY
   useEffect(() => { if (initFilterFY) setFilterFYState(initFilterFY); }, [initFilterFY]);
   const [reportType, setReportType] = useState("cashflow");
 
-  const fyList = useMemo(() => [...new Set(items.map(i => i.fy || getFY(i.planMonth)).filter(Boolean))].sort(), [items]);
+  const fyList = Array.isArray(fyOptions) ? fyOptions : [];
 
   const filteredItems = useMemo(() => {
     if (filterFY === "all") return items;
