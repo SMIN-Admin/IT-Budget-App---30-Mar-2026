@@ -5523,6 +5523,7 @@ function ExceptionsPage({ items, fyOptions }) {
 // ─── RECONCILIATION PAGE ──────────────────────────────────────────────────────
 function ReconciliationPage({
   items,
+  fyOptions,
   signoffs,
   setSignoffs,
   onAddAuditEntry,
@@ -5530,6 +5531,7 @@ function ReconciliationPage({
   canApproveReject,
 }: {
   items: any[];
+  fyOptions: string[];
   signoffs: Record<string, any>;
   setSignoffs: any;
   onAddAuditEntry?: any;
@@ -5537,11 +5539,17 @@ function ReconciliationPage({
   canApproveReject: boolean;
 }) {
   const T = { fontFamily:"'Montserrat',sans-serif" };
-  const fys = [...new Set(items.map(i=>i.fy||getFY(i.planMonth)).filter(Boolean))].sort();
+  const fys = Array.isArray(fyOptions) ? fyOptions : [];
   const bus  = [...new Set(items.map(i=>i.businessUnit).filter(Boolean))].sort();
-  const [fy, setFy] = useState(fys[fys.length-1]||"all");
+  const [fy, setFy] = useState("all");
   const [filterBU, setFilterBU] = useState("all");
   const [selected, setSelected] = useState(new Set());
+  useEffect(() => {
+  if (fy === "all") return;
+  if (!fys.includes(fy)) {
+    setFy("all");
+  }
+}, [fys, fy]);
 
   const scoped = items.filter(i=>
     (fy==="all" || (i.fy||getFY(i.planMonth))===fy) &&
@@ -8008,7 +8016,17 @@ if (itemsLoading) {
         {tab === "cashflow"   && <CashFlowForecast items={items} />}
         {tab === "payments"   && <PaymentSchedulePage items={items} />}
         {tab === "exceptions" && <ExceptionsPage items={items} fyOptions={globalFyOptions} />}
-        {tab === "reconcile"  && <ReconciliationPage items={items} signoffs={reconcileSignoffs} setSignoffs={setReconcileSignoffs} onAddAuditEntry={addAuditEntry} />}
+        {tab === "reconcile" && (
+  <ReconciliationPage
+    items={items}
+    fyOptions={globalFyOptions}
+    signoffs={reconcileSignoffs}
+    setSignoffs={setReconcileSignoffs}
+    onAddAuditEntry={addAuditEntry}
+    canDelete={canDelete}
+    canApproveReject={canApproveReject}
+  />
+)}
         {tab === "auditlog"   && <AuditLogPage auditLog={auditLog} />}
        {tab === "freeze" && role === "admin" && (
   <BudgetFreezePage
