@@ -6475,10 +6475,16 @@ function CurrencyExposurePage({ items }) {
 }
 
 // ─── BU ALLOCATION TRACKER ────────────────────────────────────────────────────
-function BUAllocationPage({ items }) {
+function BUAllocationPage({ items, fyOptions }) {
   const T = { fontFamily:"'Montserrat',sans-serif" };
-  const fys = [...new Set(items.map(i=>i.fy||getFY(i.planMonth)).filter(Boolean))].sort();
-  const [fy, setFy] = useState(fys[fys.length-1]||"all");
+  const fys = Array.isArray(fyOptions) ? fyOptions : [];
+  const [fy, setFy] = useState("all");
+  useEffect(() => {
+  if (fy === "all") return;
+  if (!fys.includes(fy)) {
+    setFy("all");
+  }
+}, [fys, fy]);
   const scoped = fy==="all"?items:items.filter(i=>(i.fy||getFY(i.planMonth))===fy);
   const bus = [...new Set(scoped.map(i=>i.businessUnit).filter(Boolean))].sort();
   const buData = bus.map(b=>{
@@ -8007,7 +8013,7 @@ if (itemsLoading) {
     currentUserEmail={user?.email || "Unknown"}
   />
 )}
-        {tab === "bualloc"    && <BUAllocationPage items={items} />}
+        {tab === "bualloc" && <BUAllocationPage items={items} fyOptions={globalFyOptions} />}
         {tab === "sop" && <SOPPage onNavigate={handleTabClick} />}
         {tab === "bible" && <BiblePage />}
         {tab === "fx" && (
