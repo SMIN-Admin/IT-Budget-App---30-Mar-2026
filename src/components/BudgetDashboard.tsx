@@ -6041,6 +6041,7 @@ function AuditLogPage({ auditLog, onExport }) {
 // ─── BUDGET FREEZE PAGE ───────────────────────────────────────────────────────
 function BudgetFreezePage({
   items,
+  fyOptions,
   frozenPeriods,
   setFrozenPeriods,
   onAddAuditEntry,
@@ -6049,6 +6050,7 @@ function BudgetFreezePage({
   currentUserEmail,
 }: {
   items: any[];
+  fyOptions: string[];
   frozenPeriods: any;
   setFrozenPeriods: any;
   onAddAuditEntry: any;
@@ -6066,7 +6068,7 @@ function BudgetFreezePage({
   const [pinError, setPinError] = useState("");
   const [reason, setReason] = useState("");
 
-  const fys = [...new Set(items.map((i:any) => i.fy || getFY(i.planMonth)).filter(Boolean))].sort();
+  const fys = Array.isArray(fyOptions) ? fyOptions : [];
   const locked = frozenPeriods.periods || {};
 
   const handleSetPin = () => {
@@ -8031,6 +8033,7 @@ if (itemsLoading) {
        {tab === "freeze" && role === "admin" && (
   <BudgetFreezePage
     items={items}
+    fyOptions={globalFyOptions}
     frozenPeriods={frozenPeriods}
     setFrozenPeriods={setFrozenPeriods}
     onAddAuditEntry={addAuditEntry}
