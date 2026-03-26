@@ -1998,14 +1998,13 @@ function DrillLink({ label, onClick }) {
 function ComparisonPage({ items, fyOptions, onDrillDown, periodA, setPeriodA, periodB, setPeriodB, groupBy, setGroupBy, mode, setMode }) {
 
   const fyList = Array.isArray(fyOptions) ? fyOptions : [];
-  const [itemsA, setItemsA] = useState([]);
-  const [itemsB, setItemsB] = useState([]);
+    const [comparisonAllItems, setComparisonAllItems] = useState([]);
   const [comparisonLoading, setComparisonLoading] = useState(false);
   const [comparisonError, setComparisonError] = useState("");
 
-  const fetchAllItemsForFY = useCallback(async (fy) => {
-    if (!fy || fy === "all") return [];
+  const normalizeFY = useCallback((item) => item.fy || getFY(item.planMonth), []);
 
+  const fetchAllComparisonItems = useCallback(async () => {
     let all = [];
     let cursor = "";
     let guard = 0;
@@ -2013,7 +2012,7 @@ function ComparisonPage({ items, fyOptions, onDrillDown, periodA, setPeriodA, pe
     while (guard < 50) {
       const params = new URLSearchParams({
         limit: "100",
-        fy,
+        fy: "all",
         businessUnit: "all",
         status: "all",
       });
@@ -2028,7 +2027,7 @@ function ComparisonPage({ items, fyOptions, onDrillDown, periodA, setPeriodA, pe
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data?.error || `Failed to load items for ${fy}`);
+        throw new Error(data?.error || "Failed to load comparison items");
       }
 
       const batch = Array.isArray(data.items) ? data.items : [];
@@ -2048,8 +2047,7 @@ function ComparisonPage({ items, fyOptions, onDrillDown, periodA, setPeriodA, pe
 
     const loadComparisonItems = async () => {
       if (!periodA && !periodB) {
-        setItemsA([]);
-        setItemsB([]);
+        setComparisonAllItems([]);
         setComparisonError("");
         return;
       }
@@ -2058,22 +2056,16 @@ function ComparisonPage({ items, fyOptions, onDrillDown, periodA, setPeriodA, pe
         setComparisonLoading(true);
         setComparisonError("");
 
-        const [aRows, bRows] = await Promise.all([
-          periodA ? fetchAllItemsForFY(periodA) : Promise.resolve([]),
-          periodB ? fetchAllItemsForFY(periodB) : Promise.resolve([]),
-        ]);
-
+        const allRows = await fetchAllComparisonItems();
         if (cancelled) return;
 
-        setItemsA(aRows);
-        setItemsB(bRows);
+        setComparisonAllItems(allRows);
       } catch (err) {
         if (cancelled) return;
 
         console.error("Comparison data load failed:", err);
         setComparisonError("Showing local data fallback because full comparison data could not be loaded.");
-        setItemsA(periodA ? getItemsForFY(items, periodA) : []);
-        setItemsB(periodB ? getItemsForFY(items, periodB) : []);
+        setComparisonAllItems(items);
       } finally {
         if (!cancelled) setComparisonLoading(false);
       }
@@ -2081,7 +2073,17 @@ function ComparisonPage({ items, fyOptions, onDrillDown, periodA, setPeriodA, pe
 
     loadComparisonItems();
     return () => { cancelled = true; };
-  }, [periodA, periodB, fetchAllItemsForFY, items]);
+  }, [periodA, periodB, fetchAllComparisonItems, items]);
+
+  const itemsA = useMemo(
+    () => (periodA ? comparisonAllItems.filter(i => normalizeFY(i) === periodA) : []),
+    [comparisonAllItems, periodA, normalizeFY]
+  );
+
+  const itemsB = useMemo(
+    () => (periodB ? comparisonAllItems.filter(i => normalizeFY(i) === periodB) : []),
+    [comparisonAllItems, periodB, normalizeFY]
+  );
 
   const valueKey = mode === "pnl" ? "pnl" : "budget";
 
