@@ -1548,7 +1548,7 @@ const actualsCoverage = summary?.home?.actualsCoverage || 0;
   const buData = summary?.home?.buData || [];
 const catData = summary?.home?.catData || [];
 const expData = summary?.home?.expData || [];
-const monthlyTrend = summary?.pnl?.monthlyPnLTrend || [];
+  const monthlyTrend = summary?.home?.monthlyTrend || [];
 
   const payingBUData = summary?.home?.payingBUData || [];
 
