@@ -171,9 +171,59 @@ function PnlView({ items, fyOptions }) {
   const [selectedFYs,  setSelectedFYs]  = useState(["all"]);
   const [filterCategory, setFilterCategory] = useState("all");
 
+  const [pageItems, setPageItems] = useState<any[] | null>(null);
+  const [pageLoading, setPageLoading] = useState(false);
+
   const buList  = useMemo(() => [...new Set(items.map(i => i.businessUnit).filter(Boolean))].sort(), [items]);
   const catList = useMemo(() => [...new Set(items.map(i => i.itemCategory).filter(Boolean))].sort(), [items]);
   const fyList = Array.isArray(fyOptions) ? fyOptions : [];
+
+  const loadPnLItems = async () => {
+  try {
+    setPageLoading(true);
+
+    const fy = selectedFYs.includes("all") ? "all" : selectedFYs[0];
+    const businessUnit = selectedBUs.includes("all") ? "all" : selectedBUs[0];
+
+    let allItems: any[] = [];
+    let nextCursor: string | null = null;
+    let hasMore = true;
+
+    while (hasMore) {
+      const url =
+        `/api/budget-items?limit=200&fy=${encodeURIComponent(fy)}&businessUnit=${encodeURIComponent(businessUnit)}&status=all` +
+        (nextCursor ? `&cursor=${encodeURIComponent(nextCursor)}` : "");
+
+      const res = await fetch(url, {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to load P&L items");
+      }
+
+      const batch = Array.isArray(data.items) ? data.items : [];
+      allItems = [...allItems, ...batch];
+
+      hasMore = Boolean(data.hasMore);
+      nextCursor = data.nextCursor || null;
+
+      if (!hasMore || !nextCursor) {
+        break;
+      }
+    }
+
+    setPageItems(allItems);
+  } catch (error) {
+    console.error("Failed to load P&L items:", error);
+     setPageItems(null);
+  } finally {
+    setPageLoading(false);
+  }
+};
 
   const toggleBU = (v) => {
     if (v === "all") { setSelectedBUs(["all"]); return; }
@@ -191,13 +241,20 @@ function PnlView({ items, fyOptions }) {
   const [buOpen, setBuOpen] = useState(false);
   const [fyOpen, setFyOpen] = useState(false);
 
+  useEffect(() => {
+    loadPnLItems();
+  }, [selectedFYs, selectedBUs]);
+
+    const sourceItems = pageItems && pageItems.length > 0 ? pageItems : items;
+
   const filtered = useMemo(() => {
-    return items.filter(i =>
+    return sourceItems.filter(i =>
       (selectedBUs.includes("all") || selectedBUs.includes(i.businessUnit)) &&
       (selectedFYs.includes("all") || selectedFYs.includes(i.fy || getFY(i.planMonth))) &&
       (filterCategory === "all" || i.itemCategory === filterCategory)
     );
-  }, [items, selectedBUs, selectedFYs, filterCategory]);
+  }, [sourceItems, selectedBUs, selectedFYs, filterCategory]);
+
 
   // Build month range from data (all months present in filtered items)
   // ── Pre-compute P&L per item (memoised) — avoids O(n×m) in render ──────────
@@ -357,7 +414,10 @@ function PnlView({ items, fyOptions }) {
           </button>
         )}
 
-        <div style={{ marginLeft:"auto", fontSize:12, color:"#88A0B8" }}>{filtered.length} items</div>
+        <div style={{ marginLeft:"auto", fontSize:12, color:"#88A0B8" }}>
+          {pageLoading ? "Loading..." : `${filtered.length} items`}
+        </div>
+
       </div>
 
       {/* ── Active filter pills ── */}

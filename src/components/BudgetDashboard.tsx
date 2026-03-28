@@ -5220,85 +5220,212 @@ function SaaSDashboard({ items }) {
 function ExceptionsPage({ items, fyOptions }) {
   const T = { fontFamily:"'Montserrat',sans-serif" };
   const fys = ["all", ...(Array.isArray(fyOptions) ? fyOptions : [])];
-  const bus  = ["all", ...[...new Set(items.map(i=>i.businessUnit).filter(Boolean))].sort()];
+  const bus  = ["all", ...[...new Set(items.map(i => i.businessUnit).filter(Boolean))].sort()];
   const [filterFY, setFilterFY] = useState("all");
   const [filterBU, setFilterBU] = useState("all");
   const [filterSev, setFilterSev] = useState("all"); // "all" | "HIGH" | "MEDIUM" | "LOW"
 
   useEffect(() => {
-  if (filterFY === "all") return;
-  if (!fys.includes(filterFY)) {
-    setFilterFY("all");
-  }
-}, [fys, filterFY]);
+    if (filterFY === "all") return;
+    if (!fys.includes(filterFY)) {
+      setFilterFY("all");
+    }
+  }, [fys, filterFY]);
 
-
-  const scoped = items.filter(i=>
-    (filterFY==="all" || (i.fy||getFY(i.planMonth))===filterFY) &&
-    (filterBU==="all" || i.businessUnit===filterBU)
+  const scoped = items.filter(i =>
+    (filterFY === "all" || (i.fy || getFY(i.planMonth)) === filterFY) &&
+    (filterBU === "all" || i.businessUnit === filterBU)
   );
 
   const exceptions = useMemo(() => {
     const results = [];
+
     scoped.forEach(item => {
-      const budget = parseFloat(item.budget)||0;
-      const actual = item.actual;
+      const budget = parseFloat(item.budget) || 0;
+      const actual = item.actual != null ? Number(item.actual) : null;
       const od = getDaysUntil(item.planMonth);
-      if (actual!=null && budget>0 && actual > budget*1.2) results.push({ ...item, ruleCode:"OVERSPEND", ruleLabel:"Actual >20% over budget", severity:"HIGH", detail:`Budget S$${Math.round(budget).toLocaleString()} → Actual S$${Math.round(actual).toLocaleString()} (${Math.round((actual-budget)/budget*100)}% over)` });
-      if (od!==null && od<-14 && actual==null && (!item.status || item.status==="")) results.push({ ...item, ruleCode:"OVERDUE", ruleLabel:"Overdue — no actual recorded (pending)", severity:"MEDIUM", detail:`Plan month ${item.planMonth} was ${Math.abs(od)} days ago` });
-      if (item.outsideBudget && actual!=null && actual>10000) results.push({ ...item, ruleCode:"OUTSIDE_HIGH", ruleLabel:"Outside-budget spend >S$10,000", severity:"HIGH", detail:`Unplanned spend of S$${Math.round(actual).toLocaleString()}` });
-      const missing = [!item.billingFreq && "Billing Freq", !item.itemCategory && "Category"].filter(Boolean);
-      if (missing.length>0) results.push({ ...item, ruleCode:"MISSING_FIELDS", ruleLabel:"Missing mandatory fields", severity:"LOW", detail:`Missing: ${missing.join(", ")}` });
+      const status = String(item.status || "").trim();
+
+      if (actual != null && budget > 0 && actual > budget * 1.2) {
+        results.push({
+          ...item,
+          ruleCode: "OVERSPEND",
+          ruleLabel: "Actual >20% over budget",
+          severity: "HIGH",
+          detail: `Budget S$${Math.round(budget).toLocaleString()} → Actual S$${Math.round(actual).toLocaleString()} (${Math.round(((actual - budget) / budget) * 100)}% over)`,
+        });
+      }
+
+      if (
+        od !== null &&
+        od < -14 &&
+        (actual == null || actual <= 0) &&
+        (!status || status === "Pending")
+      ) {
+        results.push({
+          ...item,
+          ruleCode: "OVERDUE",
+          ruleLabel: "Overdue — no actual recorded (pending)",
+          severity: "MEDIUM",
+          detail: `Plan month ${item.planMonth} was ${Math.abs(od)} days ago`,
+        });
+      }
+
+      if (item.outsideBudget && actual != null && actual > 10000) {
+        results.push({
+          ...item,
+          ruleCode: "OUTSIDE_HIGH",
+          ruleLabel: "Outside-budget spend >S$10,000",
+          severity: "HIGH",
+          detail: `Unplanned spend of S$${Math.round(actual).toLocaleString()}`,
+        });
+      }
+
+      const missing = [
+        !item.billingFreq && "Billing Freq",
+        !item.itemCategory && "Category",
+      ].filter(Boolean);
+
+      if (missing.length > 0) {
+        results.push({
+          ...item,
+          ruleCode: "MISSING_FIELDS",
+          ruleLabel: "Missing mandatory fields",
+          severity: "LOW",
+          detail: `Missing: ${missing.join(", ")}`,
+        });
+      }
     });
+
     return results;
   }, [scoped]);
 
-  const high = exceptions.filter(e=>e.severity==="HIGH").length;
-  const med  = exceptions.filter(e=>e.severity==="MEDIUM").length;
-  const low  = exceptions.filter(e=>e.severity==="LOW").length;
-  const card = { background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, border:"1px solid rgba(94,234,212,0.12)", padding:"20px 22px", marginBottom:16 };
+  const visibleExceptions = exceptions
+    .filter(e => filterSev === "all" || e.severity === filterSev)
+    .sort((a, b) => ({ HIGH: 0, MEDIUM: 1, LOW: 2 }[a.severity] - ({ HIGH: 0, MEDIUM: 1, LOW: 2 }[b.severity])));
+
+  const high = exceptions.filter(e => e.severity === "HIGH").length;
+  const med  = exceptions.filter(e => e.severity === "MEDIUM").length;
+  const low  = exceptions.filter(e => e.severity === "LOW").length;
+
+  const card = {
+    background:"linear-gradient(145deg,#0F1B2B,#0C1722)",
+    borderRadius:14,
+    border:"1px solid rgba(94,234,212,0.12)",
+    padding:"20px 22px",
+    marginBottom:16
+  };
+
   const sColor = { HIGH:"#ef4444", MEDIUM:"#f59e0b", LOW:"#6B7280" };
-  const selStyle = { background:"#09131D", border:"1px solid #213547", borderRadius:8, color:"#f1f5f9", padding:"6px 12px", fontSize:12, ...T };
+  const selStyle = {
+    background:"#09131D",
+    border:"1px solid #213547",
+    borderRadius:8,
+    color:"#f1f5f9",
+    padding:"6px 12px",
+    fontSize:12,
+    ...T
+  };
 
   return (
     <div style={T}>
-      {/* Page header */}
       <div style={{ marginBottom:18 }}>
         <h2 style={{ color:"#E6FFFD", fontSize:18, fontWeight:900, margin:"0 0 14px 0" }}>⚠️ Exceptions & Anomaly Report</h2>
+
         <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
-          <select value={filterFY} onChange={e=>setFilterFY(e.target.value)} style={selStyle}>
+          <select value={filterFY} onChange={e => setFilterFY(e.target.value)} style={selStyle}>
             <option value="all">All FY</option>
-            {fys.filter(f=>f!=="all").map(f=><option key={f} value={f}>{f}</option>)}
+            {fys.filter(f => f !== "all").map(f => (
+              <option key={f} value={f}>{f}</option>
+            ))}
           </select>
-          <select value={filterBU} onChange={e=>setFilterBU(e.target.value)} style={selStyle}>
+
+          <select value={filterBU} onChange={e => setFilterBU(e.target.value)} style={selStyle}>
             <option value="all">All BUs</option>
-            {bus.filter(b=>b!=="all").map(b=><option key={b} value={b}>{b}</option>)}
+            {bus.filter(b => b !== "all").map(b => (
+              <option key={b} value={b}>{b}</option>
+            ))}
           </select>
+
           <div style={{ display:"flex", gap:8 }}>
-            {[[high,"HIGH","#ef4444"],[med,"MEDIUM","#f59e0b"],[low,"LOW","#6B7280"]].map(([n,l,c])=>{
+            {[[high,"HIGH","#ef4444"],[med,"MEDIUM","#f59e0b"],[low,"LOW","#6B7280"]].map(([n,l,c]) => {
               const isActive = filterSev === l;
               return (
-                <button key={l}
+                <button
+                  key={l}
                   onClick={() => setFilterSev(isActive ? "all" : l)}
-                  style={{ background: isActive ? `${c}33` : `${c}11`, border:`1px solid ${isActive ? c : `${c}55`}`, borderRadius:8, padding:"4px 12px", color:c, fontSize:12, fontWeight:700, cursor:"pointer", transition:"all .15s", outline:"none" }}>
+                  style={{
+                    background: isActive ? `${c}33` : `${c}11`,
+                    border:`1px solid ${isActive ? c : `${c}55`}`,
+                    borderRadius:8,
+                    padding:"4px 12px",
+                    color:c,
+                    fontSize:12,
+                    fontWeight:700,
+                    cursor:"pointer",
+                    transition:"all .15s",
+                    outline:"none"
+                  }}
+                >
                   {n} {l}{isActive ? " ✕" : ""}
                 </button>
               );
             })}
+
             {filterSev !== "all" && (
-              <button onClick={() => setFilterSev("all")}
-                style={{ background:"rgba(71,85,105,0.2)", border:"1px solid rgba(71,85,105,0.4)", borderRadius:8, padding:"4px 10px", color:"#94a3b8", fontSize:11, fontWeight:600, cursor:"pointer" }}>
+              <button
+                onClick={() => setFilterSev("all")}
+                style={{
+                  background:"rgba(71,85,105,0.2)",
+                  border:"1px solid rgba(71,85,105,0.4)",
+                  borderRadius:8,
+                  padding:"4px 10px",
+                  color:"#94a3b8",
+                  fontSize:11,
+                  fontWeight:600,
+                  cursor:"pointer"
+                }}
+              >
                 Show All
               </button>
             )}
           </div>
-          <button onClick={()=>exportCSV(exceptions.map(e=>({description:e.description,bu:e.businessUnit,fy:e.fy||getFY(e.planMonth),rule:e.ruleLabel,severity:e.severity,detail:e.detail,budget:e.budget,actual:e.actual||""})),`Exceptions_${new Date().toISOString().slice(0,10)}.csv`)}
-            style={{ marginLeft:"auto", background:"linear-gradient(135deg,#1a3a2a,#0f2a1a)", border:"1px solid rgba(94,234,212,0.35)", borderRadius:8, color:"#5EEAD4", padding:"6px 14px", cursor:"pointer", fontWeight:700, fontSize:12, ...T }}>
+
+          <button
+            onClick={() =>
+              exportCSV(
+                exceptions.map(e => ({
+                  description: e.description,
+                  bu: e.businessUnit,
+                  fy: e.fy || getFY(e.planMonth),
+                  rule: e.ruleLabel,
+                  severity: e.severity,
+                  detail: e.detail,
+                  budget: e.budget,
+                  actual: e.actual || ""
+                })),
+                `Exceptions_${new Date().toISOString().slice(0,10)}.csv`
+              )
+            }
+            style={{
+              marginLeft:"auto",
+              background:"linear-gradient(135deg,#1a3a2a,#0f2a1a)",
+              border:"1px solid rgba(94,234,212,0.35)",
+              borderRadius:8,
+              color:"#5EEAD4",
+              padding:"6px 14px",
+              cursor:"pointer",
+              fontWeight:700,
+              fontSize:12,
+              ...T
+            }}
+          >
             ⬇ Export CSV
           </button>
         </div>
       </div>
-      {exceptions.length===0 ? (
+
+      {visibleExceptions.length === 0 ? (
         <div style={{ ...card, textAlign:"center", padding:"40px" }}>
           <div style={{ fontSize:40, marginBottom:12 }}>✅</div>
           <div style={{ color:"#10b981", fontWeight:800, fontSize:16 }}>No exceptions found</div>
@@ -5308,25 +5435,48 @@ function ExceptionsPage({ items, fyOptions }) {
         <div style={card}>
           <div style={{ overflowX:"auto" }}>
             <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, ...T }}>
-              <thead><tr style={{ background:"#09131D" }}>
-                {["Severity","Rule","Description","BU","FY","Plan Month","Budget SGD","Actual SGD","Detail"].map(h=>(
-                  <th key={h} style={{ padding:"8px 10px", color:"#5EEAD4", fontWeight:700, textAlign:"left", whiteSpace:"nowrap" }}>{h}</th>
-                ))}
-              </tr></thead>
+              <thead>
+                <tr style={{ background:"#09131D" }}>
+                  {["Severity","Rule","Description","BU","FY","Plan Month","Budget SGD","Actual SGD","Detail"].map(h => (
+                    <th
+                      key={h}
+                      style={{ padding:"8px 10px", color:"#5EEAD4", fontWeight:700, textAlign:"left", whiteSpace:"nowrap" }}
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
               <tbody>
-                {exceptions
-                  .filter(e => filterSev === "all" || e.severity === filterSev)
-                  .sort((a,b)=>({ HIGH:0, MEDIUM:1, LOW:2 })[a.severity]-({ HIGH:0, MEDIUM:1, LOW:2 })[b.severity])
-                  .map((e,i)=>(
-                  <tr key={i} style={{ background:i%2===0?"#1e293b":"#1a2744" }}>
-                    <td style={{ padding:"7px 10px" }}><span style={{ background:`${sColor[e.severity]}22`, color:sColor[e.severity], borderRadius:4, padding:"2px 8px", fontSize:10, fontWeight:700 }}>{e.severity}</span></td>
+                {visibleExceptions.map((e, i) => (
+                  <tr key={i} style={{ background:i % 2 === 0 ? "#1e293b" : "#1a2744" }}>
+                    <td style={{ padding:"7px 10px" }}>
+                      <span
+                        style={{
+                          background:`${sColor[e.severity]}22`,
+                          color:sColor[e.severity],
+                          borderRadius:4,
+                          padding:"2px 8px",
+                          fontSize:10,
+                          fontWeight:700
+                        }}
+                      >
+                        {e.severity}
+                      </span>
+                    </td>
                     <td style={{ padding:"7px 10px", color:"#CBD5E1", fontSize:11 }}>{e.ruleLabel}</td>
-                    <td style={{ padding:"7px 10px", color:"#f1f5f9", fontWeight:600, maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.description}</td>
+                    <td style={{ padding:"7px 10px", color:"#f1f5f9", fontWeight:600, maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                      {e.description}
+                    </td>
                     <td style={{ padding:"7px 10px", color:"#9FB3C8" }}>{e.businessUnit}</td>
-                    <td style={{ padding:"7px 10px", color:"#5EEAD4" }}>{e.fy||getFY(e.planMonth)}</td>
+                    <td style={{ padding:"7px 10px", color:"#5EEAD4" }}>{e.fy || getFY(e.planMonth)}</td>
                     <td style={{ padding:"7px 10px", color:"#5EEAD4" }}>{e.planMonth}</td>
-                    <td style={{ padding:"7px 10px", color:"#9FB3C8" }}>{e.budget>0?`S$${Math.round(e.budget).toLocaleString()}`:"—"}</td>
-                    <td style={{ padding:"7px 10px", color:e.actual>e.budget*1.2?"#ef4444":"#10b981" }}>{e.actual!=null?`S$${Math.round(e.actual).toLocaleString()}`:"—"}</td>
+                    <td style={{ padding:"7px 10px", color:"#9FB3C8" }}>
+                      {e.budget > 0 ? `S$${Math.round(e.budget).toLocaleString()}` : "—"}
+                    </td>
+                    <td style={{ padding:"7px 10px", color:e.actual > e.budget * 1.2 ? "#ef4444" : "#10b981" }}>
+                      {e.actual != null ? `S$${Math.round(e.actual).toLocaleString()}` : "—"}
+                    </td>
                     <td style={{ padding:"7px 10px", color:"#6B7280", fontSize:11 }}>{e.detail}</td>
                   </tr>
                 ))}
@@ -7100,6 +7250,8 @@ const [itemsNextCursor, setItemsNextCursor] = useState<string | null>(null);
 const [isSaving, setIsSaving] = useState(false);
 const [isImporting, setIsImporting] = useState(false);
 const [globalFyOptions, setGlobalFyOptions] = useState<string[]>([]);
+const [appSummary, setAppSummary] = useState<any>(null);
+const [appSummaryLoading, setAppSummaryLoading] = useState(false);
 const [itemStats, setItemStats] = useState({
   totalCount: 0,
   totalBudget: 0,
@@ -7162,6 +7314,31 @@ const loadItemStats = async () => {
     });
   }
 };
+
+const loadAppSummary = async () => {
+  try {
+    setAppSummaryLoading(true);
+
+    const res = await fetch("/api/budget-items/dashboard-summary?fy=all&businessUnit=all&payingBU=all", {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Failed to load app summary");
+    }
+
+    setAppSummary(data);
+  } catch (error) {
+    console.error("Failed to load app summary:", error);
+    setAppSummary(null);
+  } finally {
+    setAppSummaryLoading(false);
+  }
+};
+
 const loadMoreItems = async () => {
   if (!itemsHasMore || !itemsNextCursor || itemsLoading) return;
 
@@ -7210,14 +7387,11 @@ useEffect(() => {
   };
 
   loadFYOptions();
+loadAppSummary();
 }, []);
 
 
 
-useEffect(() => {
-  loadInitialItems();
-  loadItemStats();
-}, []);
 
   // Custom dropdown options added by users via "Add New"
   const [customOptions, setCustomOptions] = useLocalStorage("itbudget_options_v2", {
@@ -7323,6 +7497,12 @@ useEffect(() => {
   const [filterOutsideBudget, setFilterOutsideBudget] = useState(false);
   const [fyList, setFyList] = useState<string[]>([]);
 
+  useEffect(() => {
+  loadInitialItems();
+  loadItemStats();
+}, [filterFY, filterBU, filterStatus]);
+
+
 useEffect(() => {
   const loadFyList = async () => {
     try {
@@ -7346,10 +7526,17 @@ useEffect(() => {
   loadFyList();
 }, []);
 
-  const renewalCount = useMemo(() => items.filter(i => {
-    const d = getDaysUntil(i.planMonth);
-    return d !== null && d >= 0 && d <= 30 && i.status !== "Completed" && i.status !== "Cancel";
-  }).length, [items]);
+const renewalCount = items.filter(item => {
+  const daysUntil = getDaysUntil(item.planMonth);
+  return (
+    daysUntil !== null &&
+    daysUntil >= 0 &&
+    daysUntil <= 30 &&
+    item.status !== "Completed" &&
+    item.status !== "Cancel" &&
+    item.status !== "Cancelled"
+  );
+}).length;
 
   const filteredItems = useMemo(() => {
     return items.filter(i =>
@@ -7655,7 +7842,9 @@ if (itemsLoading) {
               {renewalCount > 0 && (
                 <div onClick={() => setTab("renewals")} style={{ background:"rgba(220,38,38,0.12)", border:"1px solid rgba(220,38,38,0.4)", borderRadius:10, padding:"7px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:6, backdropFilter:"blur(8px)" }}>
                   <span style={{ fontSize:14 }}>🔔</span>
-                  <span style={{ color:"#FCA5A5", fontWeight:700, fontSize:12, letterSpacing:"0.02em" }}>{renewalCount} renewals due</span>
+                  <span style={{ color:"#FCA5A5", fontWeight:700, fontSize:12, letterSpacing:"0.02em" }}>
+  {renewalCount} renewals due
+</span>
                 </div>
               )}
               {canImport && (
@@ -7825,7 +8014,18 @@ if (itemsLoading) {
   groupBy={cmpGroupBy} setGroupBy={setCmpGroupBy}
   mode={cmpMode} setMode={setCmpMode}
 />}
-        {tab === "reports" && <Reports items={items} fyOptions={globalFyOptions} initGroupBy={rptGroupBy} initFilterFY={rptFilterFY} onGroupByChange={setRptGroupBy} onFilterFYChange={setRptFilterFY} />}
+        {tab === "reports" && (
+  <Reports
+    items={items}
+    fyOptions={globalFyOptions}
+    initGroupBy={rptGroupBy}
+    initFilterFY={rptFilterFY}
+    onGroupByChange={setRptGroupBy}
+    onFilterFYChange={setRptFilterFY}
+    summary={appSummary}
+    summaryLoading={appSummaryLoading}
+  />
+)}
         {tab === "renewals" && (
           <div>
             <h2 style={{ color:"#f1f5f9", marginBottom:16, fontSize:18, fontWeight:800 }}>🔔 Renewal Alerts</h2>

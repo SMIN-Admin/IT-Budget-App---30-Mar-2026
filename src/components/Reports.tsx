@@ -144,7 +144,16 @@ function ReportRow({ label, budget, actual, savings, items }) {
 }
 
 
-function Reports({ items, fyOptions, initGroupBy, initFilterFY, onGroupByChange, onFilterFYChange }) {
+function Reports({
+  items,
+  fyOptions,
+  initGroupBy,
+  initFilterFY,
+  onGroupByChange,
+  onFilterFYChange,
+  summary,
+  summaryLoading,
+}) {
   const [groupBy,  setGroupByState]  = useState(initGroupBy  || "businessUnit");
   const [filterFY, setFilterFYState] = useState(initFilterFY || "all");
   const setGroupBy  = (v) => { setGroupByState(v);  onGroupByChange  && onGroupByChange(v); };
@@ -162,29 +171,71 @@ function Reports({ items, fyOptions, initGroupBy, initFilterFY, onGroupByChange,
   }, [items, filterFY]);
 
   const grouped = useMemo(() => {
-    const map = {};
-    filteredItems.forEach(item => {
-      const key = item[groupBy] || "Unknown";
-      if (!map[key]) map[key] = { label: key, items: 0, budget: 0, actual: 0 };
-      map[key].items++;
-      const isActual = item.actual != null && item.actual > 0;
-      if (reportType === "cashflow") {
-        map[key].budget += parseFloat(item.budget) || 0;
-        if (isActual) map[key].actual += item.actual;
-      } else {
-        // P&L mode: sum monthly P&L
-        const pnl = calcPnLMonths(item);
-        const pnlTotal = Object.values(pnl).reduce((a, b) => a + b, 0);
-        map[key].budget += pnlTotal;
-        if (isActual) {
-          const actualItem = { ...item, budget: item.actual };
-          const actualPnl = calcPnLMonths(actualItem);
-          map[key].actual += Object.values(actualPnl).reduce((a, b) => a + b, 0);
-        }
+    const canUseCashflowSummary =
+    summary &&
+    filterFY === "all" &&
+    groupBy === "businessUnit" &&
+    reportType === "cashflow" &&
+    Array.isArray(summary?.home?.buData);
+
+  if (canUseCashflowSummary) {
+    return summary.home.buData.map((row: any) => ({
+      label: row.bu || "Unknown",
+      items: 0,
+      budget: Number(row.budget) || 0,
+      actual: Number(row.actual) || 0,
+    }));
+  }
+
+  const canUsePnLSummary =
+    summary &&
+    filterFY === "all" &&
+    groupBy === "businessUnit" &&
+    reportType === "pnl" &&
+    Array.isArray(summary?.pnl?.pnlByBU);
+
+  if (canUsePnLSummary) {
+    return summary.pnl.pnlByBU.map((row: any) => ({
+      label: row.name || "Unknown",
+      items: Number(row.count) || 0,
+      budget: Number(row.budget) || 0,
+      actual: Number(row.actual) || 0,
+    }));
+  }
+
+  const map: Record<string, { label: string; items: number; budget: number; actual: number }> = {};
+
+  filteredItems.forEach((item: any) => {
+    const key = item[groupBy] || "Unknown";
+    if (!map[key]) map[key] = { label: key, items: 0, budget: 0, actual: 0 };
+    map[key].items++;
+
+    const isActual = item.actual != null && item.actual > 0;
+
+    if (reportType === "cashflow") {
+      map[key].budget += parseFloat(item.budget) || 0;
+      if (isActual) map[key].actual += item.actual;
+    } else {
+      const pnl = calcPnLMonths(item);
+      const budgetTotal = Object.values(pnl).reduce((s: number, v: any) => s + Number(v || 0), 0);
+      map[key].budget += budgetTotal;
+
+      if (isActual) {
+        const actualPnl = calcPnLMonths({ ...item, budget: item.actual });
+        const actualTotal = Object.values(actualPnl).reduce((s: number, v: any) => s + Number(v || 0), 0);
+        map[key].actual += actualTotal;
       }
-    });
-    return Object.values(map).map(d => ({ ...d, budget: Math.round(d.budget), actual: Math.round(d.actual), savings: Math.round(d.budget - d.actual) })).sort((a, b) => b.budget - a.budget);
-  }, [filteredItems, groupBy, reportType]);
+    }
+  });
+
+  return Object.values(map)
+    .map((r) => ({
+      ...r,
+      budget: Math.round(r.budget),
+      actual: Math.round(r.actual),
+    }))
+    .sort((a, b) => b.budget - a.budget);
+}, [filteredItems, groupBy, reportType, filterFY, summary]);
 
   // Top drivers
   const topDrivers = useMemo(() => {
