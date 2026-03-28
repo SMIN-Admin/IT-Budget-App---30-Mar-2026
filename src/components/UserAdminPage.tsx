@@ -356,6 +356,57 @@ export default function UserAdminPage({
             </div>
           )}
         </section>
+                <section
+          style={{
+            background: "#0F1B2B",
+            borderRadius: 16,
+            padding: 20,
+            border: "1px solid rgba(255,255,255,0.06)",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+          }}
+        >
+          <h2 style={{ marginTop: 0, marginBottom: 16 }}>System Tools</h2>
+
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch("/api/admin/rebuild-core-summaries", {
+                    method: "POST",
+                  });
+
+                  const data = await res.json();
+
+                  if (!res.ok) {
+                    alert(data?.error || "Failed to rebuild summaries");
+                    return;
+                  }
+
+                  alert(
+                    `Success: ${data?.message || "Core summaries rebuilt successfully"}`
+                  );
+                } catch (error: any) {
+                  alert(error?.message || "Failed to rebuild summaries");
+                }
+              }}
+              style={{
+                padding: "10px 16px",
+                borderRadius: 10,
+                border: "1px solid rgba(94,234,212,0.35)",
+                background: "linear-gradient(135deg,#1a3a2a,#0f2a1a)",
+                color: "#5EEAD4",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Rebuild Summaries (Test)
+            </button>
+          </div>
+
+          <p style={{ margin: "12px 0 0 0", color: "#8AA0B7", fontSize: 13 }}>
+            Use this to manually rebuild core summary and app option documents.
+          </p>
+        </section>
       </div>
     </main>
   );

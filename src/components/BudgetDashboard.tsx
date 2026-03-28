@@ -1517,110 +1517,48 @@ useEffect(() => {
   }, [items, selectedFYs, selectedBUs, selectedPayingBUs]);
 
   // ── KPIs ──
-const totalBudget =
-  (summary?.expData || []).reduce((sum, x) => sum + (Number(x?.value) || 0), 0);
-
-const totalActual =
-  (summary?.buData || []).reduce((sum, x) => sum + (Number(x?.actual) || 0), 0);
-
+const totalBudget = summary?.totals?.totalBudget || 0;
+const totalActual = summary?.totals?.totalActual || 0;
 const totalSavings = Math.round(totalBudget - totalActual);
 const utilPct = totalBudget > 0 ? Math.round((totalActual / totalBudget) * 100) : 0;
 const variance = Math.round(totalBudget - totalActual);
 
-const completed =
-  summary?.statusData?.find((x: any) => x.name === "Completed")?.value || 0;
-
-const pending =
-  summary?.statusData?.find((x: any) => x.name === "Pending")?.value || 0;
-
-const cancelled =
-  summary?.statusData?.find((x: any) => x.name === "Cancelled")?.value || 0;
+const completed = summary?.totals?.completed || 0;
+const pending = summary?.totals?.pending || 0;
+const cancelled = summary?.totals?.cancelled || 0;
 
 const outOfBudget = dashboardStats?.outOfBudget || 0;
 const movedToHalf = dashboardStats?.movedToHalf || 0;
 const totalItems = dashboardStats?.totalCount || 0;
 
-const capexTotal =
-  summary?.expData?.find((x: any) => x.name === "Capex")?.value || 0;
-
-const opexTotal =
-  summary?.expData?.find((x: any) => x.name === "Opex")?.value || 0;
+const capexTotal = summary?.totals?.capexTotal || 0;
+const opexTotal = summary?.totals?.opexTotal || 0;
 
 const capexPct = totalBudget > 0 ? Math.round((capexTotal / totalBudget) * 100) : 0;
 
-const upcomingRenewals = summary?.upcomingRenewals || 0;
-const overdueItems = summary?.overdueItems || 0;
+const upcomingRenewals = summary?.totals?.upcomingRenewals || 0;
+const overdueItems = summary?.totals?.overdueItems || 0;
+
+const budgetHealthScore = summary?.home?.budgetHealthScore || 0;
+const completionRate = summary?.home?.completionRate || 0;
+const budgetAccuracy = summary?.home?.budgetAccuracy || 0;
+const actualsCoverage = summary?.home?.actualsCoverage || 0;
 
   // ── Chart data ──
-  const buData = summary?.buData || [];
+  const buData = summary?.home?.buData || [];
+const catData = summary?.home?.catData || [];
+const expData = summary?.home?.expData || [];
+const monthlyTrend = summary?.pnl?.monthlyPnLTrend || [];
 
-  const catData = summary?.catData || [];
+  const payingBUData = summary?.home?.payingBUData || [];
 
-  const expData = summary?.expData || [];
+  const statusData = summary?.home?.statusData || [];
 
-  const monthlyTrend = useMemo(() => {
-    const map = {};
-    filtered.forEach(item => {
-      const pnl = calcPnLMonths(item);
-      Object.entries(pnl).forEach(([k,v]) => { if(!map[k]) map[k]={month:k,budget:0,actual:0}; map[k].budget+=v; });
-      if (item.actual != null && item.actual > 0) {
-        const actualPnl = calcPnLMonths({...item, budget:item.actual});
-        Object.entries(actualPnl).forEach(([k,v]) => { if(!map[k]) map[k]={month:k,budget:0,actual:0}; map[k].actual+=v; });
-      }
-    });
-    return Object.values(map).sort((a,b) => {
-      const [ma,ya]=a.month.split("-"); const [mb,yb]=b.month.split("-");
-      return parseInt("20"+ya)*12+MONTHS.indexOf(ma)-(parseInt("20"+yb)*12+MONTHS.indexOf(mb));
-    }).map(d=>({...d,budget:Math.round(d.budget),actual:Math.round(d.actual)}));
-  }, [filtered]);
-
-  const payingBUData = useMemo(() => {
-    const map = {};
-    filtered.forEach(i => {
-      if (!map[i.payingBU]) map[i.payingBU] = { name:i.payingBU||"Unknown", budget:0, actual:0 };
-      map[i.payingBU].budget += parseFloat(i.budget)||0;
-      if (i.actual!=null) map[i.payingBU].actual += i.actual;
-    });
-    return Object.values(map).map(d=>({...d,budget:Math.round(d.budget),actual:Math.round(d.actual)})).sort((a,b)=>b.budget-a.budget);
-  }, [filtered]);
-
-  const statusData = summary?.statusData || [];
-
-  const itemTypeData = useMemo(() => {
-    const map = {};
-    filtered.forEach(i => {
-      const t = i.itemType||"Unknown";
-      if (!map[t]) map[t]={name:t,budget:0,actual:0,count:0};
-      map[t].budget += parseFloat(i.budget)||0;
-      if (i.actual!=null) map[t].actual += i.actual;
-      map[t].count++;
-    });
-    return Object.values(map).map(d=>({...d,budget:Math.round(d.budget),actual:Math.round(d.actual)}));
-  }, [filtered]);
+  const itemTypeData = summary?.home?.itemTypeData || [];
 
   // Top categories based on Actuals or Budget
   // Rule: if actual has any value → use actual; if actual is blank AND status is blank → use budget
-  const topCategories = useMemo(() => {
-    const map = {};
-    filtered.forEach(i => {
-      const cat = i.itemCategory || "Unknown";
-      if (!map[cat]) map[cat] = { name: cat, value: 0, hasActual: false };
-      const hasActual = i.actual != null && i.actual > 0;
-      const statusBlank = !i.status || i.status === "";
-      if (hasActual) {
-        map[cat].value += i.actual;
-        map[cat].hasActual = true;
-      } else if (statusBlank) {
-        map[cat].value += parseFloat(i.budget) || 0;
-      }
-      // if actual is blank but status is NOT blank → excluded (neither budget nor actual counted)
-    });
-    return Object.values(map)
-      .map(d => ({ ...d, value: Math.round(d.value) }))
-      .filter(d => d.value > 0)
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 7);
-  }, [filtered]);
+  const topCategories = summary?.home?.topCategories || [];
 
   const filterLabel = selectedFYs.includes("all") ? "All Years" : selectedFYs.join(", ");
 
@@ -1755,15 +1693,15 @@ const overdueItems = summary?.overdueItems || 0;
           </div>
         </div>
 
-        {/* Budget Health Score */}
+                {/* Budget Health Score */}
         <div style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:18, border:"1px solid #21354744" }}>
           <div style={{ color:"#f1f5f9", fontWeight:700, fontSize:14, marginBottom:12 }}>🏥 Budget Health Score</div>
+
           {(() => {
-            const completedPct = filtered.length > 0 ? Math.round((completed/filtered.length)*100) : 0;
-            const actualsFilledPct = filtered.length > 0 ? Math.round((filtered.filter(i=>i.actual!=null).length/filtered.length)*100) : 0;
-            const score = Math.round((completedPct * 0.4) + (Math.max(0,100-Math.abs(100-utilPct)) * 0.4) + (actualsFilledPct * 0.2));
+            const score = budgetHealthScore;
             const color = score >= 75 ? "#4ade80" : score >= 50 ? "#f59e0b" : "#f87171";
             const label = score >= 75 ? "Healthy" : score >= 50 ? "Moderate" : "Needs Attention";
+
             return (
               <div>
                 <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
@@ -1773,26 +1711,34 @@ const overdueItems = summary?.overdueItems || 0;
                     <div style={{ color:"#88A0B8", fontSize:11 }}>out of 100</div>
                   </div>
                 </div>
+
                 <div
-  style={{
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 6,
-    alignItems: "center",
-  }}
->
+                  style={{
+                    display:"flex",
+                    flexWrap:"wrap",
+                    gap:6,
+                    alignItems:"center",
+                  }}
+                >
                   {[
-                    {label:"Completion rate", val:completedPct},
-                    {label:"Budget accuracy", val:Math.max(0,100-Math.abs(100-utilPct))},
-                    {label:"Actuals coverage", val:actualsFilledPct},
-                  ].map(m => (
+                    { label:"Completion rate", val: completionRate },
+                    { label:"Budget accuracy", val: budgetAccuracy },
+                    { label:"Actuals coverage", val: actualsCoverage },
+                  ].map((m) => (
                     <div key={m.label}>
                       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:2 }}>
                         <span style={{ color:"#88A0B8", fontSize:10 }}>{m.label}</span>
                         <span style={{ color:"#f1f5f9", fontSize:10, fontWeight:700 }}>{m.val}%</span>
                       </div>
                       <div style={{ background:"#213547", borderRadius:4, height:5 }}>
-                        <div style={{ width:`${m.val}%`, background:m.val>=75?"#4ade80":m.val>=50?"#f59e0b":"#f87171", height:"100%", borderRadius:4 }} />
+                        <div
+                          style={{
+                            width:`${m.val}%`,
+                            background:m.val >= 75 ? "#4ade80" : m.val >= 50 ? "#f59e0b" : "#f87171",
+                            height:"100%",
+                            borderRadius:4
+                          }}
+                        />
                       </div>
                     </div>
                   ))}

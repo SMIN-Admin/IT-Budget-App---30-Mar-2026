@@ -2,26 +2,6 @@ import { NextResponse } from "next/server";
 import { adminDb } from "../../../../src/lib/firebase-admin";
 import { getCurrentUser } from "../../../../src/lib/auth";
 
-function getDaysUntil(planMonth: string) {
-  const value = String(planMonth || "").trim();
-  const match = value.match(/^([A-Za-z]{3})-(\d{2})$/);
-  if (!match) return null;
-
-  const monthMap: Record<string, number> = {
-    jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
-    jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
-  };
-
-  const m = monthMap[match[1].toLowerCase()];
-  if (m === undefined) return null;
-
-  const y = 2000 + Number(match[2]);
-  const target = new Date(y, m, 1);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), 1);
-  return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30));
-}
-
 export async function GET(req: Request) {
   try {
     const user = await getCurrentUser();
@@ -32,10 +12,40 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
 
-    const fy = String(searchParams.get("fy") || "").trim();
-    const businessUnit = String(searchParams.get("businessUnit") || "").trim();
-    const payingBU = String(searchParams.get("payingBU") || "").trim();
+    const fy = String(searchParams.get("fy") || "all").trim();
+    const businessUnit = String(searchParams.get("businessUnit") || "all").trim();
+    const payingBU = String(searchParams.get("payingBU") || "all").trim();
 
+    // For now:
+    // - if all filters are all => use global summary
+    // - if only FY is selected => use FY summary
+    // - if BU / Paying BU filter is used => fallback to live query (temporary until filtered summaries are built)
+
+    const needsLiveFallback =
+      (businessUnit && businessUnit !== "all") ||
+      (payingBU && payingBU !== "all");
+
+    if (!needsLiveFallback) {
+      const summaryDocId = fy && fy !== "all" ? `fy_${fy}` : "global";
+      const summarySnap = await adminDb.collection("budgetSummaries").doc(summaryDocId).get();
+
+      if (!summarySnap.exists) {
+        return NextResponse.json(
+          { error: `Summary not found for ${summaryDocId}. Please run Rebuild Summaries.` },
+          { status: 404 }
+        );
+      }
+
+      const summary = summarySnap.data() || {};
+
+      return NextResponse.json({
+  totals: summary.totals || {},
+  home: summary.home || {},
+  pnl: summary.pnl || {},
+});
+    }
+
+    // Temporary fallback for BU / Paying BU filtered dashboard view
     let query: FirebaseFirestore.Query = adminDb.collection("budgetItems");
 
     if (fy && fy !== "all") {
@@ -55,24 +65,37 @@ export async function GET(req: Request) {
 
     const buMap: Record<string, { bu: string; budget: number; actual: number }> = {};
     const catMap: Record<string, { name: string; value: number }> = {};
-    const statusMap: Record<string, number> = {
+    const expMap: Record<string, { name: string; value: number }> = {};
+    const payingBUMap: Record<string, { name: string; budget: number; actual: number }> = {};
+    const itemTypeMap: Record<string, { name: string; budget: number; actual: number; count: number }> = {};
+    const statusCountMap: Record<string, number> = {
       Completed: 0,
       Pending: 0,
       Cancelled: 0,
     };
 
-    let capexBudget = 0;
-    let opexBudget = 0;
-    let upcomingRenewals = 0;
-    let overdueItems = 0;
+    let totalBudget = 0;
+    let totalActual = 0;
+    let completed = 0;
+    let pending = 0;
+    let cancelled = 0;
+    let movedToHalf = 0;
+    let outOfBudget = 0;
+    let capexTotal = 0;
+    let opexTotal = 0;
 
     for (const i of items) {
       const budget = Number(i.budget || 0);
-      const actual = Number(i.actual || 0);
+      const actual = i.actual != null ? Number(i.actual || 0) : 0;
       const bu = String(i.businessUnit || "").trim() || "Unknown";
       const cat = String(i.itemCategory || "").trim() || "Unknown";
-      const exp = String(i.expenseType || "").trim().toLowerCase();
+      const paying = String(i.payingBU || "").trim() || "Unknown";
+      const itemType = String(i.itemType || "").trim() || "Unknown";
+      const exp = String(i.expenseType || "").trim() || "Unknown";
       const status = String(i.status || "").trim();
+
+      totalBudget += budget;
+      totalActual += actual;
 
       if (!buMap[bu]) buMap[bu] = { bu, budget: 0, actual: 0 };
       buMap[bu].budget += budget;
@@ -81,56 +104,121 @@ export async function GET(req: Request) {
       if (!catMap[cat]) catMap[cat] = { name: cat, value: 0 };
       catMap[cat].value += budget;
 
-      if (exp === "capex") capexBudget += budget;
-      if (exp === "opex") opexBudget += budget;
+      if (!expMap[exp]) expMap[exp] = { name: exp, value: 0 };
+      expMap[exp].value += budget;
 
-      if (status === "Completed") statusMap.Completed += 1;
-      else if (!status || status === "Pending") statusMap.Pending += 1;
-      else if (status === "Cancelled" || status === "Cancel") statusMap.Cancelled += 1;
+      if (!payingBUMap[paying]) payingBUMap[paying] = { name: paying, budget: 0, actual: 0 };
+      payingBUMap[paying].budget += budget;
+      payingBUMap[paying].actual += actual;
 
-      const d = getDaysUntil(i.planMonth);
-      if (d !== null && d >= 0 && d <= 30 && status !== "Completed" && status !== "Cancel" && status !== "Cancelled") {
-        upcomingRenewals += 1;
+      if (!itemTypeMap[itemType]) itemTypeMap[itemType] = { name: itemType, budget: 0, actual: 0, count: 0 };
+      itemTypeMap[itemType].budget += budget;
+      itemTypeMap[itemType].actual += actual;
+      itemTypeMap[itemType].count += 1;
+
+      if (exp.toLowerCase() === "capex") capexTotal += budget;
+      if (exp.toLowerCase() === "opex") opexTotal += budget;
+
+      if (status === "Completed") {
+        completed += 1;
+        statusCountMap.Completed += 1;
+      } else if (status === "Cancel" || status === "Cancelled") {
+        cancelled += 1;
+        statusCountMap.Cancelled += 1;
+      } else {
+        pending += 1;
+        statusCountMap.Pending += 1;
       }
-      if (d !== null && d < 0 && (i.actual == null || Number(i.actual) <= 0) && status !== "Completed" && status !== "Cancel" && status !== "Cancelled") {
-        overdueItems += 1;
+
+      if (status === "Move to another half") {
+        movedToHalf += 1;
+      }
+
+      if (i.outsideBudget) {
+        outOfBudget += 1;
       }
     }
 
-    const buData = Object.values(buMap)
+    const utilPct = totalBudget > 0 ? Math.round((totalActual / totalBudget) * 100) : 0;
+    const variance = Math.round(totalBudget - totalActual);
+    const totalSavings = Math.round(totalBudget - totalActual);
+
+    const summaryLikeResponse = {
+  totals: {
+    totalBudget: Math.round(totalBudget),
+    totalActual: Math.round(totalActual),
+    totalSavings,
+    utilPct,
+    variance,
+    completed,
+    pending,
+    cancelled,
+    movedToHalf,
+    outOfBudget,
+    capexTotal: Math.round(capexTotal),
+    opexTotal: Math.round(opexTotal),
+    upcomingRenewals: 0,
+    overdueItems: 0,
+  },
+  home: {
+    buData: Object.values(buMap)
       .map((d) => ({
         bu: d.bu,
         budget: Math.round(d.budget),
         actual: Math.round(d.actual),
       }))
-      .sort((a, b) => b.budget - a.budget);
+      .sort((a, b) => b.budget - a.budget),
 
-    const catData = Object.values(catMap)
+    catData: Object.values(catMap)
       .map((d) => ({
         name: d.name,
         value: Math.round(d.value),
       }))
-      .sort((a, b) => b.value - a.value);
+      .sort((a, b) => b.value - a.value),
 
-    const expData = [
-      { name: "Capex", value: Math.round(capexBudget) },
-      { name: "Opex", value: Math.round(opexBudget) },
-    ];
+    expData: Object.values(expMap)
+      .map((d) => ({
+        name: d.name,
+        value: Math.round(d.value),
+      }))
+      .sort((a, b) => b.value - a.value),
 
-    const statusData = [
-      { name: "Completed", value: statusMap.Completed },
-      { name: "Pending", value: statusMap.Pending },
-      { name: "Cancelled", value: statusMap.Cancelled },
-    ];
+    payingBUData: Object.values(payingBUMap)
+      .map((d) => ({
+        name: d.name,
+        budget: Math.round(d.budget),
+        actual: Math.round(d.actual),
+      }))
+      .sort((a, b) => b.budget - a.budget),
 
-    return NextResponse.json({
-      buData,
-      catData,
-      expData,
-      statusData,
-      upcomingRenewals,
-      overdueItems,
-    });
+    statusData: [
+      { name: "Completed", value: statusCountMap.Completed },
+      { name: "Pending", value: statusCountMap.Pending },
+      { name: "Cancelled", value: statusCountMap.Cancelled },
+    ],
+
+    itemTypeData: Object.values(itemTypeMap)
+      .map((d) => ({
+        name: d.name,
+        budget: Math.round(d.budget),
+        actual: Math.round(d.actual),
+        count: d.count,
+      }))
+      .sort((a, b) => b.budget - a.budget),
+
+    monthlyTrend: [],
+    topCategories: [],
+    budgetHealthScore: 0,
+    completionRate: 0,
+    budgetAccuracy: 0,
+    actualsCoverage: 0,
+  },
+  pnl: {
+    monthlyPnLTrend: [],
+  },
+};
+
+    return NextResponse.json(summaryLikeResponse);
   } catch (error: any) {
     console.error("GET dashboard-summary error:", error);
     return NextResponse.json(
