@@ -63,7 +63,7 @@ export async function GET(req: Request) {
     const snapshot = await query.get();
     const items = snapshot.docs.map((doc) => doc.data() as any);
 
-    const buMap: Record<string, { bu: string; budget: number; actual: number }> = {};
+    const buMap: Record<string, { bu: string; budget: number; actual: number; count: number }> = {};
     const catMap: Record<string, { name: string; value: number }> = {};
     const expMap: Record<string, { name: string; value: number }> = {};
     const payingBUMap: Record<string, { name: string; budget: number; actual: number }> = {};
@@ -97,9 +97,10 @@ export async function GET(req: Request) {
       totalBudget += budget;
       totalActual += actual;
 
-      if (!buMap[bu]) buMap[bu] = { bu, budget: 0, actual: 0 };
-      buMap[bu].budget += budget;
-      buMap[bu].actual += actual;
+      if (!buMap[bu]) buMap[bu] = { bu, budget: 0, actual: 0, count: 0 };
+buMap[bu].budget += budget;
+buMap[bu].actual += actual;
+buMap[bu].count += 1;
 
       if (!catMap[cat]) catMap[cat] = { name: cat, value: 0 };
       catMap[cat].value += budget;
@@ -162,12 +163,13 @@ export async function GET(req: Request) {
   },
   home: {
     buData: Object.values(buMap)
-      .map((d) => ({
-        bu: d.bu,
-        budget: Math.round(d.budget),
-        actual: Math.round(d.actual),
-      }))
-      .sort((a, b) => b.budget - a.budget),
+  .map((d) => ({
+    bu: d.bu,
+    budget: Math.round(d.budget),
+    actual: Math.round(d.actual),
+    count: d.count,
+  }))
+  .sort((a, b) => b.budget - a.budget),
 
     catData: Object.values(catMap)
       .map((d) => ({

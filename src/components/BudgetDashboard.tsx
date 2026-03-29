@@ -7912,23 +7912,67 @@ loadAppSummary();
 
   // ── Drill-down handler: called from Dashboard / Comparison links ──
   const handleDrillDown = useCallback((filters) => {
-    const fromTab = filters.fromTab || null;
-    if (filters.tab) setTab(filters.tab);
-    if (filters.bu)             setFilterBU(filters.bu);
-    if (filters.fy)             setFilterFY(filters.fy);
-    if (filters.status)         setFilterStatus(filters.status);
-    if (filters.search)         setSearchTerm(filters.search);
-    if (filters.outsideBudget)  setFilterOutsideBudget(true);
-    else                        setFilterOutsideBudget(false);
-    // Reports-specific drill: pass groupBy and fy to Reports page
-    if (filters.tab === "reports") {
-      if (filters.groupBy) setRptGroupBy(filters.groupBy);
-      if (filters.fy)      setRptFilterFY(filters.fy);
-    }
-    // Set back-navigation only when drilled from comparison/dashboard (not direct tab click)
-    if (fromTab) setDrillBackTab(fromTab);
-    else setDrillBackTab(null);
-  }, []);
+  const fromTab = filters?.fromTab || null;
+
+  // Resolve aliases from different pages
+  const targetTab =
+    filters?.tab || null;
+
+  const bu =
+    filters?.businessUnit ||
+    filters?.bu ||
+    null;
+
+  const fy =
+    filters?.fy || null;
+
+  const status =
+    filters?.status || null;
+
+  const search =
+    filters?.search ||
+    filters?.description ||
+    null;
+
+  const payingBU =
+    filters?.payingBU || null;
+
+  const outsideBudget =
+    filters?.outsideBudget || false;
+
+  const reportsGroupBy =
+    filters?.groupBy || null;
+
+  const reportsFY =
+    filters?.fy || null;
+
+  // Navigate to target tab if provided
+  if (targetTab) setTab(targetTab);
+
+  // Budget page filters
+  if (bu) setFilterBU(bu);
+  if (fy) setFilterFY(fy);
+  if (status) setFilterStatus(status);
+  if (search) setSearchTerm(search);
+
+  // Optional extra filters if you already have these states in your file
+  if (payingBU && typeof setFilterPayingBU === "function") {
+    setFilterPayingBU(payingBU);
+  }
+
+  if (outsideBudget) setFilterOutsideBudget(true);
+  else setFilterOutsideBudget(false);
+
+  // Reports page drill state
+  if (targetTab === "reports") {
+    if (reportsGroupBy) setRptGroupBy(reportsGroupBy);
+    if (reportsFY) setRptFilterFY(reportsFY);
+  }
+
+  // Back navigation support
+  if (fromTab) setDrillBackTab(fromTab);
+  else setDrillBackTab(null);
+}, []);
 
   // When user directly clicks a tab, clear drill-back and reset budget filters
   const handleTabClick = useCallback((tabId) => {
@@ -8480,15 +8524,14 @@ if (itemsLoading) {
 />}
         {tab === "reports" && (
   <Reports
-    items={items}
-    fyOptions={globalFyOptions}
-    initGroupBy={rptGroupBy}
-    initFilterFY={rptFilterFY}
-    onGroupByChange={setRptGroupBy}
-    onFilterFYChange={setRptFilterFY}
-    summary={appSummary}
-    summaryLoading={appSummaryLoading}
-  />
+  items={items}
+  fyOptions={globalFyOptions}
+  initGroupBy={rptGroupBy}
+  initFilterFY={rptFilterFY}
+  onGroupByChange={setRptGroupBy}
+  onFilterFYChange={setRptFilterFY}
+  onDrillDown={handleDrillDown}
+/>
 )}
         {tab === "renewals" && (
           <div>
