@@ -1950,10 +1950,22 @@ function DrillLink({ label, onClick }) {
   );
 }
 
-function ComparisonPage({ items, fyOptions, onDrillDown, periodA, setPeriodA, periodB, setPeriodB, groupBy, setGroupBy, mode, setMode }) {
-
+function ComparisonPage({
+  items,
+  fyOptions,
+  onDrillDown,
+  periodA,
+  setPeriodA,
+  periodB,
+  setPeriodB,
+  groupBy,
+  setGroupBy,
+  mode,
+  setMode
+}) {
   const fyList = Array.isArray(fyOptions) ? fyOptions : [];
-    const [comparisonAllItems, setComparisonAllItems] = useState([]);
+
+  const [comparisonAllItems, setComparisonAllItems] = useState([]);
   const [comparisonLoading, setComparisonLoading] = useState(false);
   const [comparisonError, setComparisonError] = useState("");
 
@@ -2027,296 +2039,685 @@ function ComparisonPage({ items, fyOptions, onDrillDown, periodA, setPeriodA, pe
     };
 
     loadComparisonItems();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, [periodA, periodB, fetchAllComparisonItems, items]);
 
-  const itemsA = useMemo(
-    () => (periodA ? comparisonAllItems.filter(i => normalizeFY(i) === periodA) : []),
-    [comparisonAllItems, periodA, normalizeFY]
-  );
+  const sourceItems = comparisonAllItems.length > 0 ? comparisonAllItems : items;
 
-  const itemsB = useMemo(
-    () => (periodB ? comparisonAllItems.filter(i => normalizeFY(i) === periodB) : []),
-    [comparisonAllItems, periodB, normalizeFY]
-  );
+  const itemsA = useMemo(() => {
+    return periodA ? sourceItems.filter((i) => normalizeFY(i) === periodA) : [];
+  }, [sourceItems, periodA, normalizeFY]);
+
+  const itemsB = useMemo(() => {
+    return periodB ? sourceItems.filter((i) => normalizeFY(i) === periodB) : [];
+  }, [sourceItems, periodB, normalizeFY]);
 
   const valueKey = mode === "pnl" ? "pnl" : "budget";
+  const ready = periodA && periodB && periodA !== periodB;
+  const drill = onDrillDown || (() => {});
+  const colA = "#5EEAD4";
+  const colB = "#f59e0b";
 
   const chartData = useMemo(() => {
     const aData = aggregateBy(itemsA, groupBy, mode);
     const bData = aggregateBy(itemsB, groupBy, mode);
-    const labels = [...new Set([...aData.map(d => d.label), ...bData.map(d => d.label)])].sort();
 
-    return labels.map(label => {
-      const a = aData.find(d => d.label === label);
-      const b = bData.find(d => d.label === label);
-      const aVal = a ? a[valueKey] : 0;
-      const bVal = b ? b[valueKey] : 0;
-      const change = aVal > 0 ? Math.round(((bVal - aVal) / aVal) * 100) : null;
-      return { label, [periodA || "A"]: aVal, [periodB || "B"]: bVal, change };
-    }).sort((x, y) => (y[periodB || "B"] || 0) - (x[periodB || "B"] || 0));
+    const labels = [
+      ...new Set([
+        ...aData.map((d) => d.label),
+        ...bData.map((d) => d.label),
+      ]),
+    ].sort();
+
+    return labels
+      .map((label) => {
+        const a = aData.find((d) => d.label === label);
+        const b = bData.find((d) => d.label === label);
+
+        const aVal = a ? a[valueKey] : 0;
+        const bVal = b ? b[valueKey] : 0;
+        const change = aVal > 0 ? Math.round(((bVal - aVal) / aVal) * 100) : null;
+
+        return {
+          label,
+          [periodA || "A"]: aVal,
+          [periodB || "B"]: bVal,
+          change,
+        };
+      })
+      .sort((x, y) => (y[periodB || "B"] || 0) - (x[periodB || "B"] || 0));
   }, [itemsA, itemsB, groupBy, mode, periodA, periodB, valueKey]);
 
-  const kpi = (arr, m) => {
-    const pnlTotal = (item) => Object.values(calcPnLMonths(item)).reduce((s, v) => s + v, 0);
-    const capexItems = arr.filter(i => i.expenseType === "Capex");
-    const opexItems  = arr.filter(i => i.expenseType === "Opex");
-    return {
-      budget:    m === "pnl" ? Math.round(arr.reduce((s, i) => s + pnlTotal(i), 0))        : Math.round(arr.reduce((s, i) => s + (parseFloat(i.budget) || 0), 0)),
-      actual:    Math.round(arr.filter(i => i.actual != null).reduce((s, i) => s + i.actual, 0)),
-      items:     arr.length,
-      completed: arr.filter(i => i.status === "Completed").length,
-      capex:     m === "pnl" ? Math.round(capexItems.reduce((s, i) => s + pnlTotal(i), 0)) : Math.round(capexItems.reduce((s, i) => s + (parseFloat(i.budget) || 0), 0)),
-      opex:      m === "pnl" ? Math.round(opexItems.reduce((s, i) => s + pnlTotal(i), 0))  : Math.round(opexItems.reduce((s, i) => s + (parseFloat(i.budget) || 0), 0)),
-    };
-  };
+  const kpi = useCallback((arr, currentMode) => {
+    const pnlTotal = (item) =>
+      Object.values(calcPnLMonths(item)).reduce((s, v) => s + v, 0);
 
-  const kpiA = useMemo(() => kpi(itemsA, mode), [itemsA, mode]);
-  const kpiB = useMemo(() => kpi(itemsB, mode), [itemsB, mode]);
+    const capexItems = arr.filter((i) => i.expenseType === "Capex");
+    const opexItems = arr.filter((i) => i.expenseType === "Opex");
+
+    return {
+      budget:
+        currentMode === "pnl"
+          ? Math.round(arr.reduce((s, i) => s + pnlTotal(i), 0))
+          : Math.round(arr.reduce((s, i) => s + (parseFloat(i.budget) || 0), 0)),
+      actual: Math.round(
+        arr
+          .filter((i) => i.actual != null)
+          .reduce((s, i) => s + (Number(i.actual) || 0), 0)
+      ),
+      items: arr.length,
+      completed: arr.filter((i) => i.status === "Completed").length,
+      capex:
+        currentMode === "pnl"
+          ? Math.round(capexItems.reduce((s, i) => s + pnlTotal(i), 0))
+          : Math.round(capexItems.reduce((s, i) => s + (parseFloat(i.budget) || 0), 0)),
+      opex:
+        currentMode === "pnl"
+          ? Math.round(opexItems.reduce((s, i) => s + pnlTotal(i), 0))
+          : Math.round(opexItems.reduce((s, i) => s + (parseFloat(i.budget) || 0), 0)),
+    };
+  }, []);
+
+  const kpiA = useMemo(() => kpi(itemsA, mode), [itemsA, mode, kpi]);
+  const kpiB = useMemo(() => kpi(itemsB, mode), [itemsB, mode, kpi]);
 
   const topMovers = useMemo(() => {
     if (!periodA || !periodB) return [];
 
-    const pnlTotal = (item) => Object.values(calcPnLMonths(item)).reduce((s, v) => s + v, 0);
-    const val = (item) => mode === "pnl" ? pnlTotal(item) : (parseFloat(item.budget) || 0);
-    const aMap = {}, bMap = {};
+    const pnlTotal = (item) =>
+      Object.values(calcPnLMonths(item)).reduce((s, v) => s + v, 0);
 
-    itemsA.forEach(i => { aMap[i.description] = (aMap[i.description] || 0) + val(i); });
-    itemsB.forEach(i => { bMap[i.description] = (bMap[i.description] || 0) + val(i); });
+    const val = (item) =>
+      mode === "pnl" ? pnlTotal(item) : (parseFloat(item.budget) || 0);
 
-    const all = [...new Set([...Object.keys(aMap), ...Object.keys(bMap)])];
-    return all.map(d => ({
-      desc: d,
-      a: Math.round(aMap[d] || 0),
-      b: Math.round(bMap[d] || 0),
-      delta: Math.round((bMap[d] || 0) - (aMap[d] || 0)),
-      pct: (aMap[d] || 0) > 0 ? Math.round(((bMap[d] || 0) - (aMap[d] || 0)) / (aMap[d] || 0) * 100) : null,
-    })).sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta)).slice(0, 10);
+    const aMap = {};
+    const bMap = {};
+
+    itemsA.forEach((i) => {
+      aMap[i.description] = (aMap[i.description] || 0) + val(i);
+    });
+
+    itemsB.forEach((i) => {
+      bMap[i.description] = (bMap[i.description] || 0) + val(i);
+    });
+
+    const allLabels = [...new Set([...Object.keys(aMap), ...Object.keys(bMap)])];
+
+    return allLabels
+      .map((d) => ({
+        desc: d,
+        a: Math.round(aMap[d] || 0),
+        b: Math.round(bMap[d] || 0),
+        delta: Math.round((bMap[d] || 0) - (aMap[d] || 0)),
+        pct:
+          (aMap[d] || 0) > 0
+            ? Math.round((((bMap[d] || 0) - (aMap[d] || 0)) / (aMap[d] || 0)) * 100)
+            : null,
+      }))
+      .sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta))
+      .slice(0, 10);
   }, [itemsA, itemsB, periodA, periodB, mode]);
 
   const catMixA = useMemo(() => aggregateBy(itemsA, "itemCategory", mode), [itemsA, mode]);
   const catMixB = useMemo(() => aggregateBy(itemsB, "itemCategory", mode), [itemsB, mode]);
 
-  const dd = { background:"#0F1B2B", border:"1px solid #213547", borderRadius:10, color:"#f1f5f9", padding:"8px 14px", fontSize:13, fontWeight:700, cursor:"pointer", outline:"none" };
-  const colA = "#5EEAD4", colB = "#f59e0b";
-  const ready = periodA && periodB && periodA !== periodB;
-  const drill = onDrillDown || (() => {});
+  const dd = {
+    background: "#0F1B2B",
+    border: "1px solid #213547",
+    borderRadius: 10,
+    color: "#f1f5f9",
+    padding: "8px 14px",
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: "pointer",
+    outline: "none",
+  };
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div
+        style={{
+          background: "linear-gradient(135deg,#0C1722,#0F1B2B)",
+          borderRadius: 14,
+          padding: "16px 20px",
+          border: "1px solid rgba(94,234,212,0.22)",
+          display: "flex",
+          gap: 14,
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
+        <span
+          style={{
+            color: "#a5b4fc",
+            fontWeight: 800,
+            fontSize: 14,
+            letterSpacing: "0.04em",
+          }}
+        >
+          🔀 COMPARISON
+        </span>
 
-      <div style={{
-        background:"linear-gradient(135deg,#0C1722,#0F1B2B)", borderRadius:14,
-        padding:"16px 20px", border:"1px solid rgba(94,234,212,0.22)",
-        display:"flex", gap:14, flexWrap:"wrap", alignItems:"center"
-      }}>
-        <span style={{ color:"#a5b4fc", fontWeight:800, fontSize:14, letterSpacing:"0.04em" }}>🔀 COMPARISON</span>
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <span style={{ color:"#5EEAD4", fontWeight:700, fontSize:12 }}>Period A</span>
-          <select value={periodA} onChange={e => setPeriodA(e.target.value)} style={dd}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ color: "#5EEAD4", fontWeight: 700, fontSize: 12 }}>Period A</span>
+          <select value={periodA} onChange={(e) => setPeriodA(e.target.value)} style={dd}>
             <option value="">— Select FY —</option>
-            {fyList.map(f => <option key={f} value={f}>{f}</option>)}
+            {fyList.map((f) => (
+              <option key={f} value={f}>
+                {f}
+              </option>
+            ))}
           </select>
         </div>
-        <span style={{ color:"#475569", fontWeight:900, fontSize:18 }}>vs</span>
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <span style={{ color:"#f59e0b", fontWeight:700, fontSize:12 }}>Period B</span>
-          <select value={periodB} onChange={e => setPeriodB(e.target.value)} style={dd}>
+
+        <span style={{ color: "#475569", fontWeight: 900, fontSize: 18 }}>vs</span>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ color: "#f59e0b", fontWeight: 700, fontSize: 12 }}>Period B</span>
+          <select value={periodB} onChange={(e) => setPeriodB(e.target.value)} style={dd}>
             <option value="">— Select FY —</option>
-            {fyList.map(f => <option key={f} value={f}>{f}</option>)}
+            {fyList.map((f) => (
+              <option key={f} value={f}>
+                {f}
+              </option>
+            ))}
           </select>
         </div>
-        <div style={{ display:"flex", gap:6 }}>
-          {["cashflow", "pnl"].map(m => (
-            <button key={m} onClick={() => setMode(m)} style={{
-              background: mode === m ? (m === "cashflow" ? "#1e3a5f" : "#1c1505") : "#0f172a",
-              color: mode === m ? (m === "cashflow" ? "#93c5fd" : "#fbbf24") : "#88A0B8",
-              border:`1px solid ${mode === m ? (m === "cashflow" ? "#3b82f6" : "#f59e0b") : "#213547"}`,
-              borderRadius:8, padding:"6px 12px", cursor:"pointer", fontWeight:700, fontSize:12
-            }}>{m === "cashflow" ? "💵 Cash Flow" : "📊 P&L"}</button>
+
+        <div style={{ display: "flex", gap: 6 }}>
+          {["cashflow", "pnl"].map((m) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              style={{
+                background: mode === m ? (m === "cashflow" ? "#1e3a5f" : "#1c1505") : "#0f172a",
+                color: mode === m ? (m === "cashflow" ? "#93c5fd" : "#fbbf24") : "#88A0B8",
+                border: `1px solid ${
+                  mode === m ? (m === "cashflow" ? "#3b82f6" : "#f59e0b") : "#213547"
+                }`,
+                borderRadius: 8,
+                padding: "6px 12px",
+                cursor: "pointer",
+                fontWeight: 700,
+                fontSize: 12,
+              }}
+            >
+              {m === "cashflow" ? "💵 Cash Flow" : "📊 P&L"}
+            </button>
           ))}
         </div>
-        <div style={{ display:"flex", gap:6, marginLeft:"auto", flexWrap:"wrap" }}>
-          {[{val:"businessUnit",label:"BU"},{val:"payingBU",label:"Paying BU"},{val:"expenseType",label:"Expense Type"},{val:"itemCategory",label:"Category"},{val:"itemType",label:"Item Type"},{val:"country",label:"Country"}].map(o => (
-            <button key={o.val} onClick={() => setGroupBy(o.val)} style={{
-              background: groupBy === o.val ? "#213547" : "transparent",
-              color: groupBy === o.val ? "#f1f5f9" : "#88A0B8",
-              border:`1px solid ${groupBy === o.val ? "#5EEAD4" : "#213547"}`,
-              borderRadius:8, padding:"5px 10px", cursor:"pointer", fontWeight:700, fontSize:11
-            }}>{o.label}</button>
+
+        <div style={{ display: "flex", gap: 6, marginLeft: "auto", flexWrap: "wrap" }}>
+          {[
+            { val: "businessUnit", label: "BU" },
+            { val: "payingBU", label: "Paying BU" },
+            { val: "expenseType", label: "Expense Type" },
+            { val: "itemCategory", label: "Category" },
+            { val: "itemType", label: "Item Type" },
+            { val: "country", label: "Country" },
+          ].map((o) => (
+            <button
+              key={o.val}
+              onClick={() => setGroupBy(o.val)}
+              style={{
+                background: groupBy === o.val ? "#213547" : "transparent",
+                color: groupBy === o.val ? "#f1f5f9" : "#88A0B8",
+                border: `1px solid ${groupBy === o.val ? "#5EEAD4" : "#213547"}`,
+                borderRadius: 8,
+                padding: "5px 10px",
+                cursor: "pointer",
+                fontWeight: 700,
+                fontSize: 11,
+              }}
+            >
+              {o.label}
+            </button>
           ))}
         </div>
       </div>
 
       {comparisonError && (
-        <div style={{ background:"rgba(245,158,11,0.08)", border:"1px solid rgba(245,158,11,0.35)", borderRadius:10, color:"#fbbf24", padding:"10px 14px", fontSize:12, fontWeight:700 }}>
+        <div
+          style={{
+            background: "rgba(245,158,11,0.08)",
+            border: "1px solid rgba(245,158,11,0.35)",
+            borderRadius: 10,
+            color: "#fbbf24",
+            padding: "10px 14px",
+            fontSize: 12,
+            fontWeight: 700,
+          }}
+        >
           ⚠️ {comparisonError}
         </div>
       )}
 
       {comparisonLoading && ready && (
-        <div style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:18, color:"#88A0B8", fontSize:13, fontWeight:700 }}>
+        <div
+          style={{
+            background: "linear-gradient(145deg,#0F1B2B,#0C1722)",
+            borderRadius: 14,
+            padding: 18,
+            color: "#88A0B8",
+            fontSize: 13,
+            fontWeight: 700,
+          }}
+        >
           Loading complete comparison data for {periodA} and {periodB}...
         </div>
       )}
 
       {!ready ? (
-        <div style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:60, textAlign:"center" }}>
-          <div style={{ fontSize:48, marginBottom:16 }}>🔀</div>
-          <div style={{ color:"#88A0B8", fontSize:16, fontWeight:600 }}>Select two different financial periods above to compare</div>
-          <div style={{ color:"#475569", fontSize:13, marginTop:8 }}>e.g. 2025-H1 vs 2026-H1</div>
+        <div
+          style={{
+            background: "linear-gradient(145deg,#0F1B2B,#0C1722)",
+            borderRadius: 14,
+            padding: 60,
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🔀</div>
+          <div style={{ color: "#88A0B8", fontSize: 16, fontWeight: 600 }}>
+            Select two different financial periods above to compare
+          </div>
+          <div style={{ color: "#475569", fontSize: 13, marginTop: 8 }}>
+            e.g. 2025-H1 vs 2026-H1
+          </div>
         </div>
       ) : (
         <>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr auto 1fr", gap:14, alignItems:"start" }}>
-            <div style={{ background:"#0F1535", borderRadius:14, padding:20, border:"2px solid #5EEAD4" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                  <span style={{ color:"#a5b4fc", fontWeight:900, fontSize:16 }}>📘 {periodA}</span>
-                  <span style={{ background: mode === "pnl" ? "#1c1505" : "#1e3a5f", color: mode === "pnl" ? "#fbbf24" : "#93c5fd", fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:999, border:`1px solid ${mode === "pnl" ? "#f59e0b" : "#3b82f6"}` }}>{mode === "pnl" ? "📊 P&L" : "💵 Cash Flow"}</span>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 14, alignItems: "start" }}>
+            <div
+              style={{
+                background: "#0F1535",
+                borderRadius: 14,
+                padding: 20,
+                border: "2px solid #5EEAD4",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ color: "#a5b4fc", fontWeight: 900, fontSize: 16 }}>📘 {periodA}</span>
+                  <span
+                    style={{
+                      background: mode === "pnl" ? "#1c1505" : "#1e3a5f",
+                      color: mode === "pnl" ? "#fbbf24" : "#93c5fd",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      border: `1px solid ${mode === "pnl" ? "#f59e0b" : "#3b82f6"}`,
+                    }}
+                  >
+                    {mode === "pnl" ? "📊 P&L" : "💵 Cash Flow"}
+                  </span>
                 </div>
-                <DrillLink label="View items" onClick={() => drill({tab:"budget", fy:periodA, fromTab:"comparison"})} />
+                <DrillLink label="View items" onClick={() => drill({ tab: "budget", fy: periodA, fromTab: "comparison" })} />
               </div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {[
-                  {label:"Budget", value:`S$${kpiA.budget.toLocaleString()}`, color:"#818cf8", onClick:() => drill({tab:"budget", fy:periodA, fromTab:"comparison"})},
-                  {label:"Actual", value:`S$${kpiA.actual.toLocaleString()}`, color:"#4ade80", onClick:() => drill({tab:"budget", fy:periodA, status:"Completed", fromTab:"comparison"})},
-                  {label:"Capex", value:`S$${kpiA.capex.toLocaleString()}`, color:"#f59e0b", onClick:() => drill({tab:"reports", fy:periodA, groupBy:"expenseType", fromTab:"comparison"})},
-                  {label:"Opex", value:`S$${kpiA.opex.toLocaleString()}`, color:"#06b6d4", onClick:() => drill({tab:"reports", fy:periodA, groupBy:"expenseType", fromTab:"comparison"})},
-                  {label:"Items", value:kpiA.items, color:"#c4b5fd", onClick:() => drill({tab:"budget", fy:periodA, fromTab:"comparison"})},
-                  {label:"Completed", value:kpiA.completed, color:"#86efac", onClick:() => drill({tab:"budget", fy:periodA, status:"Completed", fromTab:"comparison"})},
-                ].map(k => (
-                  <div key={k.label} onClick={k.onClick} style={{ background:"rgba(7,13,24,0.8)", borderRadius:10, padding:"10px 14px", cursor:"pointer", border:"1px solid transparent" }}
-                    onMouseEnter={e => e.currentTarget.style.border = "1px solid #5EEAD455"}
-                    onMouseLeave={e => e.currentTarget.style.border = "1px solid transparent"}>
-                    <div style={{ color:"#88A0B8", fontSize:10, textTransform:"uppercase", fontWeight:700 }}>{k.label}</div>
-                    <div style={{ color:k.color, fontWeight:900, fontSize:18, fontFamily:"monospace" }}>{k.value}</div>
-                    <div style={{ color:"#213547", fontSize:9, marginTop:2 }}>click to view →</div>
+                  {
+                    label: "Budget",
+                    value: `S$${kpiA.budget.toLocaleString()}`,
+                    color: "#818cf8",
+                    onClick: () => drill({ tab: "budget", fy: periodA, fromTab: "comparison" }),
+                  },
+                  {
+                    label: "Actual",
+                    value: `S$${kpiA.actual.toLocaleString()}`,
+                    color: "#4ade80",
+                    onClick: () => drill({ tab: "budget", fy: periodA, status: "Completed", fromTab: "comparison" }),
+                  },
+                  {
+                    label: "Capex",
+                    value: `S$${kpiA.capex.toLocaleString()}`,
+                    color: "#f59e0b",
+                    onClick: () => drill({ tab: "reports", fy: periodA, groupBy: "expenseType", fromTab: "comparison" }),
+                  },
+                  {
+                    label: "Opex",
+                    value: `S$${kpiA.opex.toLocaleString()}`,
+                    color: "#06b6d4",
+                    onClick: () => drill({ tab: "reports", fy: periodA, groupBy: "expenseType", fromTab: "comparison" }),
+                  },
+                  {
+                    label: "Items",
+                    value: kpiA.items,
+                    color: "#c4b5fd",
+                    onClick: () => drill({ tab: "budget", fy: periodA, fromTab: "comparison" }),
+                  },
+                  {
+                    label: "Completed",
+                    value: kpiA.completed,
+                    color: "#86efac",
+                    onClick: () => drill({ tab: "budget", fy: periodA, status: "Completed", fromTab: "comparison" }),
+                  },
+                ].map((k) => (
+                  <div
+                    key={k.label}
+                    onClick={k.onClick}
+                    style={{
+                      background: "rgba(7,13,24,0.8)",
+                      borderRadius: 10,
+                      padding: "10px 14px",
+                      cursor: "pointer",
+                      border: "1px solid transparent",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.border = "1px solid #5EEAD455")}
+                    onMouseLeave={(e) => (e.currentTarget.style.border = "1px solid transparent")}
+                  >
+                    <div style={{ color: "#88A0B8", fontSize: 10, textTransform: "uppercase", fontWeight: 700 }}>
+                      {k.label}
+                    </div>
+                    <div style={{ color: k.color, fontWeight: 900, fontSize: 18, fontFamily: "monospace" }}>
+                      {k.value}
+                    </div>
+                    <div style={{ color: "#213547", fontSize: 9, marginTop: 2 }}>click to view →</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div style={{ display:"flex", flexDirection:"column", gap:8, alignItems:"center", padding:"20px 6px" }}>
-              <div style={{ color:"#475569", fontSize:11, fontWeight:700, textTransform:"uppercase", marginBottom:4 }}>Δ Change</div>
-              {[{a:kpiA.budget,b:kpiB.budget},{a:kpiA.actual,b:kpiB.actual},{a:kpiA.capex,b:kpiB.capex},{a:kpiA.opex,b:kpiB.opex},{a:kpiA.items,b:kpiB.items},{a:kpiA.completed,b:kpiB.completed}].map((pair, i) => {
-                const delta = pair.b - pair.a, pct = pair.a > 0 ? Math.round((delta / pair.a) * 100) : null;
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center", padding: "20px 6px" }}>
+              <div style={{ color: "#475569", fontSize: 11, fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>
+                Δ Change
+              </div>
+              {[
+                { a: kpiA.budget, b: kpiB.budget },
+                { a: kpiA.actual, b: kpiB.actual },
+                { a: kpiA.capex, b: kpiB.capex },
+                { a: kpiA.opex, b: kpiB.opex },
+                { a: kpiA.items, b: kpiB.items },
+                { a: kpiA.completed, b: kpiB.completed },
+              ].map((pair, i) => {
+                const delta = pair.b - pair.a;
+                const pct = pair.a > 0 ? Math.round((delta / pair.a) * 100) : null;
+
                 return (
-                  <div key={i} style={{ background:delta > 0 ? "#450a0a" : delta < 0 ? "#052e16" : "#1e293b", borderRadius:8, padding:"8px 10px", textAlign:"center", minWidth:76 }}>
-                    <div style={{ color:delta > 0 ? "#f87171" : delta < 0 ? "#4ade80" : "#88A0B8", fontWeight:900, fontSize:12 }}>
+                  <div
+                    key={i}
+                    style={{
+                      background: delta > 0 ? "#450a0a" : delta < 0 ? "#052e16" : "#1e293b",
+                      borderRadius: 8,
+                      padding: "8px 10px",
+                      textAlign: "center",
+                      minWidth: 76,
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: delta > 0 ? "#f87171" : delta < 0 ? "#4ade80" : "#88A0B8",
+                        fontWeight: 900,
+                        fontSize: 12,
+                      }}
+                    >
                       {delta > 0 ? "▲" : delta < 0 ? "▼" : "—"} {Math.abs(delta).toLocaleString()}
                     </div>
-                    {pct !== null && <div style={{ color:"#88A0B8", fontSize:10 }}>{pct > 0 ? "+" : ""}{pct}%</div>}
+                    {pct !== null && (
+                      <div style={{ color: "#88A0B8", fontSize: 10 }}>
+                        {pct > 0 ? "+" : ""}
+                        {pct}%
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
 
-            <div style={{ background:"linear-gradient(145deg,#1A1000,#120D00)", borderRadius:14, padding:20, border:"2px solid rgba(245,158,11,0.6)" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                  <span style={{ color:"#fbbf24", fontWeight:900, fontSize:16 }}>📙 {periodB}</span>
-                  <span style={{ background: mode === "pnl" ? "#1c1505" : "#1e3a5f", color: mode === "pnl" ? "#fbbf24" : "#93c5fd", fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:999, border:`1px solid ${mode === "pnl" ? "#f59e0b" : "#3b82f6"}` }}>{mode === "pnl" ? "📊 P&L" : "💵 Cash Flow"}</span>
+            <div
+              style={{
+                background: "linear-gradient(145deg,#1A1000,#120D00)",
+                borderRadius: 14,
+                padding: 20,
+                border: "2px solid rgba(245,158,11,0.6)",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ color: "#fbbf24", fontWeight: 900, fontSize: 16 }}>📙 {periodB}</span>
+                  <span
+                    style={{
+                      background: mode === "pnl" ? "#1c1505" : "#1e3a5f",
+                      color: mode === "pnl" ? "#fbbf24" : "#93c5fd",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      border: `1px solid ${mode === "pnl" ? "#f59e0b" : "#3b82f6"}`,
+                    }}
+                  >
+                    {mode === "pnl" ? "📊 P&L" : "💵 Cash Flow"}
+                  </span>
                 </div>
-                <DrillLink label="View items" onClick={() => drill({tab:"budget", fy:periodB, fromTab:"comparison"})} />
+                <DrillLink label="View items" onClick={() => drill({ tab: "budget", fy: periodB, fromTab: "comparison" })} />
               </div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {[
-                  {label:"Budget", value:`S$${kpiB.budget.toLocaleString()}`, color:"#fbbf24", onClick:() => drill({tab:"budget", fy:periodB, fromTab:"comparison"})},
-                  {label:"Actual", value:`S$${kpiB.actual.toLocaleString()}`, color:"#4ade80", onClick:() => drill({tab:"budget", fy:periodB, status:"Completed", fromTab:"comparison"})},
-                  {label:"Capex", value:`S$${kpiB.capex.toLocaleString()}`, color:"#f97316", onClick:() => drill({tab:"reports", fy:periodB, groupBy:"expenseType", fromTab:"comparison"})},
-                  {label:"Opex", value:`S$${kpiB.opex.toLocaleString()}`, color:"#06b6d4", onClick:() => drill({tab:"reports", fy:periodB, groupBy:"expenseType", fromTab:"comparison"})},
-                  {label:"Items", value:kpiB.items, color:"#fde68a", onClick:() => drill({tab:"budget", fy:periodB, fromTab:"comparison"})},
-                  {label:"Completed", value:kpiB.completed, color:"#86efac", onClick:() => drill({tab:"budget", fy:periodB, status:"Completed", fromTab:"comparison"})},
-                ].map(k => (
-                  <div key={k.label} onClick={k.onClick} style={{ background:"rgba(7,13,24,0.8)", borderRadius:10, padding:"10px 14px", cursor:"pointer", border:"1px solid transparent" }}
-                    onMouseEnter={e => e.currentTarget.style.border = "1px solid #f59e0b55"}
-                    onMouseLeave={e => e.currentTarget.style.border = "1px solid transparent"}>
-                    <div style={{ color:"#88A0B8", fontSize:10, textTransform:"uppercase", fontWeight:700 }}>{k.label}</div>
-                    <div style={{ color:k.color, fontWeight:900, fontSize:18, fontFamily:"monospace" }}>{k.value}</div>
-                    <div style={{ color:"#213547", fontSize:9, marginTop:2 }}>click to view →</div>
+                  {
+                    label: "Budget",
+                    value: `S$${kpiB.budget.toLocaleString()}`,
+                    color: "#fbbf24",
+                    onClick: () => drill({ tab: "budget", fy: periodB, fromTab: "comparison" }),
+                  },
+                  {
+                    label: "Actual",
+                    value: `S$${kpiB.actual.toLocaleString()}`,
+                    color: "#4ade80",
+                    onClick: () => drill({ tab: "budget", fy: periodB, status: "Completed", fromTab: "comparison" }),
+                  },
+                  {
+                    label: "Capex",
+                    value: `S$${kpiB.capex.toLocaleString()}`,
+                    color: "#f97316",
+                    onClick: () => drill({ tab: "reports", fy: periodB, groupBy: "expenseType", fromTab: "comparison" }),
+                  },
+                  {
+                    label: "Opex",
+                    value: `S$${kpiB.opex.toLocaleString()}`,
+                    color: "#06b6d4",
+                    onClick: () => drill({ tab: "reports", fy: periodB, groupBy: "expenseType", fromTab: "comparison" }),
+                  },
+                  {
+                    label: "Items",
+                    value: kpiB.items,
+                    color: "#fde68a",
+                    onClick: () => drill({ tab: "budget", fy: periodB, fromTab: "comparison" }),
+                  },
+                  {
+                    label: "Completed",
+                    value: kpiB.completed,
+                    color: "#86efac",
+                    onClick: () => drill({ tab: "budget", fy: periodB, status: "Completed", fromTab: "comparison" }),
+                  },
+                ].map((k) => (
+                  <div
+                    key={k.label}
+                    onClick={k.onClick}
+                    style={{
+                      background: "rgba(7,13,24,0.8)",
+                      borderRadius: 10,
+                      padding: "10px 14px",
+                      cursor: "pointer",
+                      border: "1px solid transparent",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.border = "1px solid #f59e0b55")}
+                    onMouseLeave={(e) => (e.currentTarget.style.border = "1px solid transparent")}
+                  >
+                    <div style={{ color: "#88A0B8", fontSize: 10, textTransform: "uppercase", fontWeight: 700 }}>
+                      {k.label}
+                    </div>
+                    <div style={{ color: k.color, fontWeight: 900, fontSize: 18, fontFamily: "monospace" }}>
+                      {k.value}
+                    </div>
+                    <div style={{ color: "#213547", fontSize: 9, marginTop: 2 }}>click to view →</div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          <div style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:20 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-              <h3 style={{ color:"#f1f5f9", fontSize:15, fontWeight:700, margin:0 }}>
-                📊 {periodA} vs {periodB} — by {groupBy === "businessUnit" ? "Business Unit" : groupBy === "payingBU" ? "Paying BU" : groupBy === "expenseType" ? "Expense Type" : groupBy === "itemCategory" ? "Category" : groupBy === "itemType" ? "Item Type" : "Country"}
+          <div style={{ background: "linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius: 14, padding: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <h3 style={{ color: "#f1f5f9", fontSize: 15, fontWeight: 700, margin: 0 }}>
+                📊 {periodA} vs {periodB} — by{" "}
+                {groupBy === "businessUnit"
+                  ? "Business Unit"
+                  : groupBy === "payingBU"
+                    ? "Paying BU"
+                    : groupBy === "expenseType"
+                      ? "Expense Type"
+                      : groupBy === "itemCategory"
+                        ? "Category"
+                        : groupBy === "itemType"
+                          ? "Item Type"
+                          : "Country"}
               </h3>
-              <DrillLink label="Open in Reports" onClick={() => drill({tab:"reports", groupBy, fromTab:"comparison"})} />
+              <DrillLink label="Open in Reports" onClick={() => drill({ tab: "reports", groupBy, fromTab: "comparison" })} />
             </div>
-            <div style={{ color:"#6B7280", fontSize:12, marginBottom:16 }}>{mode === "cashflow" ? "💵 Cash Flow (Budget SGD)" : "📊 P&L basis (amortised)"}</div>
+
+            <div style={{ color: "#6B7280", fontSize: 12, marginBottom: 16 }}>
+              {mode === "cashflow" ? "💵 Cash Flow (Budget SGD)" : "📊 P&L basis (amortised)"}
+            </div>
+
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData} margin={{ bottom:40 }}
-                onClick={d => d?.activePayload && drill({tab:"budget", [groupBy]:d.activePayload[0]?.payload?.label, fromTab:"comparison"})}>
+              <BarChart
+                data={chartData}
+                margin={{ bottom: 40 }}
+                onClick={(d) =>
+                  d?.activePayload &&
+                  drill({ tab: "budget", [groupBy]: d.activePayload[0]?.payload?.label, fromTab: "comparison" })
+                }
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#213547" />
-                <XAxis dataKey="label" tick={{ fill:"#9fb3c8", fontSize:10 }} interval={0} angle={-25} textAnchor="end" height={60} />
-                <YAxis tick={{ fill:"#9fb3c8", fontSize:10 }} tickFormatter={v => `S$${(v / 1000).toFixed(0)}k`} />
-                <Tooltip contentStyle={{ background:"#09131D", border:"1px solid #213547", borderRadius:8 }}
-                  formatter={v => [`S$${v.toLocaleString()}`, ""]}
-                  labelFormatter={l => <span>{l} <span style={{color:"#5EEAD4",fontSize:10}}>click bar to drill down</span></span>} />
+                <XAxis dataKey="label" tick={{ fill: "#9fb3c8", fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={60} />
+                <YAxis tick={{ fill: "#9fb3c8", fontSize: 10 }} tickFormatter={(v) => `S$${(v / 1000).toFixed(0)}k`} />
+                <Tooltip
+                  contentStyle={{ background: "#09131D", border: "1px solid #213547", borderRadius: 8 }}
+                  formatter={(v) => [`S$${v.toLocaleString()}`, ""]}
+                  labelFormatter={(l) => (
+                    <span>
+                      {l} <span style={{ color: "#5EEAD4", fontSize: 10 }}>click bar to drill down</span>
+                    </span>
+                  )}
+                />
                 <Legend />
-                <Bar dataKey={periodA} fill={colA} radius={[4,4,0,0]} cursor="pointer" />
-                <Bar dataKey={periodB} fill={colB} radius={[4,4,0,0]} cursor="pointer" />
+                <Bar dataKey={periodA} fill={colA} radius={[4, 4, 0, 0]} cursor="pointer" />
+                <Bar dataKey={periodB} fill={colB} radius={[4, 4, 0, 0]} cursor="pointer" />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-            {[[catMixA, periodA],[catMixB, periodB]].map(([data, label]) => (
-              <div key={label} style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:20 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-                  <h3 style={{ color:"#f1f5f9", fontSize:14, fontWeight:700, margin:0 }}>🥧 Category Mix — {label}</h3>
-                  <DrillLink label="Reports" onClick={() => drill({tab:"reports", fy:label, groupBy:"itemCategory", fromTab:"comparison"})} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+            {[
+              [catMixA, periodA],
+              [catMixB, periodB],
+            ].map(([data, label]) => (
+              <div key={label} style={{ background: "linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius: 14, padding: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <h3 style={{ color: "#f1f5f9", fontSize: 14, fontWeight: 700, margin: 0 }}>
+                    🥧 Category Mix — {label}
+                  </h3>
+                  <DrillLink label="Reports" onClick={() => drill({ tab: "reports", fy: label, groupBy: "itemCategory", fromTab: "comparison" })} />
                 </div>
+
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
-                    <Pie data={data} cx="50%" cy="50%" innerRadius={45} outerRadius={80} dataKey={valueKey} nameKey="label"
-                      onClick={d => drill({tab:"budget", fy:label, category:d.label, fromTab:"comparison"})}>
-                      {data.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} cursor="pointer" />)}
+                    <Pie
+                      data={data}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={80}
+                      dataKey={valueKey}
+                      nameKey="label"
+                      onClick={(d) => drill({ tab: "budget", fy: label, category: d.label, fromTab: "comparison" })}
+                    >
+                      {data.map((_, i) => (
+                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} cursor="pointer" />
+                      ))}
                     </Pie>
-                    <Tooltip contentStyle={{ background:"#09131D", border:"1px solid #213547", borderRadius:8 }}
-                      formatter={(v) => [`S$${v.toLocaleString()} — click to drill down`, ""]} />
-                    <Legend wrapperStyle={{ fontSize:10, color:"#9fb3c8" }} />
+                    <Tooltip
+                      contentStyle={{ background: "#09131D", border: "1px solid #213547", borderRadius: 8 }}
+                      formatter={(v) => [`S$${v.toLocaleString()} — click to drill down`, ""]}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 10, color: "#9fb3c8" }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             ))}
           </div>
 
-          <div style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:20 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-              <h3 style={{ color:"#f1f5f9", fontSize:15, fontWeight:700, margin:0 }}>🔼🔽 Top Budget Movers ({periodA} → {periodB})</h3>
-              <DrillLink label="See all in Budget" onClick={() => drill({tab:"budget", fromTab:"comparison"})} />
+          <div style={{ background: "linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius: 14, padding: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h3 style={{ color: "#f1f5f9", fontSize: 15, fontWeight: 700, margin: 0 }}>
+                🔼🔽 Top Budget Movers ({periodA} → {periodB})
+              </h3>
+              <DrillLink label="See all in Budget" onClick={() => drill({ tab: "budget", fromTab: "comparison" })} />
             </div>
-            <div style={{ overflowX:"auto" }}>
-              <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
-                  <tr style={{ background:"#09131D" }}>
-                    {["Description",`${periodA} Budget`,`${periodB} Budget`,"Δ Change","Δ %","Action"].map(h => (
-                      <th key={h} style={{ padding:"8px 12px", color:"#5EEAD4", textAlign:h === "Description" || h === "Action" ? "left" : "right", fontSize:11, textTransform:"uppercase", fontWeight:700 }}>{h}</th>
+                  <tr style={{ background: "#09131D" }}>
+                    {["Description", `${periodA} Budget`, `${periodB} Budget`, "Δ Change", "Δ %", "Action"].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: "8px 12px",
+                          color: "#5EEAD4",
+                          textAlign: h === "Description" || h === "Action" ? "left" : "right",
+                          fontSize: 11,
+                          textTransform: "uppercase",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {topMovers.map((m, i) => (
-                    <tr key={i} style={{ borderTop:"1px solid #213547" }}>
-                      <td style={{ padding:"8px 12px", color:"#f1f5f9", fontWeight:600, maxWidth:200 }}>
-                        <div style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{m.desc}</div>
+                    <tr key={i} style={{ borderTop: "1px solid #213547" }}>
+                      <td style={{ padding: "8px 12px", color: "#f1f5f9", fontWeight: 600, maxWidth: 200 }}>
+                        <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {m.desc}
+                        </div>
                       </td>
-                      <td style={{ padding:"8px 12px", color:"#818cf8", textAlign:"right" }}>S${m.a.toLocaleString()}</td>
-                      <td style={{ padding:"8px 12px", color:"#fbbf24", textAlign:"right" }}>S${m.b.toLocaleString()}</td>
-                      <td style={{ padding:"8px 12px", textAlign:"right", color:m.delta > 0 ? "#f87171" : m.delta < 0 ? "#4ade80" : "#88A0B8", fontWeight:700 }}>
-                        {m.delta > 0 ? "+" : ""}{m.delta.toLocaleString()}
+                      <td style={{ padding: "8px 12px", color: "#818cf8", textAlign: "right" }}>
+                        S${m.a.toLocaleString()}
                       </td>
-                      <td style={{ padding:"8px 12px", textAlign:"right", color:m.pct === null ? "#88A0B8" : m.pct > 0 ? "#f87171" : "#4ade80", fontWeight:700 }}>
+                      <td style={{ padding: "8px 12px", color: "#fbbf24", textAlign: "right" }}>
+                        S${m.b.toLocaleString()}
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px 12px",
+                          textAlign: "right",
+                          color: m.delta > 0 ? "#f87171" : m.delta < 0 ? "#4ade80" : "#88A0B8",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {m.delta > 0 ? "+" : ""}
+                        {m.delta.toLocaleString()}
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px 12px",
+                          textAlign: "right",
+                          color: m.pct === null ? "#88A0B8" : m.pct > 0 ? "#f87171" : "#4ade80",
+                          fontWeight: 700,
+                        }}
+                      >
                         {m.pct === null ? "New" : `${m.pct > 0 ? "+" : ""}${m.pct}%`}
                       </td>
-                      <td style={{ padding:"8px 12px" }}>
-                        <DrillLink label="Find" onClick={() => drill({tab:"budget", search:m.desc, fromTab:"comparison"})} />
+                      <td style={{ padding: "8px 12px" }}>
+                        <DrillLink label="Find" onClick={() => drill({ tab: "budget", search: m.desc, fromTab: "comparison" })} />
                       </td>
                     </tr>
                   ))}
@@ -2325,45 +2726,108 @@ function ComparisonPage({ items, fyOptions, onDrillDown, periodA, setPeriodA, pe
             </div>
           </div>
 
-          <div style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:20 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-              <h3 style={{ color:"#f1f5f9", fontSize:15, fontWeight:700, margin:0 }}>📋 Detailed Comparison</h3>
-              <DrillLink label="Full Report" onClick={() => drill({tab:"reports", groupBy, fromTab:"comparison"})} />
+          <div style={{ background: "linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius: 14, padding: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h3 style={{ color: "#f1f5f9", fontSize: 15, fontWeight: 700, margin: 0 }}>
+                📋 Detailed Comparison
+              </h3>
+              <DrillLink label="Full Report" onClick={() => drill({ tab: "reports", groupBy, fromTab: "comparison" })} />
             </div>
-            <div style={{ overflowX:"auto" }}>
-              <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
-                  <tr style={{ background:"#09131D" }}>
-                    {["Dimension",`${periodA}`,`${periodB}`,"Δ SGD","Δ %","Bar"].map(h => (
-                      <th key={h} style={{ padding:"8px 12px", color:"#5EEAD4", textAlign:h === "Dimension" ? "left" : "right", fontSize:11, textTransform:"uppercase", fontWeight:700 }}>{h}</th>
+                  <tr style={{ background: "#09131D" }}>
+                    {["Dimension", `${periodA}`, `${periodB}`, "Δ SGD", "Δ %", "Bar"].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: "8px 12px",
+                          color: "#5EEAD4",
+                          textAlign: h === "Dimension" ? "left" : "right",
+                          fontSize: 11,
+                          textTransform: "uppercase",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {chartData.map((row, i) => {
-                    const aVal = row[periodA] || 0, bVal = row[periodB] || 0;
-                    const delta = bVal - aVal, pct = aVal > 0 ? Math.round((delta / aVal) * 100) : null;
-                    const maxVal = Math.max(...chartData.map(r => Math.max(r[periodA] || 0, r[periodB] || 0)), 0);
+                    const aVal = row[periodA] || 0;
+                    const bVal = row[periodB] || 0;
+                    const delta = bVal - aVal;
+                    const pct = aVal > 0 ? Math.round((delta / aVal) * 100) : null;
+                    const maxBarVal = Math.max(
+                      ...chartData.map((r) => Math.max(r[periodA] || 0, r[periodB] || 0)),
+                      0
+                    );
+
                     return (
-                      <tr key={i} style={{ borderTop:"1px solid #213547", cursor:"pointer" }}
-                        onClick={() => drill({tab:"budget", [groupBy]:row.label, fromTab:"comparison"})}
-                        onMouseEnter={e => e.currentTarget.style.background = "#213547"}
-                        onMouseLeave={e => e.currentTarget.style.background = ""}>
-                        <td style={{ padding:"8px 12px", color:"#a5b4fc", fontWeight:700 }}>
-                          {row.label} <span style={{ color:"#213547", fontSize:10 }}>↗</span>
+                      <tr
+                        key={i}
+                        style={{ borderTop: "1px solid #213547", cursor: "pointer" }}
+                        onClick={() => drill({ tab: "budget", [groupBy]: row.label, fromTab: "comparison" })}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "#213547")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "")}
+                      >
+                        <td style={{ padding: "8px 12px", color: "#a5b4fc", fontWeight: 700 }}>
+                          {row.label} <span style={{ color: "#213547", fontSize: 10 }}>↗</span>
                         </td>
-                        <td style={{ padding:"8px 12px", color:"#818cf8", textAlign:"right", fontWeight:700 }}>S${aVal.toLocaleString()}</td>
-                        <td style={{ padding:"8px 12px", color:"#fbbf24", textAlign:"right", fontWeight:700 }}>S${bVal.toLocaleString()}</td>
-                        <td style={{ padding:"8px 12px", textAlign:"right", color:delta > 0 ? "#f87171" : delta < 0 ? "#4ade80" : "#88A0B8", fontWeight:700 }}>
-                          {delta > 0 ? "+" : ""}{delta.toLocaleString()}
+                        <td style={{ padding: "8px 12px", color: "#818cf8", textAlign: "right", fontWeight: 700 }}>
+                          S${aVal.toLocaleString()}
                         </td>
-                        <td style={{ padding:"8px 12px", textAlign:"right", color:pct === null ? "#88A0B8" : pct > 0 ? "#f87171" : "#4ade80", fontWeight:700 }}>
+                        <td style={{ padding: "8px 12px", color: "#fbbf24", textAlign: "right", fontWeight: 700 }}>
+                          S${bVal.toLocaleString()}
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 12px",
+                            textAlign: "right",
+                            color: delta > 0 ? "#f87171" : delta < 0 ? "#4ade80" : "#88A0B8",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {delta > 0 ? "+" : ""}
+                          {delta.toLocaleString()}
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 12px",
+                            textAlign: "right",
+                            color: pct === null ? "#88A0B8" : pct > 0 ? "#f87171" : "#4ade80",
+                            fontWeight: 700,
+                          }}
+                        >
                           {pct === null ? "—" : `${pct > 0 ? "+" : ""}${pct}%`}
                         </td>
-                        <td style={{ padding:"8px 12px", minWidth:100 }}>
-                          <div style={{ position:"relative", height:16 }}>
-                            <div style={{ position:"absolute", top:2, left:0, width:`${maxVal > 0 ? (aVal / maxVal) * 100 : 0}%`, background:colA + "99", height:5, borderRadius:3 }} />
-                            <div style={{ position:"absolute", top:9, left:0, width:`${maxVal > 0 ? (bVal / maxVal) * 100 : 0}%`, background:colB + "99", height:5, borderRadius:3 }} />
+                        <td style={{ padding: "8px 12px", minWidth: 100 }}>
+                          <div style={{ position: "relative", height: 16 }}>
+                            <div
+                              style={{
+                                position: "absolute",
+                                top: 2,
+                                left: 0,
+                                width: `${maxBarVal > 0 ? (aVal / maxBarVal) * 100 : 0}%`,
+                                background: colA + "99",
+                                height: 5,
+                                borderRadius: 3,
+                              }}
+                            />
+                            <div
+                              style={{
+                                position: "absolute",
+                                top: 9,
+                                left: 0,
+                                width: `${maxBarVal > 0 ? (bVal / maxBarVal) * 100 : 0}%`,
+                                background: colB + "99",
+                                height: 5,
+                                borderRadius: 3,
+                              }}
+                            />
                           </div>
                         </td>
                       </tr>
