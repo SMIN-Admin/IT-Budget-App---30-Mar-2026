@@ -43,8 +43,10 @@ function calcPnLMonths(item: PaymentItem) {
   if (!p) return {} as Record<string, number>;
 
   const pnlBreakup = getPnLBreakup(item.billingFreq);
-  const actualVal = item.actual != null && Number(item.actual) > 0 ? Number(item.actual) : null;
-  const costVal = actualVal !== null ? actualVal : (parseFloat(String(item.budget || 0)) || 0);
+  const actualVal =
+    item.actual != null && Number(item.actual) > 0 ? Number(item.actual) : null;
+  const costVal =
+    actualVal !== null ? actualVal : (parseFloat(String(item.budget || 0)) || 0);
 
   if (costVal <= 0) return {} as Record<string, number>;
 
@@ -107,12 +109,117 @@ function exportCSV(
   setTimeout(() => document.body.removeChild(a), 1000);
 }
 
-export default function PaymentSchedulePage({ items }: { items: PaymentItem[] }) {
+function MonthDetailView({
+  selectedMonth,
+  schedule,
+  onBack,
+}: {
+  selectedMonth: string;
+  schedule: Array<{ mk: string; items: any[]; total: number }>;
+  onBack: () => void;
+}) {
+  const T = { fontFamily: "'Montserrat',sans-serif" };
+
+  const monthData = schedule.find((m) => m.mk === selectedMonth);
+  if (!monthData) return null;
+
+  return (
+    <div style={T}>
+      <div style={{ marginBottom: 18 }}>
+        <button
+          onClick={onBack}
+          style={{
+            background: "#1e293b",
+            border: "1px solid #334155",
+            borderRadius: 8,
+            color: "#cbd5f5",
+            padding: "6px 12px",
+            cursor: "pointer",
+            fontSize: 12,
+            marginBottom: 10,
+            fontWeight: 700,
+          }}
+        >
+          ← Back
+        </button>
+
+        <h2 style={{ color: "#E6FFFD", fontSize: 18, fontWeight: 900, margin: "0 0 6px 0" }}>
+          📂 {selectedMonth} — Payment Details
+        </h2>
+
+        <div style={{ color: "#88A0B8", fontSize: 12 }}>
+          {monthData.items.length} items • Total S${monthData.total.toLocaleString()}
+        </div>
+      </div>
+
+      <div
+        style={{
+          background: "linear-gradient(145deg,#0F1B2B,#0C1722)",
+          borderRadius: 14,
+          border: "1px solid rgba(94,234,212,0.12)",
+          padding: "16px",
+          overflowX: "auto",
+        }}
+      >
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, ...T }}>
+          <thead>
+            <tr style={{ background: "#09131D" }}>
+              {["Description", "Paying BU", "Billing", "Basis", "Amount"].map((h) => (
+                <th
+                  key={h}
+                  style={{ padding: "10px", color: "#5EEAD4", textAlign: "left", whiteSpace: "nowrap" }}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+
+          <tbody>
+            {monthData.items.map((it, i) => (
+              <tr key={`${selectedMonth}_${it.id}_${i}`} style={{ background: i % 2 === 0 ? "#1e293b" : "#1a2744" }}>
+                <td style={{ padding: "10px", color: "#E2E8F0", fontWeight: 600 }}>
+                  {it.description || "—"}
+                </td>
+                <td style={{ padding: "10px", color: "#94A3B8" }}>
+                  {it.payingBU || "—"}
+                </td>
+                <td style={{ padding: "10px", color: "#94A3B8" }}>
+                  {it.billingFreq || "—"}
+                </td>
+                <td style={{ padding: "10px" }}>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      background: it.basis === "Actual" ? "#052e16" : "#1e1b4b",
+                      color: it.basis === "Actual" ? "#4ade80" : "#a5b4fc",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {it.basis}
+                  </span>
+                </td>
+                <td style={{ padding: "10px", color: "#5EEAD4", fontWeight: 700 }}>
+                  S${Number(it.payAmt || 0).toLocaleString()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function PaymentSchedulePage({ items }: { items: PaymentItem[] }) {
   const T = { fontFamily:"'Montserrat',sans-serif" };
   const today = new Date();
 
   const [filterPayingBU, setFilterPayingBU] = useState("all");
   const [paymentType, setPaymentType] = useState("all");
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
 
   const payingBUs = useMemo(() => {
     return ["all", ...[...new Set(items.map(i => i.payingBU).filter(Boolean) as string[])].sort()];
@@ -195,7 +302,10 @@ export default function PaymentSchedulePage({ items }: { items: PaymentItem[] })
   }, [filteredItems, monthKeys]);
 
   const maxTotal = Math.max(...schedule.map((s) => s.total), 1);
-  const peakMonth = schedule.reduce((a, b) => (b.total > a.total ? b : a), schedule[0] || { total: 0, mk: "—" });
+  const peakMonth = schedule.reduce(
+    (a, b) => (b.total > a.total ? b : a),
+    schedule[0] || { total: 0, mk: "—" }
+  );
   const grandTotal = schedule.reduce((s, d) => s + d.total, 0);
 
   const exportRows = useMemo(() => {
@@ -244,164 +354,181 @@ export default function PaymentSchedulePage({ items }: { items: PaymentItem[] })
 
   return (
     <div style={T}>
-      <div style={{ marginBottom:18 }}>
-        <h2 style={{ color:"#E6FFFD", fontSize:18, fontWeight:900, margin:"0 0 14px 0" }}>
-          📅 Payment Schedule — Next 12 Months
-        </h2>
+      {selectedMonth ? (
+        <MonthDetailView
+          selectedMonth={selectedMonth}
+          schedule={schedule}
+          onBack={() => setSelectedMonth(null)}
+        />
+      ) : (
+        <>
+          <div style={{ marginBottom:18 }}>
+            <h2 style={{ color:"#E6FFFD", fontSize:18, fontWeight:900, margin:"0 0 14px 0" }}>
+              📅 Payment Schedule — Next 12 Months
+            </h2>
 
-        <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
-          <span style={{ color:"#9FB3C8", fontSize:12, fontWeight:700 }}>Paying BU:</span>
-          <select
-            value={filterPayingBU}
-            onChange={(e) => setFilterPayingBU(e.target.value)}
-            style={selStyle}
-          >
-            <option value="all">All Paying BUs</option>
-            {payingBUs.filter((b) => b !== "all").map((b) => (
-              <option key={b} value={b}>{b}</option>
-            ))}
-          </select>
+            <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+              <span style={{ color:"#9FB3C8", fontSize:12, fontWeight:700 }}>Paying BU:</span>
+              <select
+                value={filterPayingBU}
+                onChange={(e) => setFilterPayingBU(e.target.value)}
+                style={selStyle}
+              >
+                <option value="all">All Paying BUs</option>
+                {payingBUs.filter((b) => b !== "all").map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
 
-          <span style={{ color:"#9FB3C8", fontSize:12, fontWeight:700 }}>Payment Type:</span>
-          <select
-            value={paymentType}
-            onChange={(e) => setPaymentType(e.target.value)}
-            style={selStyle}
-          >
-            <option value="all">All</option>
-            <option value="one_time">One Time</option>
-            <option value="recurring">Recurring</option>
-          </select>
+              <span style={{ color:"#9FB3C8", fontSize:12, fontWeight:700 }}>Payment Type:</span>
+              <select
+                value={paymentType}
+                onChange={(e) => setPaymentType(e.target.value)}
+                style={selStyle}
+              >
+                <option value="all">All</option>
+                <option value="one_time">One Time</option>
+                <option value="recurring">Recurring</option>
+              </select>
 
-          <div
-            style={{
-              background:"rgba(245,158,11,0.15)",
-              border:"1px solid rgba(245,158,11,0.4)",
-              borderRadius:8,
-              padding:"5px 14px",
-              color:"#f59e0b",
-              fontSize:12,
-              fontWeight:700
-            }}
-          >
-            Peak: {peakMonth?.mk} · S${peakMonth?.total.toLocaleString()}
-          </div>
-
-          <div style={{ color:"#88A0B8", fontSize:12 }}>
-            Items: <strong style={{ color:"#5EEAD4" }}>{filteredItems.length}</strong>
-          </div>
-
-          <div style={{ marginLeft:"auto", color:"#88A0B8", fontSize:12 }}>
-            Total: <strong style={{ color:"#5EEAD4" }}>S${grandTotal.toLocaleString()}</strong>
-          </div>
-
-          <button
-            onClick={() => {
-              const ts = new Date().toISOString().slice(0,10);
-              exportCSV(exportRows, `Payment_Schedule_${ts}.csv`);
-            }}
-            style={{
-              background:"linear-gradient(135deg,#1a3a2a,#0f2a1a)",
-              border:"1px solid rgba(94,234,212,0.35)",
-              borderRadius:8,
-              color:"#5EEAD4",
-              padding:"6px 14px",
-              cursor:"pointer",
-              fontWeight:700,
-              fontSize:12,
-              ...T
-            }}
-          >
-            ⬇ Export CSV
-          </button>
-        </div>
-      </div>
-
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:12 }}>
-        {schedule.map(({ mk, items: mItems, total }) => {
-          const isPeak = mk === peakMonth?.mk;
-          const intensity = total / maxTotal;
-
-          return (
-            <div
-              key={mk}
-              style={{
-                ...card,
-                marginBottom:0,
-                border:`1px solid ${isPeak ? "rgba(245,158,11,0.5)" : "rgba(94,234,212,0.12)"}`,
-                padding:"14px 16px"
-              }}
-            >
-              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
-                <span style={{ color:isPeak ? "#f59e0b" : "#5EEAD4", fontWeight:800, fontSize:13 }}>
-                  {mk}{isPeak ? " 🔴 Peak" : ""}
-                </span>
-                <span style={{ color:"#f1f5f9", fontWeight:900, fontSize:14 }}>
-                  S${total.toLocaleString()}
-                </span>
+              <div
+                style={{
+                  background:"rgba(245,158,11,0.15)",
+                  border:"1px solid rgba(245,158,11,0.4)",
+                  borderRadius:8,
+                  padding:"5px 14px",
+                  color:"#f59e0b",
+                  fontSize:12,
+                  fontWeight:700
+                }}
+              >
+                Peak: {peakMonth?.mk} · S${peakMonth?.total.toLocaleString()}
               </div>
 
-              <div style={{ height:4, background:"#1e293b", borderRadius:2, marginBottom:10 }}>
-                <div
-                  style={{
-                    height:"100%",
-                    width:`${Math.round(intensity * 100)}%`,
-                    background:intensity > 0.8 ? "#ef4444" : intensity > 0.5 ? "#f59e0b" : "#5EEAD4",
-                    borderRadius:2
-                  }}
-                />
+              <div style={{ color:"#88A0B8", fontSize:12 }}>
+                Items: <strong style={{ color:"#5EEAD4" }}>{filteredItems.length}</strong>
               </div>
 
-              {mItems.slice(0, 6).map((it) => (
-                <div key={`${mk}_${it.id}_${it.description}`} style={{ marginBottom:6 }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", gap:10 }}>
-                    <span
-                      style={{
-                        color:"#9FB3C8",
-                        fontSize:11,
-                        overflow:"hidden",
-                        textOverflow:"ellipsis",
-                        whiteSpace:"nowrap",
-                        maxWidth:160
-                      }}
-                    >
-                      {it.description}
-                    </span>
-                    <span style={{ color:"#5EEAD4", fontSize:11, fontWeight:600 }}>
-                      S${it.payAmt.toLocaleString()}
-                    </span>
-                  </div>
-                  <div style={{ display:"flex", justifyContent:"space-between", gap:10 }}>
-                    <span style={{ color:"#475569", fontSize:10 }}>
-                      {it.payingBU || "Unknown"} · {it.billingFreq || "N/A"}
-                    </span>
-                    <span
-                      style={{
-                        fontSize:10,
-                        padding:"1px 6px",
-                        borderRadius:999,
-                        background: it.basis === "Actual" ? "#052e16" : "#1e1b4b",
-                        color: it.basis === "Actual" ? "#4ade80" : "#a5b4fc",
-                        fontWeight:700
-                      }}
-                    >
-                      {it.basis}
-                    </span>
-                  </div>
-                </div>
-              ))}
+              <div style={{ marginLeft:"auto", color:"#88A0B8", fontSize:12 }}>
+                Total: <strong style={{ color:"#5EEAD4" }}>S${grandTotal.toLocaleString()}</strong>
+              </div>
 
-              {mItems.length > 6 && (
-                <div style={{ color:"#374151", fontSize:11, marginTop:3 }}>
-                  +{mItems.length - 6} more items
-                </div>
-              )}
+              <button
+                onClick={() => {
+                  const ts = new Date().toISOString().slice(0,10);
+                  exportCSV(exportRows, `Payment_Schedule_${ts}.csv`);
+                }}
+                style={{
+                  background:"linear-gradient(135deg,#1a3a2a,#0f2a1a)",
+                  border:"1px solid rgba(94,234,212,0.35)",
+                  borderRadius:8,
+                  color:"#5EEAD4",
+                  padding:"6px 14px",
+                  cursor:"pointer",
+                  fontWeight:700,
+                  fontSize:12,
+                  ...T
+                }}
+              >
+                ⬇ Export CSV
+              </button>
             </div>
-          );
-        })}
-      </div>
+          </div>
+
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:12 }}>
+            {schedule.map(({ mk, items: mItems, total }) => {
+              const isPeak = mk === peakMonth?.mk;
+              const intensity = total / maxTotal;
+
+              return (
+                <div
+                  key={mk}
+                  onClick={() => setSelectedMonth(mk)}
+                  style={{
+                    ...card,
+                    marginBottom:0,
+                    border:`1px solid ${isPeak ? "rgba(245,158,11,0.5)" : "rgba(94,234,212,0.12)"}`,
+                    padding:"14px 16px",
+                    cursor:"pointer",
+                    transition:"all 0.2s ease"
+                  }}
+                >
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
+                    <span style={{ color:isPeak ? "#f59e0b" : "#5EEAD4", fontWeight:800, fontSize:13 }}>
+                      {mk}{isPeak ? " 🔴 Peak" : ""}
+                    </span>
+                    <span style={{ color:"#f1f5f9", fontWeight:900, fontSize:14 }}>
+                      S${total.toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div style={{ height:4, background:"#1e293b", borderRadius:2, marginBottom:10 }}>
+                    <div
+                      style={{
+                        height:"100%",
+                        width:`${Math.round(intensity * 100)}%`,
+                        background:intensity > 0.8 ? "#ef4444" : intensity > 0.5 ? "#f59e0b" : "#5EEAD4",
+                        borderRadius:2
+                      }}
+                    />
+                  </div>
+
+                  {mItems.slice(0, 6).map((it) => (
+                    <div key={`${mk}_${it.id}_${it.description}`} style={{ marginBottom:6 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", gap:10 }}>
+                        <span
+                          style={{
+                            color:"#9FB3C8",
+                            fontSize:11,
+                            overflow:"hidden",
+                            textOverflow:"ellipsis",
+                            whiteSpace:"nowrap",
+                            maxWidth:160
+                          }}
+                        >
+                          {it.description}
+                        </span>
+                        <span style={{ color:"#5EEAD4", fontSize:11, fontWeight:600 }}>
+                          S${it.payAmt.toLocaleString()}
+                        </span>
+                      </div>
+                      <div style={{ display:"flex", justifyContent:"space-between", gap:10 }}>
+                        <span style={{ color:"#475569", fontSize:10 }}>
+                          {it.payingBU || "Unknown"} · {it.billingFreq || "N/A"}
+                        </span>
+                        <span
+                          style={{
+                            fontSize:10,
+                            padding:"1px 6px",
+                            borderRadius:999,
+                            background: it.basis === "Actual" ? "#052e16" : "#1e1b4b",
+                            color: it.basis === "Actual" ? "#4ade80" : "#a5b4fc",
+                            fontWeight:700
+                          }}
+                        >
+                          {it.basis}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+
+                  {mItems.length > 6 && (
+                    <div style={{ color:"#374151", fontSize:11, marginTop:3 }}>
+                      +{mItems.length - 6} more items
+                    </div>
+                  )}
+
+                  <div style={{ color:"#64748b", fontSize:10, marginTop:8 }}>
+                    Click to view line items
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
-
+export default PaymentSchedulePage;
