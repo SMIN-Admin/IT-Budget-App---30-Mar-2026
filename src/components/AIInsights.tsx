@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -18,6 +19,8 @@ type BudgetItem = {
   payingBU?: string;
   billingFreq?: string;
   country?: string;
+  location?: string;
+  city?: string;
   remarks?: string;
 };
 
@@ -30,6 +33,28 @@ type AIInsightsProps = {
 type ChatMessage = {
   role: "user" | "assistant";
   text: string;
+};
+
+type DataRow = {
+  id: string;
+  description: string;
+  businessUnit: string;
+  itemCategory: string;
+  expenseType: string;
+  planMonth: string;
+  fy: string;
+  budget: number;
+  actual: number | null;
+  amount: number;
+  status: string;
+  outsideBudget: boolean;
+  vendor: string;
+  payingBU: string;
+  billingFreq: string;
+  country: string;
+  location: string;
+  city: string;
+  remarks: string;
 };
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"] as const;
@@ -53,261 +78,559 @@ function getFY(planMonth?: string | null) {
   return `${year}-H2`;
 }
 
+function prettyMonth(date: Date) {
+  return `${MONTHS[date.getMonth()]}-${date.getFullYear()}`;
+}
+
 function num(v: unknown) {
   const n = typeof v === "number" ? v : parseFloat(String(v ?? 0));
   return Number.isFinite(n) ? n : 0;
-}
-
-function isCompleted(status?: string | null) {
-  return String(status || "").trim().toLowerCase() === "completed";
-}
-
-function isCancelled(status?: string | null) {
-  const s = String(status || "").trim().toLowerCase();
-  return s === "cancel" || s === "cancelled";
-}
-
-function isPending(status?: string | null) {
-  const s = String(status || "").trim().toLowerCase();
-  return s === "" || s === "pending";
-}
-
-function isOutsideBudget(item: BudgetItem) {
-  return (
-    item.outsideBudget === true ||
-    String(item.outsideBudget || "").toLowerCase() === "true" ||
-    String(item.status || "").trim().toLowerCase() === "outside budget"
-  );
 }
 
 function money(n: number) {
   return `S$${Math.round(n).toLocaleString()}`;
 }
 
-function safePct(numr: number, den: number) {
-  if (!den) return 0;
-  return Math.round((numr / den) * 100);
+function pct(a: number, b: number) {
+  if (!b) return 0;
+  return Math.round((a / b) * 100);
 }
 
-function topN<T>(arr: T[], n: number, getter: (x: T) => number) {
-  return [...arr].sort((a, b) => getter(b) - getter(a)).slice(0, n);
+function normalise(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s&/-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-function normaliseText(s: string) {
-  return s.toLowerCase().replace(/[^\w\s&-]/g, " ").replace(/\s+/g, " ").trim();
+function tokens(text: string) {
+  return normalise(text).split(" ").filter(Boolean);
 }
 
-function findOne(query: string, values: string[]) {
-  const nq = normaliseText(query);
-  return values.find((v) => nq.includes(normaliseText(v)));
+function includesAny(text: string, patterns: string[]) {
+  return patterns.some((p) => text.includes(p));
 }
 
-function findFY(query: string, fyList: string[]) {
-  const direct = fyList.find((fy) => query.toLowerCase().includes(fy.toLowerCase()));
-  if (direct) return direct;
-  const m = query.match(/\b(20\d{2})\s*[- ]?\s*(h1|h2)\b/i);
-  if (m) {
-    const fy = `${m[1]}-${m[2].toUpperCase()}`;
-    if (fyList.includes(fy)) return fy;
-  }
-  return "";
+function uniqueSorted(values: Array<string | undefined | null>) {
+  return [...new Set(values.map((v) => String(v || "").trim()).filter(Boolean))].sort();
 }
 
-function buildDataset(items: BudgetItem[], fxRates: Record<string, unknown>) {
-  const enriched = items.map((item) => {
+function canonicalStatus(status?: string | null) {
+  const s = normalise(String(status || ""));
+  if (!s) return "Pending";
+  if (s === "cancel" || s === "cancelled" || s === "canceled") return "Cancelled";
+  if (s === "completed") return "Completed";
+  if (s === "move to another half") return "Move to another half";
+  if (s === "unused") return "Unused";
+  if (s === "outside budget") return "Outside Budget";
+  return String(status || "").trim();
+}
+
+function isCompleted(status?: string | null) {
+  return canonicalStatus(status) === "Completed";
+}
+
+function isCancelled(status?: string | null) {
+  return canonicalStatus(status) === "Cancelled";
+}
+
+function isPending(status?: string | null) {
+  return canonicalStatus(status) === "Pending";
+}
+
+function isOutsideBudget(item: BudgetItem) {
+  return (
+    item.outsideBudget === true ||
+    String(item.outsideBudget || "").toLowerCase() === "true" ||
+    canonicalStatus(item.status) === "Outside Budget"
+  );
+}
+
+function recurringMonths(freq?: string | null) {
+  const f = normalise(String(freq || ""));
+  if (f === "monthly") return 1;
+  if (f === "quarterly") return 3;
+  if (f === "half yearly" || f === "half-yearly" || f === "halfyearly") return 6;
+  if (f === "annual" || f === "yearly") return 12;
+  return 0;
+}
+
+function addMonths(d: Date, months: number) {
+  return new Date(d.getFullYear(), d.getMonth() + months, 1);
+}
+
+function scoreTextMatch(question: string, row: DataRow) {
+  const qTokens = new Set(tokens(question));
+  const hay = tokens([
+    row.description,
+    row.businessUnit,
+    row.itemCategory,
+    row.vendor,
+    row.payingBU,
+    row.country,
+    row.location,
+    row.city,
+    row.expenseType,
+    row.status,
+    row.fy,
+    row.remarks,
+    row.billingFreq,
+  ].join(" "));
+  let score = 0;
+  hay.forEach((t) => {
+    if (qTokens.has(t)) score += 1;
+  });
+  return score;
+}
+
+function buildData(items: BudgetItem[], fxRates: Record<string, unknown>) {
+  const rows: DataRow[] = items.map((item) => {
     const budget = num(item.budget);
-    const actualRaw = item.actual;
-    const actual = actualRaw == null || actualRaw === "" ? null : num(actualRaw);
-    const fy = item.fy || getFY(item.planMonth);
-    const status = String(item.status || "").trim();
-    const amount = actual != null && actual > 0 ? actual : budget;
-    const savings = actual != null ? budget - actual : 0;
-
+    const actual = item.actual == null || item.actual === "" ? null : num(item.actual);
     return {
-      ...item,
-      fy,
-      budget,
-      actual,
-      amount,
-      savings,
-      status,
-      businessUnit: item.businessUnit || "Unknown",
-      itemCategory: item.itemCategory || "Unknown",
-      expenseType: item.expenseType || "Unknown",
-      vendor: item.vendor || "Unknown",
-      payingBU: item.payingBU || "Unknown",
-      country: item.country || "Unknown",
+      id: String(item.id ?? `${item.description || "item"}-${item.planMonth || ""}-${item.businessUnit || ""}`),
       description: item.description || "Unknown Item",
-      outsideBudget: isOutsideBudget(item),
-    };
-  });
-
-  const fys = [...new Set(enriched.map((i) => i.fy).filter(Boolean))].sort();
-  const businessUnits = [...new Set(enriched.map((i) => i.businessUnit).filter(Boolean))].sort();
-  const categories = [...new Set(enriched.map((i) => i.itemCategory).filter(Boolean))].sort();
-  const vendors = [...new Set(enriched.map((i) => i.vendor).filter(Boolean))].sort();
-
-  const totalBudget = enriched.reduce((s, i) => s + i.budget, 0);
-  const totalActual = enriched.reduce((s, i) => s + (i.actual || 0), 0);
-  const totalSavings = enriched.reduce((s, i) => s + (i.actual != null ? i.savings : 0), 0);
-  const outsideItems = enriched.filter((i) => i.outsideBudget);
-  const outsideBudgetTotal = outsideItems.reduce((s, i) => s + i.amount, 0);
-
-  const fySummary = fys.map((fy) => {
-    const arr = enriched.filter((i) => i.fy === fy);
-    const budget = arr.reduce((s, i) => s + i.budget, 0);
-    const actual = arr.reduce((s, i) => s + (i.actual || 0), 0);
-    return {
-      fy,
-      items: arr.length,
+      businessUnit: item.businessUnit || "Unknown BU",
+      itemCategory: item.itemCategory || "Unknown Category",
+      expenseType: item.expenseType || "Unknown Expense Type",
+      planMonth: item.planMonth || "",
+      fy: item.fy || getFY(item.planMonth),
       budget,
       actual,
-      utilisation: safePct(actual, budget),
-      completed: arr.filter((i) => isCompleted(i.status)).length,
-      pending: arr.filter((i) => isPending(i.status)).length,
-      cancelled: arr.filter((i) => isCancelled(i.status)).length,
-      outsideBudget: arr.filter((i) => i.outsideBudget).length,
+      amount: actual != null && actual > 0 ? actual : budget,
+      status: canonicalStatus(item.status),
+      outsideBudget: isOutsideBudget(item),
+      vendor: item.vendor || "Unknown Vendor",
+      payingBU: item.payingBU || "Unknown Paying BU",
+      billingFreq: item.billingFreq || "",
+      country: item.country || "",
+      location: item.location || "",
+      city: item.city || item.location || item.country || "",
+      remarks: item.remarks || "",
     };
   });
 
-  const inrRate =
-    Number((fxRates as any)?.INR) ||
-    Number((fxRates as any)?.["SGD_TO_INR"]) ||
-    Number((fxRates as any)?.["INR_RATE"]) ||
-    0;
-
-  return { items: enriched, fys, businessUnits, categories, vendors, totalBudget, totalActual, totalSavings, outsideItems, outsideBudgetTotal, fySummary, inrRate };
+  return {
+    rows,
+    fys: uniqueSorted(rows.map((r) => r.fy)),
+    businessUnits: uniqueSorted(rows.map((r) => r.businessUnit)),
+    categories: uniqueSorted(rows.map((r) => r.itemCategory)),
+    vendors: uniqueSorted(rows.map((r) => r.vendor)),
+    payingBUs: uniqueSorted(rows.map((r) => r.payingBU)),
+    locations: uniqueSorted(rows.map((r) => r.city || r.location || r.country)),
+    inrRate:
+      Number((fxRates as any)?.INR) ||
+      Number((fxRates as any)?.SGD_TO_INR) ||
+      Number((fxRates as any)?.INR_RATE) ||
+      0,
+  };
 }
 
-function makeList(rows: string[]) {
-  return rows.map((r) => `- ${r}`);
+function findFY(question: string, fyList: string[]) {
+  const q = question.toLowerCase();
+  const direct = fyList.find((fy) => q.includes(fy.toLowerCase()));
+  if (direct) return direct;
+  const m = q.match(/\b(20\d{2})\s*[- ]?\s*(h1|h2)\b/i);
+  if (!m) return null;
+  return `${m[1]}-${m[2].toUpperCase()}`;
 }
 
-function answerQuestion(query: string, dataset: ReturnType<typeof buildDataset>) {
-  const q = normaliseText(query);
-  const fy = findFY(query, dataset.fys);
-  const bu = findOne(query, dataset.businessUnits);
-  const category = findOne(query, dataset.categories);
-  const vendor = findOne(query, dataset.vendors);
-
-  let scoped = dataset.items;
-  if (fy) scoped = scoped.filter((i) => i.fy === fy);
-  if (bu) scoped = scoped.filter((i) => i.businessUnit === bu);
-  if (category) scoped = scoped.filter((i) => i.itemCategory === category);
-  if (vendor) scoped = scoped.filter((i) => i.vendor === vendor);
-
-  const scopedBudget = scoped.reduce((s, i) => s + i.budget, 0);
-  const scopedActual = scoped.reduce((s, i) => s + (i.actual || 0), 0);
-  const scopedSavings = scoped.reduce((s, i) => s + (i.actual != null ? i.savings : 0), 0);
-  const scopeBits = [fy ? `FY ${fy}` : "", bu ? `BU ${bu}` : "", category ? `Category ${category}` : "", vendor ? `Vendor ${vendor}` : ""].filter(Boolean);
-  const scopeTitle = scopeBits.length ? `Scope: ${scopeBits.join(" · ")}` : "Scope: Entire loaded budget dataset";
-
-  if (q.includes("outside budget")) {
-    const arr = fy ? dataset.outsideItems.filter((i) => i.fy === fy) : dataset.outsideItems;
-    const total = arr.reduce((s, i) => s + i.amount, 0);
-    const byFy = dataset.fys.map((oneFy) => ({ fy: oneFy, amt: arr.filter((i) => i.fy === oneFy).reduce((s, i) => s + i.amount, 0) })).filter((x) => x.amt > 0);
-    const itemLines = arr.length ? arr.slice(0, 20).map((i) => `${i.description} (${i.businessUnit} · ${i.fy}) — ${money(i.amount)}`) : ["No outside-budget items found in the current dataset."];
-    const out = [
-      "Outside Budget Summary",
-      "",
-      scopeTitle,
-      `- Total Outside Budget: ${money(total)}`,
-      `- Items: ${arr.length}`,
-      "",
-      "Breakdown by FY:",
-      ...makeList(byFy.map((x) => `${x.fy}: ${money(x.amt)}`)),
-      "",
-      "Items:",
-      ...makeList(itemLines),
-    ];
-    if (dataset.inrRate) out.push("", `Approx. INR Value: INR ${Math.round(total * dataset.inrRate).toLocaleString()} (rate ${dataset.inrRate})`);
-    return out.join("\n");
-  }
-
-  if ((q.includes("capex") && q.includes("opex")) || q.includes("split")) {
-    const capex = scoped.filter((i) => String(i.expenseType).toLowerCase() === "capex").reduce((s, i) => s + i.budget, 0);
-    const opex = scoped.filter((i) => String(i.expenseType).toLowerCase() === "opex").reduce((s, i) => s + i.budget, 0);
-    const total = capex + opex;
-    return ["Capex vs Opex Split", "", scopeTitle, `- Capex: ${money(capex)} (${safePct(capex, total)}%)`, `- Opex: ${money(opex)} (${safePct(opex, total)}%)`, `- Total: ${money(total)}`].join("\n");
-  }
-
-  if (q.includes("top") && q.includes("vendor")) {
-    const rows = topN(dataset.vendors.map((v) => {
-      const arr = scoped.filter((i) => i.vendor === v);
-      return { vendor: v, budget: arr.reduce((s, i) => s + i.budget, 0), actual: arr.reduce((s, i) => s + (i.actual || 0), 0) };
-    }).filter((x) => x.budget > 0 || x.actual > 0), 5, (x) => x.actual > 0 ? x.actual : x.budget);
-    return ["Top Vendors by Spend", "", scopeTitle, ...makeList(rows.map((r, idx) => `${idx + 1}. ${r.vendor} — Budget ${money(r.budget)} | Actual ${money(r.actual)}`))].join("\n");
-  }
-
-  if ((q.includes("highest") || q.includes("top")) && (q.includes("bu") || q.includes("business unit"))) {
-    const rows = topN(dataset.businessUnits.map((b) => {
-      const arr = scoped.filter((i) => i.businessUnit === b);
-      return { bu: b, budget: arr.reduce((s, i) => s + i.budget, 0), actual: arr.reduce((s, i) => s + (i.actual || 0), 0) };
-    }).filter((x) => x.budget > 0 || x.actual > 0), 5, (x) => x.actual > 0 ? x.actual : x.budget);
-    return ["Top Business Units by Spend", "", scopeTitle, ...makeList(rows.map((r, idx) => `${idx + 1}. ${r.bu} — Budget ${money(r.budget)} | Actual ${money(r.actual)}`))].join("\n");
-  }
-
-  if (q.includes("trend") || (q.includes("budget") && q.includes("fy")) || q.includes("each fy")) {
-    const rows = dataset.fySummary.filter((r) => !fy || r.fy === fy).map((r) => `${r.fy} — Budget ${money(r.budget)} | Actual ${money(r.actual)} | Utilisation ${r.utilisation}% | Items ${r.items}`);
-    return ["Budget / Actual by FY", "", ...makeList(rows)].join("\n");
-  }
-
-  if ((q.includes("overspend") || q.includes("variance")) && (q.includes("category") || q.includes("categories"))) {
-    const rows = dataset.categories.map((c) => {
-      const arr = scoped.filter((i) => i.itemCategory === c);
-      const budget = arr.reduce((s, i) => s + i.budget, 0);
-      const actual = arr.reduce((s, i) => s + (i.actual || 0), 0);
-      return { category: c, budget, actual, variance: budget - actual };
-    }).filter((x) => x.budget > 0 || x.actual > 0).sort((a, b) => a.variance - b.variance).slice(0, 8);
-    return ["Categories with Highest Overspend / Variance Risk", "", scopeTitle, ...makeList(rows.map((r) => `${r.category} — Budget ${money(r.budget)} | Actual ${money(r.actual)} | Variance ${r.variance >= 0 ? money(r.variance) : `-${money(Math.abs(r.variance)).replace("S$", "S$")}`}`))].join("\n");
-  }
-
-  if (q.includes("pending") || q.includes("completed") || q.includes("cancelled") || q.includes("status")) {
-    const completed = scoped.filter((i) => isCompleted(i.status)).length;
-    const pending = scoped.filter((i) => isPending(i.status)).length;
-    const cancelled = scoped.filter((i) => isCancelled(i.status)).length;
-    const moved = scoped.filter((i) => String(i.status).toLowerCase() === "move to another half").length;
-    const unused = scoped.filter((i) => String(i.status).toLowerCase() === "unused").length;
-    return ["Status Summary", "", scopeTitle, `- Total Items: ${scoped.length}`, `- Completed: ${completed}`, `- Pending: ${pending}`, `- Cancelled: ${cancelled}`, `- Move to Another Half: ${moved}`, `- Unused: ${unused}`].join("\n");
-  }
-
-  if (q.includes("utilisation") || q.includes("utilization")) {
-    return ["Budget Utilisation", "", scopeTitle, `- Budget: ${money(scopedBudget)}`, `- Actual: ${money(scopedActual)}`, `- Utilisation: ${safePct(scopedActual, scopedBudget)}%`, `- Realised Savings / Variance: ${scopedSavings >= 0 ? money(scopedSavings) : `-${money(Math.abs(scopedSavings)).replace("S$", "S$")}`}`].join("\n");
-  }
-
-  if (q.includes("budget") || q.includes("actual") || q.includes("savings") || q.includes("summary") || q.includes("total")) {
-    return ["Budget Summary", "", scopeTitle, `- Items: ${scoped.length}`, `- Budget: ${money(scopedBudget)}`, `- Actual: ${money(scopedActual)}`, `- Savings / Variance: ${scopedSavings >= 0 ? money(scopedSavings) : `-${money(Math.abs(scopedSavings)).replace("S$", "S$")}`}`, `- Utilisation: ${safePct(scopedActual, scopedBudget)}%`].join("\n");
-  }
-
-  return [
-    "I can answer budget questions from the data loaded in this app.",
-    "",
-    scopeTitle,
-    "",
-    "Try asking one of these:",
-    ...makeList([
-      "total budget for each FY",
-      "highest spend BU in 2026-H2",
-      "top 5 vendors by spend",
-      "outside budget summary",
-      "capex vs opex split",
-      "status summary for 2026-H1",
-    ]),
-  ].join("\n");
+function findOne(question: string, list: string[]) {
+  const q = normalise(question);
+  const sorted = [...list].sort((a, b) => b.length - a.length);
+  return sorted.find((v) => q.includes(normalise(v))) || null;
 }
 
-function renderRichText(text: string, T: React.CSSProperties) {
-  return text.split("\n").map((line, i) => {
-    if (!line.trim()) return <div key={i} style={{ height: 6 }} />;
-    if (!line.startsWith("- ") && line.endsWith("Summary")) return <div key={i} style={{ color: "#E6FFFD", fontWeight: 800, fontSize: 14, margin: "8px 0 4px", ...T }}>{line}</div>;
-    if (!line.startsWith("- ") && /:$/.test(line)) return <div key={i} style={{ color: "#DDE9F8", fontWeight: 700, margin: "8px 0 4px", ...T }}>{line}</div>;
-    if (line.startsWith("- ")) return <div key={i} style={{ display: "flex", gap: 8, marginBottom: 3 }}><span style={{ color: "#5EEAD4", flexShrink: 0 }}>▸</span><span>{line.slice(2)}</span></div>;
-    return <div key={i} style={{ marginBottom: 2 }}>{line}</div>;
+function findMultiple(question: string, list: string[]) {
+  const q = normalise(question);
+  return [...list]
+    .sort((a, b) => b.length - a.length)
+    .filter((v) => q.includes(normalise(v)))
+    .slice(0, 4);
+}
+
+function applyScope(data: ReturnType<typeof buildData>, question: string) {
+  const fy = findFY(question, data.fys);
+  const bu = findOne(question, data.businessUnits);
+  const category = findOne(question, data.categories);
+  const vendor = findOne(question, data.vendors);
+  const payingBU = findOne(question, data.payingBUs);
+  const location = findOne(question, data.locations);
+
+  const rows = data.rows.filter((r) => {
+    if (fy && r.fy !== fy) return false;
+    if (bu && r.businessUnit !== bu) return false;
+    if (category && r.itemCategory !== category) return false;
+    if (vendor && r.vendor !== vendor) return false;
+    if (payingBU && r.payingBU !== payingBU) return false;
+    if (location) {
+      const locs = [r.city, r.location, r.country].map((x) => normalise(String(x || "")));
+      if (!locs.includes(normalise(location))) return false;
+    }
+    return true;
   });
+
+  return { fy, bu, category, vendor, payingBU, location, rows };
+}
+
+function scopeText(scope: ReturnType<typeof applyScope>) {
+  const parts: string[] = [];
+  if (scope.fy) parts.push(`FY: ${scope.fy}`);
+  if (scope.bu) parts.push(`BU: ${scope.bu}`);
+  if (scope.payingBU) parts.push(`Paying BU: ${scope.payingBU}`);
+  if (scope.category) parts.push(`Category: ${scope.category}`);
+  if (scope.vendor) parts.push(`Vendor: ${scope.vendor}`);
+  if (scope.location) parts.push(`Location: ${scope.location}`);
+  return parts.length ? `Scope: ${parts.join(" | ")}` : "Scope: Entire loaded app dataset";
+}
+
+function groupedSpend(rows: DataRow[], key: keyof DataRow) {
+  const map = new Map<string, number>();
+  rows.forEach((r) => {
+    const k = String(r[key] || "Unknown");
+    map.set(k, (map.get(k) || 0) + r.amount);
+  });
+  return [...map.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+function groupedBudgetActual(rows: DataRow[], key: keyof DataRow) {
+  const map = new Map<string, { budget: number; actual: number; items: number }>();
+  rows.forEach((r) => {
+    const k = String(r[key] || "Unknown");
+    const prev = map.get(k) || { budget: 0, actual: 0, items: 0 };
+    prev.budget += r.budget;
+    prev.actual += r.actual || 0;
+    prev.items += 1;
+    map.set(k, prev);
+  });
+  return [...map.entries()]
+    .map(([label, v]) => ({ label, ...v }))
+    .sort((a, b) => b.budget - a.budget);
+}
+
+function nextRenewal(rows: DataRow[]) {
+  const today = new Date();
+  const startOfCurrentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  const candidates = rows
+    .map((r) => {
+      const parsed = parsePlanMonth(r.planMonth);
+      const cycle = recurringMonths(r.billingFreq);
+      if (!parsed || !cycle) return null;
+
+      let d = new Date(parsed.year, parsed.month, 1);
+      while (d < startOfCurrentMonth) {
+        d = addMonths(d, cycle);
+      }
+
+      return { ...r, renewalDate: d };
+    })
+    .filter(Boolean) as Array<DataRow & { renewalDate: Date }>;
+
+  candidates.sort((a, b) => a.renewalDate.getTime() - b.renewalDate.getTime());
+  return candidates[0] || null;
+}
+
+function format(lines: string[]) {
+  return lines.filter(Boolean).join("\n\n");
+}
+
+function fallbackAnswer(question: string, scopedRows: DataRow[], scope: ReturnType<typeof applyScope>) {
+  const matches = scopedRows
+    .map((r) => ({ row: r, score: scoreTextMatch(question, r) }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score || b.row.amount - a.row.amount)
+    .slice(0, 5);
+
+  if (!matches.length) {
+    const totalBudget = scopedRows.reduce((s, r) => s + r.budget, 0);
+    const totalActual = scopedRows.reduce((s, r) => s + (r.actual || 0), 0);
+    return format([
+      "I checked the app data and could not map that question to a specific metric confidently.",
+      scopeText(scope),
+      `Closest safe summary: Budget ${money(totalBudget)} | Actual ${money(totalActual)} | Items ${scopedRows.length}`,
+      "Try asking with a BU, FY, vendor, category, status, location, top item, renewal, actual, budget, or outside-budget wording.",
+    ]);
+  }
+
+  return format([
+    "I matched your question to the closest relevant items in the app data:",
+    scopeText(scope),
+    ...matches.map((m, i) => `${i + 1}. ${m.row.description} — ${m.row.businessUnit} — ${m.row.city || m.row.location || m.row.country || "NA"} — ${money(m.row.amount)}`),
+  ]);
+}
+
+function answerQuestion(question: string, data: ReturnType<typeof buildData>) {
+  const q = normalise(question);
+  const scope = applyScope(data, question);
+  const rows = scope.rows;
+
+  if (!rows.length) {
+    return format([
+      "I checked the app data first, but I could not find matching records for that question.",
+      scopeText(scope),
+      "Try adding an FY, BU, vendor, category, location, or ask for budget / actual / top items.",
+    ]);
+  }
+
+  const totalBudget = rows.reduce((s, r) => s + r.budget, 0);
+  const totalActual = rows.reduce((s, r) => s + (r.actual || 0), 0);
+  const savings = rows.reduce((s, r) => s + (r.actual != null ? r.budget - r.actual : 0), 0);
+  const util = pct(totalActual, totalBudget);
+
+  const askRenewal = includesAny(q, [
+    "next renewal", "upcoming renewal", "renewal due", "when is my next renewal", "what is my next renewal",
+    "renewals", "subscription renewal", "license renewal"
+  ]);
+
+  const askBiggestItem = includesAny(q, [
+    "biggest line item","largest line item","highest line item","highest cost item","biggest item","largest item","top item","costliest item"
+  ]);
+
+  const askTotalBudget = includesAny(q, [
+    "total budget","budget total","planned budget","budget amount","how much budget"
+  ]);
+
+  const askTotalActual = includesAny(q, [
+    "total actual","actual spend","spent so far","how much spent","actual amount","how much have we spent"
+  ]);
+
+  const askSavings = includesAny(q, [
+    "savings","variance","over budget","under budget","budget variance","overspend"
+  ]);
+
+  const askTopVendor = includesAny(q, [
+    "top vendor","top vendors","largest vendor","highest vendor","vendor spend","vendors by spend"
+  ]);
+
+  const askCapexOpex = includesAny(q, [
+    "capex vs opex","capex opex","capex","opex"
+  ]);
+
+  const askOutsideBudget = includesAny(q, [
+    "outside budget","out of budget","unplanned"
+  ]);
+
+  const askStatus = includesAny(q, [
+    "status summary","status split","status breakdown","completed","pending","cancelled","canceled","unused"
+  ]);
+
+  const askByFY = includesAny(q, [
+    "each fy","by fy","fy wise","financial year wise","all years","half wise"
+  ]);
+
+  const askByBU = includesAny(q, [
+    "which bu","which business unit","highest bu","highest spend bu","largest bu","top bu","business unit"
+  ]);
+
+  const askTopCategory = includesAny(q, [
+    "top category","top categories","highest category","largest category","costing category","which category"
+  ]);
+
+  const askTopLocation = includesAny(q, [
+    "which city","which location","highest city","highest location","costing most city","costing most location","which place"
+  ]);
+
+  const compareTargets = [
+    ...findMultiple(question, data.businessUnits),
+    ...findMultiple(question, data.vendors),
+    ...findMultiple(question, data.categories),
+  ];
+
+  if (askRenewal) {
+    const renewal = nextRenewal(rows);
+    if (!renewal) {
+      return format([
+        "I checked the loaded app data and could not find a recurring renewal schedule for the current scope.",
+        scopeText(scope),
+        "This usually means billing frequency is missing or items are one-time costs only.",
+      ]);
+    }
+
+    return format([
+      `Next renewal: ${prettyMonth(renewal.renewalDate)}`,
+      scopeText(scope),
+      `Item: ${renewal.description}`,
+      `BU: ${renewal.businessUnit}`,
+      `Vendor: ${renewal.vendor}`,
+      `Billing frequency: ${renewal.billingFreq || "Not specified"}`,
+      `Expected amount: ${money(renewal.amount)} ${renewal.actual != null && renewal.actual > 0 ? "(using Actual)" : "(using Budget)"}`,
+    ]);
+  }
+
+  if (askBiggestItem) {
+    const top = [...rows].sort((a, b) => b.amount - a.amount)[0];
+    const next = [...rows]
+      .sort((a, b) => b.amount - a.amount)
+      .slice(1, 4)
+      .map((r, i) => `${i + 2}. ${r.description} — ${r.businessUnit} — ${r.city || r.location || r.country || "NA"} — ${money(r.amount)}`);
+
+    return format([
+      `Biggest line item: ${top.description}`,
+      scopeText(scope),
+      `BU: ${top.businessUnit}`,
+      `City / Location: ${top.city || top.location || top.country || "Not specified"}`,
+      `Vendor: ${top.vendor || "Unknown Vendor"}`,
+      `FY: ${top.fy || "Unknown"}`,
+      `Amount: ${money(top.amount)} ${top.actual != null && top.actual > 0 ? "(using Actual)" : "(using Budget)"}`,
+      next.length ? `Next biggest items:\n${next.join("\n")}` : "",
+    ]);
+  }
+
+  if (askTopVendor) {
+    const top = groupedSpend(rows, "vendor").slice(0, 5);
+    return format([
+      "Top vendors by spend from the loaded app data:",
+      scopeText(scope),
+      ...top.map(([name, value], i) => `${i + 1}. ${name} — ${money(value)}`),
+    ]);
+  }
+
+  if (askCapexOpex) {
+    const capex = rows
+      .filter((r) => normalise(r.expenseType).includes("capex"))
+      .reduce((s, r) => s + r.amount, 0);
+    const opex = rows
+      .filter((r) => normalise(r.expenseType).includes("opex"))
+      .reduce((s, r) => s + r.amount, 0);
+    const total = capex + opex;
+
+    return format([
+      "Capex vs Opex split:",
+      scopeText(scope),
+      `Capex: ${money(capex)} (${pct(capex, total)}%)`,
+      `Opex: ${money(opex)} (${pct(opex, total)}%)`,
+      `Total: ${money(total)}`,
+    ]);
+  }
+
+  if (askOutsideBudget) {
+    const outside = rows.filter((r) => r.outsideBudget);
+    const total = outside.reduce((s, r) => s + r.amount, 0);
+    const topItems = outside
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 8)
+      .map((r, i) => `${i + 1}. ${r.description} — ${r.businessUnit} — ${r.fy} — ${money(r.amount)}`);
+
+    return format([
+      `Outside-budget items: ${outside.length}`,
+      scopeText(scope),
+      `Total impact: ${money(total)}`,
+      data.inrRate ? `Approx INR: ₹${Math.round(total * data.inrRate).toLocaleString()}` : "",
+      topItems.length ? `Largest outside-budget items:\n${topItems.join("\n")}` : "No outside-budget items found.",
+    ]);
+  }
+
+  if (askStatus) {
+    const completed = rows.filter((r) => isCompleted(r.status)).length;
+    const pending = rows.filter((r) => isPending(r.status)).length;
+    const cancelled = rows.filter((r) => isCancelled(r.status)).length;
+    const unused = rows.filter((r) => normalise(r.status) === "unused").length;
+    const moved = rows.filter((r) => normalise(r.status) === "move to another half").length;
+
+    return format([
+      "Status summary:",
+      scopeText(scope),
+      `Completed: ${completed}`,
+      `Pending: ${pending}`,
+      `Cancelled: ${cancelled}`,
+      `Unused: ${unused}`,
+      `Move to another half: ${moved}`,
+      `Total items: ${rows.length}`,
+    ]);
+  }
+
+  if (askByFY) {
+    const byFY = groupedBudgetActual(rows, "fy").sort((a, b) => a.label.localeCompare(b.label));
+    return format([
+      "FY-wise summary:",
+      scopeText(scope),
+      ...byFY.map((r) => `${r.label} — Budget ${money(r.budget)} | Actual ${money(r.actual)} | Items ${r.items}`),
+    ]);
+  }
+
+  if (askByBU && includesAny(q, ["highest","largest","biggest","top"])) {
+    const top = groupedSpend(rows, "businessUnit")[0];
+    return format([
+      "Highest-spend business unit:",
+      scopeText(scope),
+      `${top?.[0] || "Unknown"} — ${money(top?.[1] || 0)}`,
+    ]);
+  }
+
+  if (askTopCategory) {
+    const top = groupedSpend(rows, "itemCategory").slice(0, 5);
+    return format([
+      "Top categories by spend:",
+      scopeText(scope),
+      ...top.map(([name, value], i) => `${i + 1}. ${name} — ${money(value)}`),
+    ]);
+  }
+
+  if (askTopLocation) {
+    const map = new Map<string, number>();
+    rows.forEach((r) => {
+      const loc = r.city || r.location || r.country || "Unknown";
+      map.set(loc, (map.get(loc) || 0) + r.amount);
+    });
+    const top = [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+    return format([
+      "Top locations by spend:",
+      scopeText(scope),
+      ...top.map(([name, value], i) => `${i + 1}. ${name} — ${money(value)}`),
+    ]);
+  }
+
+  if (compareTargets.length >= 2) {
+    const uniq = [...new Set(compareTargets)].slice(0, 2);
+    const comparisons = uniq.map((name) => {
+      const subset = data.rows.filter((r) =>
+        r.businessUnit === name || r.vendor === name || r.itemCategory === name
+      );
+      const budget = subset.reduce((s, r) => s + r.budget, 0);
+      const actual = subset.reduce((s, r) => s + (r.actual || 0), 0);
+      return `${name} — Budget ${money(budget)} | Actual ${money(actual)} | Items ${subset.length}`;
+    });
+
+    return format([
+      "Comparison from the app data:",
+      ...comparisons,
+    ]);
+  }
+
+  if (askTotalBudget) {
+    return format([
+      `Total budget: ${money(totalBudget)}`,
+      scopeText(scope),
+      `Items covered: ${rows.length}`,
+    ]);
+  }
+
+  if (askTotalActual) {
+    return format([
+      `Total actual: ${money(totalActual)}`,
+      scopeText(scope),
+      `Utilisation: ${util}% of budget`,
+      `Items with actual entered: ${rows.filter((r) => r.actual != null && r.actual > 0).length}`,
+    ]);
+  }
+
+  if (askSavings) {
+    const label = savings >= 0 ? "Savings / positive variance" : "Overspend / negative variance";
+    return format([
+      `${label}: ${savings >= 0 ? money(savings) : `-${money(Math.abs(savings)).replace("S$", "S$")}`}`,
+      scopeText(scope),
+      `Budget: ${money(totalBudget)}`,
+      `Actual: ${money(totalActual)}`,
+      `Utilisation: ${util}%`,
+    ]);
+  }
+
+  return fallbackAnswer(question, rows, scope);
 }
 
 export default function AIInsights({ items, fxRates, role }: AIInsightsProps) {
-  const T = { fontFamily: "'Montserrat',sans-serif" } as const;
   const todayKey = new Date().toISOString().slice(0, 10);
   const storageKey = `itbudget_ai_chat_${todayKey}`;
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
@@ -321,77 +644,301 @@ export default function AIInsights({ items, fxRates, role }: AIInsightsProps) {
   });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const endRef = useRef<HTMLDivElement | null>(null);
-  const dataset = useMemo(() => buildDataset(items, fxRates), [items, fxRates]);
-  const isAdmin = role === "admin";
+  const [error, setError] = useState("");
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  const data = useMemo(() => buildData(items, fxRates), [items, fxRates]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    try { localStorage.setItem(storageKey, JSON.stringify(messages)); } catch (error) { console.error("Failed to save AI chat:", error); }
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(messages));
+    } catch {
+      // ignore storage errors
+    }
   }, [messages, storageKey]);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
-  const sendMessage = async (userMsg: string) => {
-    const trimmed = userMsg.trim();
-    if (!trimmed || loading) return;
-    setMessages((prev) => [...prev, { role: "user", text: trimmed }]);
+  const prompts = [
+    "What is the biggest line item in all these years, and for which BU, city and how much does it cost?",
+    "When is my next renewal and what is the item?",
+    "Show top 5 vendors by spend",
+    "How much actual have we spent in 2026-H1?",
+    "Give outside budget summary",
+    "Which BU has the highest spend?",
+    "Which city is costing the most?",
+    "Compare Blink and WP - India Common",
+  ];
+
+  async function ask() {
+    const text = input.trim();
+    if (!text || loading) return;
+
+    setError("");
+    setMessages((prev) => [...prev, { role: "user", text }]);
     setInput("");
     setLoading(true);
+
     try {
-      const answer = answerQuestion(trimmed, dataset);
-      await new Promise((r) => setTimeout(r, 180));
+      const answer = answerQuestion(text, data);
+      await new Promise((resolve) => setTimeout(resolve, 120));
       setMessages((prev) => [...prev, { role: "assistant", text: answer }]);
+    } catch (e: any) {
+      setError(e?.message || "Failed to answer from app data.");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const SUGGESTED = [
-    "Total IT budget for each FY half",
-    "Which BU has highest spend in 2026-H2",
-    "Top 5 vendors by total spend",
-    "Overall Capex vs Opex split",
-    "All outside-budget items and their SGD impact",
-    "Status summary for 2026-H1",
-    "Budget utilisation trend across FY halves",
-    "Categories with overspend risk",
-  ];
-
-  const card = { background: "linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius: 14, border: "1px solid rgba(94,234,212,0.12)" } as const;
+  function renderText(text: string) {
+    return text.split("\n").map((line, i) => (
+      <div
+        key={i}
+        style={{
+          marginBottom: line.trim() ? 6 : 12,
+          color: "#CBD5E1",
+          lineHeight: 1.65,
+          whiteSpace: "pre-wrap",
+        }}
+      >
+        {line}
+      </div>
+    ));
+  }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12, ...T, height: "calc(100vh - 180px)", minHeight: 580 }}>
-      <div style={{ ...card, padding: "14px 18px", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <div style={{ width: 40, height: 40, borderRadius: 11, background: "linear-gradient(135deg,#22D3EE,#2DD4BF)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>🧠</div>
-        <div style={{ flex: 1, minWidth: 220 }}>
-          <div style={{ color: "#5EEAD4", fontWeight: 800, fontSize: 13 }}>Budget Insight Assistant</div>
-          <div style={{ color: "#8AA0B7", fontSize: 11, marginTop: 1 }}>Answers are generated only from the budget data currently loaded in this app. No outside browsing, no external knowledge.</div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div
+        style={{
+          background: "linear-gradient(145deg,#0F1B2B,#0C1722)",
+          borderRadius: 16,
+          padding: 18,
+          border: "1px solid rgba(94,234,212,0.22)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 16,
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div
+            style={{
+              width: 46,
+              height: 46,
+              borderRadius: 14,
+              background: "linear-gradient(135deg,#22d3ee,#34d399)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 22,
+            }}
+          >
+            🧠
+          </div>
+          <div>
+            <div style={{ color: "#5EEAD4", fontWeight: 800, fontSize: 16 }}>
+              Budget Insight Assistant
+            </div>
+            <div style={{ color: "#88A0B8", fontSize: 13, marginTop: 4 }}>
+              Checks the loaded app data first, then answers in plain business language.
+            </div>
+          </div>
         </div>
-        {isAdmin && <div style={{ background: "rgba(94,234,212,0.08)", border: "1px solid rgba(94,234,212,0.30)", borderRadius: 9, padding: "8px 16px", color: "#5EEAD4", fontSize: 12, fontWeight: 700 }}>App-grounded mode</div>}
+
+        <div
+          style={{
+            color: "#5EEAD4",
+            border: "1px solid rgba(94,234,212,0.3)",
+            borderRadius: 10,
+            padding: "10px 14px",
+            fontWeight: 700,
+            whiteSpace: "nowrap",
+          }}
+        >
+          App-grounded mode
+        </div>
       </div>
 
-      <div style={{ ...card, flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", padding: 0 }}>
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
-          {messages.length === 0 && <div style={{ textAlign: "center", paddingTop: 10 }}><div style={{ fontSize: 44, marginBottom: 10 }}>✨</div><div style={{ color: "#E0E7FF", fontWeight: 800, fontSize: 17, marginBottom: 5, ...T }}>Ask anything about your IT budget</div><div style={{ color: "#6B7280", fontSize: 12, marginBottom: 20, ...T }}>Grounded on loaded app data · {dataset.items.length} items · {dataset.fys.length} FY halves</div><div style={{ display: "flex", flexWrap: "wrap", gap: 7, justifyContent: "center", maxWidth: 760, margin: "0 auto" }}>{SUGGESTED.map((q, i) => <button key={i} onClick={() => void sendMessage(q)} style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.17)", borderRadius: 20, color: "#9FB3C8", padding: "6px 14px", cursor: "pointer", fontSize: 11, fontWeight: 600, maxWidth: 280, ...T }}>{q}</button>)}</div></div>}
+      <div
+        style={{
+          background: "linear-gradient(145deg,#0F1B2B,#0C1722)",
+          borderRadius: 16,
+          border: "1px solid rgba(94,234,212,0.16)",
+          minHeight: 560,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
+        <div style={{ flex: 1, padding: 20, overflowY: "auto" }}>
+          {messages.length === 0 && (
+            <div
+              style={{
+                maxWidth: 660,
+                background: "rgba(9,19,29,0.78)",
+                borderRadius: 18,
+                padding: 18,
+                border: "1px solid rgba(94,234,212,0.12)",
+              }}
+            >
+              <div style={{ color: "#E2E8F0", fontWeight: 700, fontSize: 18, marginBottom: 8 }}>
+                Ask in normal day-to-day language.
+              </div>
+              <div style={{ color: "#94A3B8", lineHeight: 1.7, marginBottom: 14 }}>
+                I work only on the budget data loaded in this app. I first check the data, detect the intent,
+                apply BU / FY / vendor / category / location scope, then answer clearly.
+              </div>
 
-          {messages.map((msg, i) => <div key={i} style={{ display: "flex", gap: 10, flexDirection: msg.role === "user" ? "row-reverse" : "row" }}><div style={{ width: 30, height: 30, borderRadius: 999, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, background: msg.role === "user" ? "linear-gradient(135deg,#22D3EE,#2DD4BF)" : "linear-gradient(135deg,#4285F4,#0F9D58)" }}>{msg.role === "user" ? "👤" : "📊"}</div><div style={{ maxWidth: "78%", background: msg.role === "user" ? "rgba(79,70,229,0.18)" : "rgba(0,0,0,0.28)", border: `1px solid ${msg.role === "user" ? "rgba(94,234,212,0.22)" : "rgba(255,255,255,0.05)"}`, borderRadius: msg.role === "user" ? "14px 4px 14px 14px" : "4px 14px 14px 14px", padding: "12px 16px" }}><div style={{ color: msg.role === "user" ? "#E6FFFD" : "#9FB3C8", fontSize: 12, lineHeight: 1.75, ...T }}>{msg.role === "assistant" ? renderRichText(msg.text, T) : msg.text}</div></div></div>)}
+              <div style={{ color: "#F8FAFC", fontWeight: 700, marginBottom: 10 }}>
+                Examples
+              </div>
 
-          {loading && <div style={{ display: "flex", gap: 10 }}><div style={{ width: 30, height: 30, borderRadius: 999, background: "linear-gradient(135deg,#4285F4,#0F9D58)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>📊</div><div style={{ background: "rgba(0,0,0,0.28)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "4px 14px 14px 14px", padding: "13px 18px", display: "flex", gap: 6, alignItems: "center" }}>{[0,1,2].map((i) => <div key={i} style={{ width: 7, height: 7, borderRadius: 999, background: "#4285F4", animation: `aibounce 1.2s ${i * 0.2}s infinite` }} />)}<style>{`@keyframes aibounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}`}</style><span style={{ color: "#374151", fontSize: 11, marginLeft: 4, ...T }}>Analysing loaded budget data…</span></div></div>}
-          <div ref={endRef} />
+              <div style={{ display: "grid", gap: 8 }}>
+                {prompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    onClick={() => setInput(prompt)}
+                    style={{
+                      textAlign: "left",
+                      background: "#0B1520",
+                      color: "#CBD5E1",
+                      border: "1px solid #1E3A5F",
+                      borderRadius: 12,
+                      padding: "10px 12px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {messages.map((m, i) => (
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                justifyContent: m.role === "user" ? "flex-end" : "flex-start",
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  maxWidth: "78%",
+                  background: m.role === "user" ? "#1E2A59" : "rgba(9,19,29,0.85)",
+                  border: "1px solid rgba(94,234,212,0.14)",
+                  borderRadius: 18,
+                  padding: "14px 16px",
+                }}
+              >
+                {renderText(m.text)}
+              </div>
+            </div>
+          ))}
+
+          {loading && (
+            <div style={{ color: "#88A0B8", fontWeight: 600 }}>
+              Checking app data...
+            </div>
+          )}
+
+          <div ref={bottomRef} />
         </div>
 
-        <div style={{ borderTop: "1px solid rgba(94,234,212,0.10)", padding: "12px 18px", display: "flex", gap: 10, flexShrink: 0, background: "rgba(0,0,0,0.15)" }}>
-          <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendMessage(input); } }} placeholder="Ask about budget, actuals, utilisation, vendors, BU, FY, categories…" disabled={loading} style={{ flex: 1, background: "rgba(0,0,0,0.38)", border: "1px solid rgba(66,133,244,0.35)", borderRadius: 10, color: "#E5E7EB", padding: "10px 16px", fontSize: 13, outline: "none", ...T }} />
-          <button onClick={() => void sendMessage(input)} disabled={!input.trim() || loading} style={{ background: !input.trim() || loading ? "rgba(66,133,244,0.20)" : "linear-gradient(135deg,#4285F4,#0F9D58)", border: "none", borderRadius: 10, color: "#fff", padding: "10px 22px", cursor: !input.trim() || loading ? "not-allowed" : "pointer", fontWeight: 700, fontSize: 13, ...T, flexShrink: 0 }}>{loading ? "⏳" : "Send ↗"}</button>
-          {messages.length > 0 && <button onClick={() => setMessages([])} style={{ background: "rgba(71,85,105,0.2)", border: "1px solid rgba(71,85,105,0.3)", borderRadius: 10, color: "#6B7280", padding: "10px 14px", cursor: "pointer", fontSize: 12, ...T }}>Clear</button>}
+        <div
+          style={{
+            borderTop: "1px solid rgba(94,234,212,0.12)",
+            padding: 16,
+            display: "flex",
+            gap: 12,
+            alignItems: "center",
+          }}
+        >
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                ask();
+              }
+            }}
+            placeholder="Ask naturally: next renewal, biggest item, top vendor, what did we spend, compare BU..."
+            style={{
+              flex: 1,
+              background: "#08131D",
+              color: "#E2E8F0",
+              border: "1px solid #1E3A5F",
+              borderRadius: 12,
+              padding: "14px 16px",
+              outline: "none",
+              fontSize: 14,
+            }}
+          />
+
+          <button
+            onClick={ask}
+            disabled={loading}
+            style={{
+              background: "linear-gradient(135deg,#2563eb,#1d4ed8)",
+              color: "#fff",
+              border: "none",
+              borderRadius: 12,
+              padding: "14px 20px",
+              fontWeight: 700,
+              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading ? 0.7 : 1,
+            }}
+          >
+            Send ↗
+          </button>
+
+          <button
+            onClick={() => setMessages([])}
+            style={{
+              background: "#1E293B",
+              color: "#CBD5E1",
+              border: "none",
+              borderRadius: 12,
+              padding: "14px 18px",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Clear
+          </button>
         </div>
       </div>
 
-      <div style={{ ...card, padding: "10px 18px", flexShrink: 0, display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}>
-        <span style={{ color: "#374151", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Data context</span>
-        {[[dataset.items.length, "items"], [dataset.fys.length, "FY halves"], [dataset.businessUnits.length, "BUs"], [dataset.categories.length, "categories"], [dataset.vendors.length, "vendors"]].map(([n, l]) => <div key={String(l)} style={{ display: "flex", gap: 5, alignItems: "baseline" }}><span style={{ color: "#4285F4", fontWeight: 800, fontSize: 14, ...T }}>{String(n)}</span><span style={{ color: "#374151", fontSize: 11, ...T }}>{String(l)}</span></div>)}
-        <div style={{ marginLeft: "auto", color: "#374151", fontSize: 10, ...T }}>App-only budget reasoning</div>
+      {error && (
+        <div style={{ color: "#F87171", fontWeight: 700 }}>{error}</div>
+      )}
+
+      <div
+        style={{
+          background: "linear-gradient(145deg,#0F1B2B,#0C1722)",
+          borderRadius: 14,
+          border: "1px solid rgba(94,234,212,0.12)",
+          padding: "12px 16px",
+          color: "#64748B",
+          fontSize: 12,
+          display: "flex",
+          gap: 18,
+          flexWrap: "wrap",
+        }}
+      >
+        <span><strong style={{ color: "#60A5FA" }}>{data.rows.length}</strong> items</span>
+        <span><strong style={{ color: "#60A5FA" }}>{data.fys.length}</strong> FY halves</span>
+        <span><strong style={{ color: "#60A5FA" }}>{data.businessUnits.length}</strong> BUs</span>
+        <span><strong style={{ color: "#60A5FA" }}>{data.categories.length}</strong> categories</span>
+        <span><strong style={{ color: "#60A5FA" }}>{data.vendors.length}</strong> vendors</span>
+        <span>role: <strong style={{ color: "#60A5FA" }}>{role}</strong></span>
       </div>
     </div>
   );
