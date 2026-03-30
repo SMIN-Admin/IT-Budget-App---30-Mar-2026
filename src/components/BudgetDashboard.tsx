@@ -7726,7 +7726,7 @@ const loadInitialItems = async () => {
     setItemsLoading(true);
 
     const res = await fetch(
-  `/api/budget-items?limit=50&fy=${encodeURIComponent(filterFY)}&businessUnit=${encodeURIComponent(filterBU)}&status=${encodeURIComponent(filterStatus)}`,
+  `/api/budget-items?limit=100&fy=${encodeURIComponent(filterFY)}&businessUnit=${encodeURIComponent(filterBU)}&status=${encodeURIComponent(filterStatus)}`,
   {
     method: "GET",
     cache: "no-store",
@@ -7810,7 +7810,7 @@ const loadMoreItems = async () => {
     setItemsLoading(true);
 
     const res = await fetch(
-      `/api/budget-items?limit=50&fy=${encodeURIComponent(filterFY)}&businessUnit=${encodeURIComponent(filterBU)}&status=${encodeURIComponent(filterStatus)}&cursor=${encodeURIComponent(itemsNextCursor)}`,
+      `/api/budget-items?limit=100&fy=${encodeURIComponent(filterFY)}&businessUnit=${encodeURIComponent(filterBU)}&status=${encodeURIComponent(filterStatus)}&cursor=${encodeURIComponent(itemsNextCursor)}`,
       {
         method: "GET",
         cache: "no-store",

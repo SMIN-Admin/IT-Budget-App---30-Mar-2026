@@ -19,9 +19,9 @@ function getFYFromPlanMonth(planMonth: string) {
   if (!m) return "";
 
   const fullYear = 2000 + year;
-  return m >= 4 && m <= 9
-    ? `${fullYear}-H1`
-    : `${fullYear}-H2`;
+  if (m >= 4 && m <= 9) return `${fullYear + 1}-H1`;
+if (m >= 10) return `${fullYear + 1}-H2`;
+return `${fullYear}-H2`;
 }
 
 export async function GET() {
