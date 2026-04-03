@@ -187,7 +187,7 @@ function scoreTextMatch(question: string, row: DataRow) {
 function buildData(items: BudgetItem[], fxRates: Record<string, unknown>) {
   const rows: DataRow[] = items.map((item) => {
     const budget = num(item.budget);
-    const actual = item.actual == null || item.actual === "" ? null : num(item.actual);
+    const actual = item.actual == null ? null : num(item.actual);
     return {
       id: String(item.id ?? `${item.description || "item"}-${item.planMonth || ""}-${item.businessUnit || ""}`),
       description: item.description || "Unknown Item",

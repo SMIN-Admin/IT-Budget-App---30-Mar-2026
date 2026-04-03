@@ -427,7 +427,7 @@ export async function POST(req: NextRequest) {
       const fyItems = items.filter(i => i.fy === fy);
       batch.set(
         adminDb.collection("budgetSummaries").doc(`fy_${fy}`),
-        buildHomeSummary(fyItems, fy)
+        buildHomeSummary(fyItems, fy || null)
       );
     }
 
