@@ -387,16 +387,34 @@ function PlanMonthPicker({ value, onChange, required }) {
 
 // ─── PERSISTENCE HOOK ─────────────────────────────────────────────────────────
 function useLocalStorage(key, initial) {
-  const [value, setValue] = useState(() => {
+  const initialRef = useRef(initial);
+  const [value, setValue] = useState(initialRef.current);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
     try {
       const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : initial;
-    } catch { return initial; }
-  });
+      if (raw != null) {
+        setValue(JSON.parse(raw));
+      } else {
+        setValue(initialRef.current);
+      }
+    } catch {
+      setValue(initialRef.current);
+    } finally {
+      setHydrated(true);
+    }
+  }, [key]);
+
   useEffect(() => {
-    try { localStorage.setItem(key, JSON.stringify(value)); }
-    catch (e) { console.warn("localStorage quota exceeded for key:", key, e); }
-  }, [key, value]);
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      console.warn("localStorage quota exceeded for key:", key, e);
+    }
+  }, [key, value, hydrated]);
+
   return [value, setValue];
 }
 
@@ -1323,6 +1341,128 @@ function FYMultiSelect({ fyOptions, selectedFYs, onChange }) {
     </div>
   );
 }
+function FYComparisonMultiSelect({ label, color, fyOptions, selectedFYs, onChange }) {
+  const [open, setOpen] = useState(false);
+
+  const toggle = (fy) => {
+    if (selectedFYs.includes(fy)) {
+      onChange(selectedFYs.filter((x) => x !== fy));
+    } else {
+      onChange([...selectedFYs, fy].sort());
+    }
+  };
+
+  const displayLabel =
+    selectedFYs.length === 0
+      ? "— Select FY —"
+      : selectedFYs.length === 1
+      ? selectedFYs[0]
+      : `${selectedFYs.length} selected`;
+
+  return (
+    <div style={{ position: "relative" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ color, fontWeight: 700, fontSize: 12 }}>{label}</span>
+        <button
+          onClick={() => setOpen((o) => !o)}
+          style={{
+            background: "#0F1B2B",
+            border: "1px solid #213547",
+            borderRadius: 10,
+            color: "#f1f5f9",
+            padding: "8px 14px",
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: "pointer",
+            outline: "none",
+            minWidth: 200,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span>{displayLabel}</span>
+          <span style={{ fontSize: 10 }}>{open ? "▲" : "▼"}</span>
+        </button>
+      </div>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: 0,
+            zIndex: 50,
+            background: "#0F1B2B",
+            border: "1px solid #213547",
+            borderRadius: 12,
+            padding: 8,
+            minWidth: 220,
+            boxShadow: "0 8px 32px #00000066",
+            maxHeight: 280,
+            overflowY: "auto",
+          }}
+        >
+          {fyOptions.map((fy) => {
+            const active = selectedFYs.includes(fy);
+            return (
+              <div
+                key={fy}
+                onClick={() => toggle(fy)}
+                style={{
+                  padding: "7px 12px",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  background: active ? "#1e1b4b" : "transparent",
+                  color: active ? "#a5b4fc" : "#9fb3c8",
+                  fontWeight: active ? 700 : 500,
+                  fontSize: 13,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 11,
+                    width: 16,
+                    height: 16,
+                    borderRadius: 4,
+                    background: active ? "#5EEAD4" : "#213547",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#fff",
+                  }}
+                >
+                  {active ? "✓" : ""}
+                </span>
+                {fy}
+              </div>
+            );
+          })}
+
+          {selectedFYs.length > 0 && (
+            <div
+              onClick={() => onChange([])}
+              style={{
+                marginTop: 8,
+                borderTop: "1px solid #213547",
+                padding: "8px 12px",
+                color: "#f87171",
+                fontSize: 12,
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              ✕ Clear selection
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Generic multi-select dropdown for BU / PayingBU
 function MultiSelectDropdown({ label, icon, options, selected, onChange, color="#5EEAD4" }) {
@@ -1416,13 +1556,21 @@ function DashboardTrendChart({ monthlyTrend }) {
   );
 }
 
-function Dashboard({ items, itemStats, onDrillDown }) {
+function Dashboard({
+  items,
+  itemStats,
+  summary: externalSummary,
+  onDrillDown,
+  selectedFYs,
+  setSelectedFYs,
+  selectedBUs,
+  setSelectedBUs,
+  selectedPayingBUs,
+  setSelectedPayingBUs,
+}) {
   const [fyOptions, setFyOptions] = useState<string[]>([]);
-  const [selectedFYs,      setSelectedFYs]      = useState(["all"]);
-  const [selectedBUs,      setSelectedBUs]      = useState(["all"]);
-  const [selectedPayingBUs,setSelectedPayingBUs] = useState(["all"]);
-  const [dashboardStats, setDashboardStats] = useState(itemStats);
-  const [summary, setSummary] = useState<any>(null);
+    const [dashboardStats, setDashboardStats] = useState(itemStats);
+  const summary = externalSummary || null;
 const [summaryLoading, setSummaryLoading] = useState(false);
   useEffect(() => {
   const loadFyOptions = async () => {
@@ -1473,39 +1621,19 @@ const [summaryLoading, setSummaryLoading] = useState(false);
 }, [selectedFYs, selectedBUs, selectedPayingBUs]);
 
 // ✅ ADD HERE (new block)
-useEffect(() => {
-  const loadSummary = async () => {
-    try {
-      setSummaryLoading(true);
 
-      const fy = selectedFYs.includes("all") ? "all" : selectedFYs[0];
-      const businessUnit = selectedBUs.includes("all") ? "all" : selectedBUs[0];
-      const payingBU = selectedPayingBUs.includes("all") ? "all" : selectedPayingBUs[0];
+  const buOptions = useMemo(() => {
+  const rawOptions = [...new Set(items.map(i => i.businessUnit).filter(Boolean))].sort();
+  if (rawOptions.length > 0) return rawOptions;
 
-      const res = await fetch(
-        `/api/budget-items/dashboard-summary?fy=${encodeURIComponent(fy)}&businessUnit=${encodeURIComponent(businessUnit)}&payingBU=${encodeURIComponent(payingBU)}`,
-        { cache: "no-store" }
-      );
+  return [...new Set((summary?.home?.buData || []).map(d => d.bu).filter(Boolean))].sort();
+}, [items, summary]);
+  const payingBUOptions = useMemo(() => {
+  const rawOptions = [...new Set(items.map(i => i.payingBU).filter(Boolean))].sort();
+  if (rawOptions.length > 0) return rawOptions;
 
-      const data = await res.json();
-
-      if (res.ok) {
-        setSummary(data);
-      } else {
-        console.error("Summary fetch failed:", data?.error);
-      }
-    } catch (err) {
-      console.error("Summary fetch error:", err);
-    } finally {
-      setSummaryLoading(false);
-    }
-  };
-
-  loadSummary();
-}, [selectedFYs, selectedBUs, selectedPayingBUs]);
-
-  const buOptions      = useMemo(() => [...new Set(items.map(i => i.businessUnit).filter(Boolean))].sort(), [items]);
-  const payingBUOptions = useMemo(() => [...new Set(items.map(i => i.payingBU).filter(Boolean))].sort(), [items]);
+  return [...new Set((summary?.home?.payingBUData || []).map(d => d.name).filter(Boolean))].sort();
+}, [items, summary]);
 
   const filtered = useMemo(() => {
     return items.filter(i => {
@@ -1567,6 +1695,18 @@ const expData = summary?.home?.expData || [];
   // Click-through helper
   const drill = (filters) => onDrillDown && onDrillDown(filters);
 
+const drillWithContext = (extra = {}) => {
+  drill({
+    fromTab: "dashboard",
+    dashboardFilters: {
+      selectedFYs,
+      selectedBUs,
+      selectedPayingBUs,
+    },
+    ...extra,
+  });
+};
+
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
 
@@ -1603,7 +1743,7 @@ const expData = summary?.home?.expData || [];
 
       {/* ── Row 1: Primary KPIs ── */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14 }}>
-        <div onClick={() => drill({tab:"budget"})} style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:18, border:"1px solid #5EEAD444", cursor:"pointer", transition:"border .15s" }}>
+        <div onClick={() => drillWithContext({ tab: "budget" })} style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:18, border:"1px solid #5EEAD444", cursor:"pointer", transition:"border .15s" }}>
           <div style={{ fontSize:20, marginBottom:4 }}>💰</div>
           <div style={{ color:"#9fb3c8", fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Total Budget</div>
           <div style={{ color:"#5EEAD4", fontSize:24, fontWeight:900, fontFamily:"monospace" }}>S${Math.round(totalBudget).toLocaleString()}</div>
@@ -1612,7 +1752,7 @@ const expData = summary?.home?.expData || [];
             <div style={{ width:`${Math.min(utilPct,100)}%`, background:"#5EEAD4", height:"100%", borderRadius:4 }} />
           </div>
         </div>
-        <div onClick={() => drill({tab:"budget", status:"Completed"})} style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:18, border:"1px solid #10b98144", cursor:"pointer" }}>
+        <div onClick={() => drillWithContext({ tab: "budget", status: "Completed" })} style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:18, border:"1px solid #10b98144", cursor:"pointer" }}>
           <div style={{ fontSize:20, marginBottom:4 }}>✅</div>
           <div style={{ color:"#9fb3c8", fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Total Actual</div>
           <div style={{ color:"#10b981", fontSize:24, fontWeight:900, fontFamily:"monospace" }}>S${Math.round(totalActual).toLocaleString()}</div>
@@ -1621,7 +1761,16 @@ const expData = summary?.home?.expData || [];
             <div style={{ width:`${Math.min(utilPct,100)}%`, background: utilPct>100?"#ef4444":utilPct>80?"#f59e0b":"#10b981", height:"100%", borderRadius:4 }} />
           </div>
         </div>
-        <div style={{ background: variance>=0?"#1e293b":"#450a0a", borderRadius:14, padding:18, border:`1px solid ${variance>=0?"#f59e0b44":"#dc262688"}` }}>
+        <div
+  onClick={() => drillWithContext({ tab: "budget" })}
+  style={{
+    background: variance >= 0 ? "#1e293b" : "#450a0a",
+    borderRadius: 14,
+    padding: 18,
+    border: `1px solid ${variance >= 0 ? "#f59e0b44" : "#dc262688"}`,
+    cursor: "pointer"
+  }}
+>
           <div style={{ fontSize:20, marginBottom:4 }}>{variance >= 0 ? "📉" : "📈"}</div>
           <div style={{ color:"#9fb3c8", fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Budget Variance</div>
           <div style={{ color: variance>=0?"#f59e0b":"#f87171", fontSize:24, fontWeight:900, fontFamily:"monospace" }}>
@@ -1629,7 +1778,7 @@ const expData = summary?.home?.expData || [];
           </div>
           <div style={{ color:"#88A0B8", fontSize:11, marginTop:4 }}>{variance>=0?"Under budget":"OVER budget"}</div>
         </div>
-        <div onClick={() => drill({tab:"renewals"})} style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:18, border:`1px solid ${upcomingRenewals>0?"#f8717144":"#21354744"}`, cursor:"pointer" }}>
+        <div onClick={() => drillWithContext({ tab: "renewals" })} style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:18, border:`1px solid ${upcomingRenewals>0?"#f8717144":"#21354744"}`, cursor:"pointer" }}>
           <div style={{ fontSize:20, marginBottom:4 }}>🔔</div>
           <div style={{ color:"#9fb3c8", fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Upcoming Renewals</div>
           <div style={{ color: upcomingRenewals>0?"#f87171":"#4ade80", fontSize:24, fontWeight:900, fontFamily:"monospace" }}>{upcomingRenewals}</div>
@@ -1640,24 +1789,24 @@ const expData = summary?.home?.expData || [];
       {/* ── Row 2: Secondary KPIs ── */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:14 }}>
         {[
-          { icon:"📋", label:"Total Items",          value:dashboardStats?.totalCount || 0,        color:"#7C8CFF", onClick:() => drill({tab:"budget"}), sub: outOfBudget>0?`incl. ${outOfBudget} outside budget`:undefined },
-          { icon:"✔️", label:"Completed",             value:completed,         color:"#4ade80", onClick:() => drill({tab:"budget",status:"Completed"}) },
-          { icon:"⏳", label:"Pending",                value:pending,           color:"#9fb3c8", onClick:() => drill({tab:"budget",status:"Pending"}) },
-          { icon:"❌", label:"Cancelled",              value:cancelled,         color:"#f87171", onClick:() => drill({tab:"budget",status:"Cancel"}) },
-          { icon:"🔄", label:"Move to Another Half",  value:movedToHalf,       color:"#38bdf8", onClick:() => drill({tab:"budget",status:"Move to another half"}) },
-          { icon:"⚠️", label:"Outside Budget",        value:outOfBudget,       color:"#f59e0b", onClick:() => drill({tab:"budget", outsideBudget:true}) },
-          {
-  icon:"💾",
-  label:"Total Savings",
-  value:`${totalSavings > 0 ? "+" : ""}S$${Math.round(totalSavings).toLocaleString()}`,
-  color:
-    totalSavings < 0
-      ? "#ff6b6b"
-      : totalSavings > 0
-      ? "#10b981"
-      : "#94a3b8"
-},
-        ].map(k => (
+  { icon:"📋", label:"Total Items", value:dashboardStats?.totalCount || 0, color:"#7C8CFF", onClick:() => drillWithContext({ tab:"budget" }), sub: outOfBudget>0?`incl. ${outOfBudget} outside budget`:undefined },
+  { icon:"✔️", label:"Completed", value:completed, color:"#4ade80", onClick:() => drillWithContext({ tab:"budget", status:"Completed" }) },
+  { icon:"⏳", label:"Pending", value:pending, color:"#9fb3c8", onClick:() => drillWithContext({ tab:"budget", status:"Pending" }) },
+  { icon:"❌", label:"Cancelled", value:cancelled, color:"#f87171", onClick:() => drillWithContext({ tab:"budget", status:"Cancelled" }) },
+  { icon:"🔄", label:"Move to Another Half", value:movedToHalf, color:"#38bdf8", onClick:() => drillWithContext({ tab:"budget", status:"Move to another half" }) },
+  { icon:"⚠️", label:"Outside Budget", value:outOfBudget, color:"#f59e0b", onClick:() => drillWithContext({ tab:"budget", outsideBudget:true }) },
+  {
+    icon:"💾",
+    label:"Total Savings",
+    value:`${totalSavings > 0 ? "+" : ""}S$${Math.round(totalSavings).toLocaleString()}`,
+    color:
+      totalSavings < 0
+        ? "#ff6b6b"
+        : totalSavings > 0
+        ? "#10b981"
+        : "#94a3b8"
+  },
+].map(k => (
           <div key={k.label} onClick={k.onClick} style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:12, padding:"14px 16px", border:`1px solid ${k.color}22`, cursor:k.onClick?"pointer":"default" }}>
             <div style={{ fontSize:18, marginBottom:3 }}>{k.icon}</div>
             <div style={{ color:"#88A0B8", fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>{k.label}</div>
@@ -1753,7 +1902,16 @@ const expData = summary?.home?.expData || [];
           <div style={{ color:"#f1f5f9", fontWeight:700, fontSize:14, marginBottom:12 }}>🏷️ New vs Existing vs Replacement</div>
           <ResponsiveContainer width="100%" height={140}>
             <PieChart>
-              <Pie data={itemTypeData} cx="50%" cy="50%" innerRadius={35} outerRadius={60} dataKey="budget" nameKey="name">
+              <Pie
+  data={itemTypeData}
+  cx="50%"
+  cy="50%"
+  innerRadius={35}
+  outerRadius={60}
+  dataKey="budget"
+  nameKey="name"
+  onClick={d => drillWithContext({ tab:"budget", itemType:d.name })}
+>
                 {itemTypeData.map((_,i) => <Cell key={i} fill={["#5EEAD4","#10b981","#f59e0b"][i%3]} />)}
               </Pie>
               <Tooltip contentStyle={{ background:"#09131D", border:"1px solid #213547", borderRadius:8 }} formatter={v => [`S$${v.toLocaleString()}`,"Budget"]} />
@@ -1768,13 +1926,20 @@ const expData = summary?.home?.expData || [];
         <div style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:20 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
             <h3 style={{ color:"#f1f5f9", fontSize:15, fontWeight:700, margin:0 }}>📊 Budget vs Actual by Business Unit</h3>
-            <button onClick={() => drill({tab:"reports", groupBy:"businessUnit"})}
+            <button onClick={() => drillWithContext({ tab:"reports", groupBy:"businessUnit" })}
               style={{ background:"#0F1535", border:"1px solid #5EEAD4", borderRadius:6, color:"#a5b4fc", padding:"4px 10px", cursor:"pointer", fontSize:11, fontWeight:700 }}>
               View Report ↗
             </button>
           </div>
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={buData} margin={{ left:0 }} onClick={d => d?.activePayload && drill({tab:"budget", bu:d.activePayload[0]?.payload?.bu})}>
+            <BarChart
+  data={buData}
+  margin={{ left:0 }}
+  onClick={d =>
+    d?.activePayload &&
+    drillWithContext({ tab:"budget", bu:d.activePayload[0]?.payload?.bu })
+  }
+>
               <CartesianGrid strokeDasharray="3 3" stroke="#213547" />
               <XAxis dataKey="bu" tick={{ fill:"#9fb3c8", fontSize:10 }} interval={0} angle={-20} textAnchor="end" height={50} />
               <YAxis tick={{ fill:"#9fb3c8", fontSize:10 }} tickFormatter={v => `S$${(v/1000).toFixed(0)}k`} />
@@ -1788,7 +1953,7 @@ const expData = summary?.home?.expData || [];
         <div style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:20 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
             <h3 style={{ color:"#f1f5f9", fontSize:15, fontWeight:700, margin:0 }}>🥧 Budget by Category</h3>
-            <button onClick={() => drill({tab:"reports", groupBy:"itemCategory"})}
+            <button onClick={() => drillWithContext({ tab:"reports", groupBy:"itemCategory" })}
               style={{ background:"#0F1535", border:"1px solid #5EEAD4", borderRadius:6, color:"#a5b4fc", padding:"4px 10px", cursor:"pointer", fontSize:11, fontWeight:700 }}>
               View ↗
             </button>
@@ -1796,7 +1961,7 @@ const expData = summary?.home?.expData || [];
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
               <Pie data={catData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" nameKey="name"
-                onClick={d => drill({tab:"budget", category:d.name})}>
+                onClick={d => drillWithContext({ tab:"budget", category:d.name })}>
                 {catData.map((_,i) => <Cell key={i} fill={CHART_COLORS[i%CHART_COLORS.length]} cursor="pointer" />)}
               </Pie>
               <Tooltip contentStyle={{ background:"#09131D", border:"1px solid #213547", borderRadius:8 }} formatter={v => [`S$${v.toLocaleString()}`,""]} />
@@ -1814,7 +1979,7 @@ const expData = summary?.home?.expData || [];
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie data={statusData} cx="50%" cy="50%" innerRadius={45} outerRadius={80} dataKey="value" nameKey="name"
-                onClick={d => drill({tab:"budget", status:d.name})}>
+                onClick={d => drillWithContext({ tab:"budget", status:d.name })}>
                 {statusData.map((d,i) => {
                   const c = d.name==="Completed"?"#4ade80":d.name==="Cancel"?"#f87171":d.name==="Unused"?"#9fb3c8":"#a5b4fc";
                   return <Cell key={i} fill={c} cursor="pointer" />;
@@ -1832,13 +1997,19 @@ const expData = summary?.home?.expData || [];
         <div style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:20 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
             <h3 style={{ color:"#f1f5f9", fontSize:15, fontWeight:700, margin:0 }}>⚡ Capex vs Opex</h3>
-            <button onClick={() => drill({tab:"reports", groupBy:"expenseType"})}
+            <button onClick={() => drillWithContext({ tab:"reports", groupBy:"expenseType" })}
               style={{ background:"#0F1535", border:"1px solid #5EEAD4", borderRadius:6, color:"#a5b4fc", padding:"4px 10px", cursor:"pointer", fontSize:11, fontWeight:700 }}>
               View ↗
             </button>
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={expData}>
+            <BarChart
+  data={expData}
+  onClick={d =>
+    d?.activePayload &&
+    drillWithContext({ tab:"budget", expenseType:d.activePayload[0]?.payload?.name })
+  }
+>
               <CartesianGrid strokeDasharray="3 3" stroke="#213547" />
               <XAxis dataKey="name" tick={{ fill:"#9fb3c8", fontSize:12 }} />
               <YAxis tick={{ fill:"#9fb3c8", fontSize:10 }} tickFormatter={v => `S$${(v/1000).toFixed(0)}k`} />
@@ -1852,13 +2023,20 @@ const expData = summary?.home?.expData || [];
         <div style={{ background:"linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius:14, padding:20 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
             <h3 style={{ color:"#f1f5f9", fontSize:15, fontWeight:700, margin:0 }}>💳 Budget vs Actual by Paying BU</h3>
-            <button onClick={() => drill({tab:"reports", groupBy:"payingBU"})}
+            <button onClick={() => drillWithContext({ tab:"reports", groupBy:"payingBU" })}
               style={{ background:"#0F1535", border:"1px solid #5EEAD4", borderRadius:6, color:"#a5b4fc", padding:"4px 10px", cursor:"pointer", fontSize:11, fontWeight:700 }}>
               View ↗
             </button>
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={payingBUData} margin={{ left:0 }}>
+            <BarChart
+  data={payingBUData}
+  margin={{ left:0 }}
+  onClick={d =>
+    d?.activePayload &&
+    drillWithContext({ tab:"budget", payingBU:d.activePayload[0]?.payload?.name })
+  }
+>
               <CartesianGrid strokeDasharray="3 3" stroke="#213547" />
               <XAxis dataKey="name" tick={{ fill:"#9fb3c8", fontSize:11 }} />
               <YAxis tick={{ fill:"#9fb3c8", fontSize:10 }} tickFormatter={v => `S$${(v/1000).toFixed(0)}k`} />
@@ -2048,15 +2226,24 @@ function ComparisonPage({
   const sourceItems = comparisonAllItems.length > 0 ? comparisonAllItems : items;
 
   const itemsA = useMemo(() => {
-    return periodA ? sourceItems.filter((i) => normalizeFY(i) === periodA) : [];
-  }, [sourceItems, periodA, normalizeFY]);
+  return periodA.length > 0
+    ? sourceItems.filter((i) => periodA.includes(normalizeFY(i)))
+    : [];
+}, [sourceItems, periodA, normalizeFY]);
 
-  const itemsB = useMemo(() => {
-    return periodB ? sourceItems.filter((i) => normalizeFY(i) === periodB) : [];
-  }, [sourceItems, periodB, normalizeFY]);
+const itemsB = useMemo(() => {
+  return periodB.length > 0
+    ? sourceItems.filter((i) => periodB.includes(normalizeFY(i)))
+    : [];
+}, [sourceItems, periodB, normalizeFY]);
 
   const valueKey = mode === "pnl" ? "pnl" : "budget";
-  const ready = periodA && periodB && periodA !== periodB;
+  const ready =
+  periodA.length > 0 &&
+  periodB.length > 0 &&
+  JSON.stringify([...periodA].sort()) !== JSON.stringify([...periodB].sort());
+  const periodALabel = periodA.length === 0 ? "A" : periodA.join(" + ");
+const periodBLabel = periodB.length === 0 ? "B" : periodB.join(" + ");
   const drill = onDrillDown || (() => {});
   const colA = "#5EEAD4";
   const colB = "#f59e0b";
@@ -2201,31 +2388,23 @@ function ComparisonPage({
           🔀 COMPARISON
         </span>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ color: "#5EEAD4", fontWeight: 700, fontSize: 12 }}>Period A</span>
-          <select value={periodA} onChange={(e) => setPeriodA(e.target.value)} style={dd}>
-            <option value="">— Select FY —</option>
-            {fyList.map((f) => (
-              <option key={f} value={f}>
-                {f}
-              </option>
-            ))}
-          </select>
-        </div>
+       <FYComparisonMultiSelect
+  label="Period A"
+  color="#5EEAD4"
+  fyOptions={fyList}
+  selectedFYs={periodA}
+  onChange={setPeriodA}
+/>
 
-        <span style={{ color: "#475569", fontWeight: 900, fontSize: 18 }}>vs</span>
+<span style={{ color: "#475569", fontWeight: 900, fontSize: 18 }}>vs</span>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ color: "#f59e0b", fontWeight: 700, fontSize: 12 }}>Period B</span>
-          <select value={periodB} onChange={(e) => setPeriodB(e.target.value)} style={dd}>
-            <option value="">— Select FY —</option>
-            {fyList.map((f) => (
-              <option key={f} value={f}>
-                {f}
-              </option>
-            ))}
-          </select>
-        </div>
+<FYComparisonMultiSelect
+  label="Period B"
+  color="#f59e0b"
+  fyOptions={fyList}
+  selectedFYs={periodB}
+  onChange={setPeriodB}
+/>
 
         <div style={{ display: "flex", gap: 6 }}>
           {["cashflow", "pnl"].map((m) => (
@@ -2614,10 +2793,10 @@ function ComparisonPage({
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
             {[
-              [catMixA, periodA],
-              [catMixB, periodB],
-            ].map(([data, label]) => (
-              <div key={label} style={{ background: "linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius: 14, padding: 20 }}>
+  [catMixA, periodALabel, "A"],
+  [catMixB, periodBLabel, "B"],
+].map(([data, label, side]) => (
+  <div key={side} style={{ background: "linear-gradient(145deg,#0F1B2B,#0C1722)", borderRadius: 14, padding: 20 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <h3 style={{ color: "#f1f5f9", fontSize: 14, fontWeight: 700, margin: 0 }}>
                     🥧 Category Mix — {label}
@@ -7673,6 +7852,30 @@ function BiblePage() {
     </div>
   );
 }
+function DrillBackButton({ visible, label = "Back", onClick }) {
+  if (!visible) return null;
+
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <button
+        onClick={onClick}
+        style={{
+          background: "#0F1535",
+          border: "1px solid rgba(94,234,212,0.35)",
+          borderRadius: 8,
+          color: "#E6FFFD",
+          padding: "8px 14px",
+          cursor: "pointer",
+          fontWeight: 700,
+          fontSize: 12,
+        }}
+      >
+        ← {label}
+      </button>
+    </div>
+  );
+}
+
 export default function App({ user }: { user: any }) {
 const role = user?.role || "viewer";
 const TABS = [
@@ -7708,7 +7911,7 @@ const isReadOnly = role === "viewer" || role === "approver";
 const visibleTabs = TABS;
 
 const [items, setItems] = useState<any[]>([]);
-const [itemsLoading, setItemsLoading] = useState(true);
+const [itemsLoading, setItemsLoading] = useState(false);
 const [itemsHasMore, setItemsHasMore] = useState(false);
 const [itemsNextCursor, setItemsNextCursor] = useState<string | null>(null);
 const [isSaving, setIsSaving] = useState(false);
@@ -7725,13 +7928,18 @@ const loadInitialItems = async () => {
   try {
     setItemsLoading(true);
 
+    const apiStatus =
+      filterStatus === "Pending" ? "all" :
+      filterStatus === "Cancelled" ? "Cancel" :
+      filterStatus;
+
     const res = await fetch(
-  `/api/budget-items?limit=100&fy=${encodeURIComponent(filterFY)}&businessUnit=${encodeURIComponent(filterBU)}&status=${encodeURIComponent(filterStatus)}`,
-  {
-    method: "GET",
-    cache: "no-store",
-  }
-);
+      `/api/budget-items?limit=100&fy=${encodeURIComponent(filterFY)}&businessUnit=${encodeURIComponent(filterBU)}&status=${encodeURIComponent(apiStatus)}`,
+      {
+        method: "GET",
+        cache: "no-store",
+      }
+    );
 
     const data = await res.json();
 
@@ -7739,11 +7947,13 @@ const loadInitialItems = async () => {
       throw new Error(data?.error || "Failed to load budget items");
     }
 
-    setItems(Array.isArray(data.items) ? data.items : []);
+    const fetchedItems = Array.isArray(data.items) ? data.items : [];
+
+    setItems(fetchedItems);
     setItemsHasMore(Boolean(data.hasMore));
     setItemsNextCursor(data.nextCursor || null);
   } catch (error) {
-    console.error("Failed to load initial budget items:", error);
+    console.error("Failed to load budget items:", error);
     setItems([]);
     setItemsHasMore(false);
     setItemsNextCursor(null);
@@ -7803,14 +8013,26 @@ const loadAppSummary = async () => {
   }
 };
 
+const refreshSummaryState = async () => {
+  await Promise.allSettled([
+    loadItemStats(),
+    loadAppSummary(),
+  ]);
+};
+
 const loadMoreItems = async () => {
   if (!itemsHasMore || !itemsNextCursor || itemsLoading) return;
 
   try {
     setItemsLoading(true);
 
+    const apiStatus =
+      filterStatus === "Pending" ? "all" :
+      filterStatus === "Cancelled" ? "Cancel" :
+      filterStatus;
+
     const res = await fetch(
-      `/api/budget-items?limit=100&fy=${encodeURIComponent(filterFY)}&businessUnit=${encodeURIComponent(filterBU)}&status=${encodeURIComponent(filterStatus)}&cursor=${encodeURIComponent(itemsNextCursor)}`,
+      `/api/budget-items?limit=100&fy=${encodeURIComponent(filterFY)}&businessUnit=${encodeURIComponent(filterBU)}&status=${encodeURIComponent(apiStatus)}&cursor=${encodeURIComponent(itemsNextCursor)}`,
       {
         method: "GET",
         cache: "no-store",
@@ -7902,6 +8124,23 @@ loadAppSummary();
     return merged;
   }, [fxRates]);
   const [tab, setTab] = useState("dashboard");
+  const RAW_DATA_TABS = useMemo(() => new Set([
+    "budget",
+    "pnl",
+    "comparison",
+    "reports",
+    "renewals",
+    "planning",
+    "cashflow",
+    "payments",
+    "exceptions",
+    "reconcile",
+    "freeze",
+    "bualloc",
+    "fx",
+    "ai",
+  ]), []);
+  const tabNeedsRawItems = RAW_DATA_TABS.has(tab);
 
   useEffect(() => {
     if (!visibleTabs.some((t) => t.id === tab)) {
@@ -7909,70 +8148,62 @@ loadAppSummary();
     }
   }, [tab, visibleTabs]);
   const [drillBackTab, setDrillBackTab] = useState(null); // tab to go back to (set only on drill-through)
+  const [dashboardFYs, setDashboardFYs] = useState(["all"]);
+const [dashboardBUs, setDashboardBUs] = useState(["all"]);
+const [dashboardPayingBUs, setDashboardPayingBUs] = useState(["all"]);
 
   // ── Drill-down handler: called from Dashboard / Comparison links ──
   const handleDrillDown = useCallback((filters) => {
   const fromTab = filters?.fromTab || null;
-
-  // Resolve aliases from different pages
-  const targetTab =
-    filters?.tab || null;
+  const targetTab = filters?.tab || null;
 
   const bu =
     filters?.businessUnit ||
     filters?.bu ||
     null;
 
-  const fy =
-    filters?.fy || null;
-
-  const status =
-    filters?.status || null;
+  const fy = filters?.fy || null;
+  const status = filters?.status || null;
 
   const search =
     filters?.search ||
     filters?.description ||
     null;
 
-  const payingBU =
-    filters?.payingBU || null;
+  const payingBU = filters?.payingBU || null;
+  const category = filters?.category || null;
+  const outsideBudget = filters?.outsideBudget || false;
 
-  const outsideBudget =
-    filters?.outsideBudget || false;
+  const reportsGroupBy = filters?.groupBy || null;
+  const reportsFY = filters?.fy || null;
 
-  const reportsGroupBy =
-    filters?.groupBy || null;
+  if (filters?.dashboardFilters) {
+    setDashboardFYs(filters.dashboardFilters.selectedFYs || ["all"]);
+    setDashboardBUs(filters.dashboardFilters.selectedBUs || ["all"]);
+    setDashboardPayingBUs(filters.dashboardFilters.selectedPayingBUs || ["all"]);
+  }
 
-  const reportsFY =
-    filters?.fy || null;
-
-  // Navigate to target tab if provided
   if (targetTab) setTab(targetTab);
 
-  // Budget page filters
   if (bu) setFilterBU(bu);
   if (fy) setFilterFY(fy);
   if (status) setFilterStatus(status);
   if (search) setSearchTerm(search);
+  if (payingBU && typeof setFilterPayingBU === "function") setFilterPayingBU(payingBU);
+  if (category && typeof setFilterCategory === "function") setFilterCategory(category);
+  setFilterOutsideBudget(!!outsideBudget);
 
-  // Optional extra filters if you already have these states in your file
-  if (payingBU && typeof setFilterPayingBU === "function") {
-    setFilterPayingBU(payingBU);
-  }
-
-  if (outsideBudget) setFilterOutsideBudget(true);
-  else setFilterOutsideBudget(false);
-
-  // Reports page drill state
   if (targetTab === "reports") {
     if (reportsGroupBy) setRptGroupBy(reportsGroupBy);
     if (reportsFY) setRptFilterFY(reportsFY);
   }
 
-  // Back navigation support
-  if (fromTab) setDrillBackTab(fromTab);
-  else setDrillBackTab(null);
+  setDrillBackTab(fromTab);
 }, []);
+const handleDrillBack = useCallback(() => {
+  if (!drillBackTab) return;
+  setTab(drillBackTab);
+}, [drillBackTab]);
 
   // When user directly clicks a tab, clear drill-back and reset budget filters
   const handleTabClick = useCallback((tabId) => {
@@ -7988,8 +8219,8 @@ loadAppSummary();
   }, []);
 
   // ── Comparison page state lifted here so it survives tab switches ──
-  const [cmpPeriodA, setCmpPeriodA] = useState("");
-  const [cmpPeriodB, setCmpPeriodB] = useState("");
+  const [cmpPeriodA, setCmpPeriodA] = useState<string[]>([]);
+const [cmpPeriodB, setCmpPeriodB] = useState<string[]>([]);
   const [cmpGroupBy, setCmpGroupBy] = useState("businessUnit");
   const [cmpMode,    setCmpMode]    = useState("cashflow");
 
@@ -8006,9 +8237,17 @@ loadAppSummary();
   const [fyList, setFyList] = useState<string[]>([]);
 
   useEffect(() => {
+  if (!tabNeedsRawItems) {
+    setItemsLoading(false);
+    return;
+  }
+
   loadInitialItems();
-  loadItemStats();
-}, [filterFY, filterBU, filterStatus]);
+}, [filterFY, filterBU, filterStatus, tabNeedsRawItems]);
+
+  useEffect(() => {
+    loadItemStats();
+  }, []);
 
 
 useEffect(() => {
@@ -8034,26 +8273,34 @@ useEffect(() => {
   loadFyList();
 }, []);
 
-const renewalCount = items.filter(item => {
-  const daysUntil = getDaysUntil(item.planMonth);
-  return (
-    daysUntil !== null &&
-    daysUntil >= 0 &&
-    daysUntil <= 30 &&
-    item.status !== "Completed" &&
-    item.status !== "Cancel" &&
-    item.status !== "Cancelled"
-  );
-}).length;
+const renewalCount = Number(appSummary?.totals?.upcomingRenewals) || 0;
 
   const filteredItems = useMemo(() => {
-    return items.filter(i =>
-      (filterBU === "all" || i.businessUnit === filterBU) &&
-      (filterFY === "all" || (i.fy || getFY(i.planMonth)) === filterFY) &&
-      (filterStatus === "all" || i.status === filterStatus || (!i.status && filterStatus === "Pending")) &&
-      (!filterOutsideBudget || i.outsideBudget === true)
-    );
-  }, [items, filterBU, filterFY, filterStatus, filterOutsideBudget]);
+  return items.filter((i) => {
+    const fyValue = i.fy || getFY(i.planMonth);
+
+    const buMatch =
+      filterBU === "all" || i.businessUnit === filterBU;
+
+    const fyMatch =
+      filterFY === "all" || fyValue === filterFY;
+
+    const rawStatus = String(i.status ?? "").trim();
+
+    const normalizedStatus =
+      rawStatus === "" ? "Pending" :
+      rawStatus === "Cancel" ? "Cancelled" :
+      rawStatus;
+
+    const statusMatch =
+      filterStatus === "all" || normalizedStatus === filterStatus;
+
+    const outsideBudgetMatch =
+      !filterOutsideBudget || !!i.outsideBudget;
+
+    return buMatch && fyMatch && statusMatch && outsideBudgetMatch;
+  });
+}, [items, filterBU, filterFY, filterStatus, filterOutsideBudget]);
 
  const handleSave = useCallback(async (item) => {
   if (isSaving) return;
@@ -8096,6 +8343,7 @@ const renewalCount = items.filter(item => {
       });
 
       setModal(null);
+      await refreshSummaryState();
       setMoveHalfItem(enriched);
       setTimeout(() => setModal("moveHalf"), 50);
       return;
@@ -8182,6 +8430,7 @@ const renewalCount = items.filter(item => {
     await deleteBudgetItem(String(id));
 
     setItems(prev => prev.filter(i => i.id !== id));
+    await refreshSummaryState();
 
   } catch (error) {
     console.error("Delete failed:", error);
@@ -8196,6 +8445,7 @@ const renewalCount = items.filter(item => {
       const updated = { ...item, status: "Approved" };
       await updateBudgetItem(String(item.id), updated);
       setItems(prev => prev.map(i => i.id === item.id ? updated : i));
+      await refreshSummaryState();
       addAuditEntry("Item Approved", { description: item.description, fy: item.fy || getFY(item.planMonth) });
     } catch (error) {
       console.error("Approve failed:", error);
@@ -8212,6 +8462,7 @@ const renewalCount = items.filter(item => {
       const updated = { ...item, status: "Rejected" };
       await updateBudgetItem(String(item.id), updated);
       setItems(prev => prev.map(i => i.id === item.id ? updated : i));
+      await refreshSummaryState();
       addAuditEntry("Item Rejected", { description: item.description, fy: item.fy || getFY(item.planMonth) });
     } catch (error) {
       console.error("Reject failed:", error);
@@ -8234,21 +8485,29 @@ const renewalCount = items.filter(item => {
       });
     }
 
-    const results = await Promise.allSettled(
-      validIds.map(id => deleteBudgetItem(String(id)))
-    );
+    let succeededIds = [];
+    let failedCount = 0;
 
-    const failed = results.filter(r => r.status === "rejected");
-    const succeededIds = validIds.filter((_, index) => results[index].status === "fulfilled");
+    try {
+      await bulkDeleteBudgetItems(validIds.map(id => String(id)));
+      succeededIds = validIds;
+    } catch (bulkError) {
+      console.warn("bulkDeleteBudgetItems failed, falling back to single deletes:", bulkError);
+      const results = await Promise.allSettled(
+        validIds.map(id => deleteBudgetItem(String(id)))
+      );
+      failedCount = results.filter(r => r.status === "rejected").length;
+      succeededIds = validIds.filter((_, index) => results[index].status === "fulfilled");
+    }
 
     if (succeededIds.length > 0) {
       setItems(prev => prev.filter(i => !succeededIds.includes(i.id)));
+      await refreshSummaryState();
     }
 
-
-    if (failed.length > 0) {
-      console.error("Some bulk deletes failed:", failed);
-      alert(`${failed.length} selected item(s) could not be deleted, but others were removed.`);
+    if (failedCount > 0) {
+      console.error("Some bulk deletes failed");
+      alert(`${failedCount} selected item(s) could not be deleted, but others were removed.`);
     }
 
   } catch (error) {
@@ -8258,7 +8517,7 @@ const renewalCount = items.filter(item => {
 }, [items, addAuditEntry]);
   const buList = useMemo(() => [...new Set(items.map(i => i.businessUnit).filter(Boolean))].sort(), [items]);
   
-if (itemsLoading) {
+if (tabNeedsRawItems && itemsLoading && items.length === 0) {
   return (
     <div style={{ padding: 30, color: "white" }}>
       Loading Budget Dashboard...
@@ -8330,6 +8589,7 @@ if (itemsLoading) {
                       if (window.confirm("Clear ALL budget data and reset to sample data? This cannot be undone.")) {
                         setItems(SAMPLE_DATA);
                         setFxRates({});
+                        refreshSummaryState();
                         setCustomOptions({ itemType:[], itemCategory:[], subCategory:[], businessUnit:[], payingBU:[], location:[], country:[], currency:[], status:[] });
                         setCompanyName("");
                         setLogoUrl("");
@@ -8462,32 +8722,47 @@ if (itemsLoading) {
 
         {tab === "dashboard" && (
   <Dashboard
-    items={items}
-    itemStats={itemStats}
-    onDrillDown={handleDrillDown}
-  />
-)}
-        {tab === "budget" && (
-          <BudgetTable
-  items={filteredItems}
-  allItems={items}
-  searchTerm={searchTerm}
-  frozenPeriods={frozenPeriods}
-  onEdit={(item) => { setEditItem(item); setModal("edit"); }}
-  onUpdateActual={(item) => { setEditItem(item); setModal("actual"); }}
-  onDelete={handleDelete}
-  onDeleteMultiple={handleDeleteMultiple}
-  onApprove={handleApproveItem}
-  onReject={handleRejectItem}
-  isSaving={isSaving}
-  canEditBudget={canEditBudget}
-  canAddActual={canAddActual}
-  canDelete={canDelete}
-  canExport={canExport}
-  canApproveReject={canApproveReject}
+  items={items}
+  itemStats={itemStats}
+  summary={appSummary}
+  onDrillDown={handleDrillDown}
+  selectedFYs={dashboardFYs}
+  setSelectedFYs={setDashboardFYs}
+  selectedBUs={dashboardBUs}
+  setSelectedBUs={setDashboardBUs}
+  selectedPayingBUs={dashboardPayingBUs}
+  setSelectedPayingBUs={setDashboardPayingBUs}
 />
-        )}
-        {tab === "budget" && !itemsLoading && itemsHasMore && (
+)}
+       {tab === "budget" && (
+  <>
+    <DrillBackButton
+      visible={!!drillBackTab}
+      label="Back"
+      onClick={handleDrillBack}
+    />
+    <BudgetTable
+      items={filteredItems}
+      allItems={items}
+      searchTerm={searchTerm}
+      frozenPeriods={frozenPeriods}
+      onEdit={(item) => { setEditItem(item); setModal("edit"); }}
+      onUpdateActual={(item) => { setEditItem(item); setModal("actual"); }}
+      onDelete={handleDelete}
+      onDeleteMultiple={handleDeleteMultiple}
+      onApprove={handleApproveItem}
+      onReject={handleRejectItem}
+      isSaving={isSaving}
+      canEditBudget={canEditBudget}
+      canAddActual={canAddActual}
+      canDelete={canDelete}
+      canExport={canExport}
+      canApproveReject={canApproveReject}
+    />
+  </>
+)}
+
+{tab === "budget" && !itemsLoading && itemsHasMore && (
   <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
     <button
       onClick={loadMoreItems}
@@ -8512,35 +8787,63 @@ if (itemsLoading) {
     Loading more items...
   </div>
 )}
-        {tab === "pnl" && <PnlView items={items} fyOptions={globalFyOptions} />}
-        {tab === "comparison" && <ComparisonPage
-  items={items}
-  fyOptions={globalFyOptions}   // ✅ ADD THIS LINE
-  onDrillDown={handleDrillDown}
-  periodA={cmpPeriodA} setPeriodA={setCmpPeriodA}
-  periodB={cmpPeriodB} setPeriodB={setCmpPeriodB}
-  groupBy={cmpGroupBy} setGroupBy={setCmpGroupBy}
-  mode={cmpMode} setMode={setCmpMode}
-/>}
-        {tab === "reports" && (
-  <Reports
-  items={items}
-  fyOptions={globalFyOptions}
-  initGroupBy={rptGroupBy}
-  initFilterFY={rptFilterFY}
-  onGroupByChange={setRptGroupBy}
-  onFilterFYChange={setRptFilterFY}
-  onDrillDown={handleDrillDown}
-/>
+
+{tab === "pnl" && <PnlView items={items} fyOptions={globalFyOptions} />}
+
+{tab === "comparison" && (
+  <ComparisonPage
+    items={items}
+    fyOptions={globalFyOptions}
+    onDrillDown={handleDrillDown}
+    periodA={cmpPeriodA}
+    setPeriodA={setCmpPeriodA}
+    periodB={cmpPeriodB}
+    setPeriodB={setCmpPeriodB}
+    groupBy={cmpGroupBy}
+    setGroupBy={setCmpGroupBy}
+    mode={cmpMode}
+    setMode={setCmpMode}
+  />
+)}
+
+{tab === "reports" && (
+  <>
+    <DrillBackButton
+      visible={!!drillBackTab}
+      label="Back"
+      onClick={handleDrillBack}
+    />
+    <Reports
+      items={items}
+      fyOptions={globalFyOptions}
+      initGroupBy={rptGroupBy}
+      initFilterFY={rptFilterFY}
+      onGroupByChange={setRptGroupBy}
+      onFilterFYChange={setRptFilterFY}
+      onDrillDown={handleDrillDown}
+    />
+  </>
 )}
         {tab === "renewals" && (
-          <div>
-            <h2 style={{ color:"#f1f5f9", marginBottom:16, fontSize:18, fontWeight:800 }}>🔔 Renewal Alerts</h2>
-            <RenewalAlerts items={items} />
-          </div>
-        )}
+  <>
+    <DrillBackButton
+      visible={!!drillBackTab}
+      label="Back"
+      onClick={handleDrillBack}
+    />
+    <div>
+      <h2 style={{ color:"#f1f5f9", marginBottom:16, fontSize:18, fontWeight:800 }}>
+        🔔 Renewal Alerts
+      </h2>
+      <RenewalAlerts items={items} />
+    </div>
+  </>
+)}
         {tab === "planning" && (
-          <NextYearPlanning items={items} onApply={(newItems) => setItems(prev => [...prev, ...newItems])} />
+          <NextYearPlanning items={items} onApply={async (newItems) => {
+            setItems(prev => [...prev, ...newItems]);
+            await refreshSummaryState();
+          }} />
         )}
         {tab === "cashflow"   && <CashFlowForecast items={items} />}
         {tab === "payments"   && <PaymentSchedulePage items={items} />}
@@ -8684,8 +8987,7 @@ if (itemsLoading) {
     }
 
     await loadInitialItems();
-    await loadItemStats();
-
+    await refreshSummaryState();
 
     addAuditEntry("Bulk Import", {
       count: itemsToImport.length,
