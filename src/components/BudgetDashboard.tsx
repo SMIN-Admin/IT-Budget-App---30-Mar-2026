@@ -7,6 +7,7 @@ import {
   bulkDeleteBudgetItems,
 } from "../lib/budget-api";
 import AIInsights from "./AIInsights";
+import TrendAnalysisPage from "./TrendAnalysisPage";
 import dynamic from "next/dynamic";
 import { useState, useEffect, useMemo, useCallback, useRef, createContext, useContext } from "react";
 import {
@@ -3021,6 +3022,7 @@ const periodBLabel = periodB.length === 0 ? "B" : periodB.join(" + ");
     </div>
   );
 }
+
 
 
 // ─── NEXT YEAR PLANNING ──────────────────────────────────────────────────────
@@ -7885,6 +7887,7 @@ const TABS = [
   { id:"cashflow", label:"🪰 Cash Flow" },
   { id:"payments", label:"📅 Payment Schedule" },
   { id:"comparison", label:"⚖️ Period Compare" },
+  { id:"trendline", label:"📈 Trend Analysis" },
   { id:"reports", label:"📄 Reports" },
   { id:"renewals", label:"🔔 Renewals" },
   { id:"bualloc", label:"💳 Team Allocation" },
@@ -8804,6 +8807,21 @@ if (tabNeedsRawItems && itemsLoading && items.length === 0) {
     mode={cmpMode}
     setMode={setCmpMode}
   />
+)}
+
+{tab === "trendline" && (
+  <>
+    <DrillBackButton
+      visible={!!drillBackTab}
+      label="Back"
+      onClick={handleDrillBack}
+    />
+    <TrendAnalysisPage
+      items={items}
+      fyOptions={globalFyOptions}
+      onDrillDown={handleDrillDown}
+    />
+  </>
 )}
 
 {tab === "reports" && (
