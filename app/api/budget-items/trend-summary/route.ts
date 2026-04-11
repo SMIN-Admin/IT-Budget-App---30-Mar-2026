@@ -101,7 +101,11 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
 
-    const fy = searchParams.get("fy") || "all";
+    const fyParam = searchParams.get("fy") || "all";
+const selectedFYs =
+  fyParam === "all"
+    ? ["all"]
+    : fyParam.split(",").map((v) => v.trim()).filter(Boolean);
     const businessUnit = searchParams.get("businessUnit") || "all";
     const payingBU = searchParams.get("payingBU") || "all";
     const category = searchParams.get("category") || "all";
@@ -135,7 +139,8 @@ export async function GET(req: NextRequest) {
     ).sort();
 
     const filteredItems = allItems.filter((item) => {
-      const fyMatch = fy === "all" || item.fy === fy;
+      const fyMatch =
+  selectedFYs.includes("all") || selectedFYs.includes(String(item.fy || "").trim());
       const buMatch = businessUnit === "all" || String(item.businessUnit || "").trim() === businessUnit;
       const payingBUMatch = payingBU === "all" || String(item.payingBU || "").trim() === payingBU;
       const categoryMatch = category === "all" || String(item.itemCategory || "").trim() === category;
@@ -188,12 +193,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       filters: {
-        fy,
-        businessUnit,
-        payingBU,
-        category,
-        viewType,
-      },
+  fy: fyParam,
+  businessUnit,
+  payingBU,
+  category,
+  viewType,
+},
       kpis: {
         totalBudget,
         totalActual,

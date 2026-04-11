@@ -8172,6 +8172,8 @@ const [dashboardPayingBUs, setDashboardPayingBUs] = useState(["all"]);
     filters?.search ||
     filters?.description ||
     null;
+    const planMonth = filters?.planMonth || null;
+
 
   const payingBU = filters?.payingBU || null;
   const category = filters?.category || null;
@@ -8188,12 +8190,21 @@ const [dashboardPayingBUs, setDashboardPayingBUs] = useState(["all"]);
 
   if (targetTab) setTab(targetTab);
 
-  if (bu) setFilterBU(bu);
-  if (fy) setFilterFY(fy);
-  if (status) setFilterStatus(status);
-  if (search) setSearchTerm(search);
-  if (payingBU && typeof setFilterPayingBU === "function") setFilterPayingBU(payingBU);
-  if (category && typeof setFilterCategory === "function") setFilterCategory(category);
+  setFilterBU(bu || "all");
+setFilterFY(fy || "all");
+setFilterStatus(status || "all");
+setSearchTerm(search || "");
+
+if (typeof setFilterCategory === "function") {
+  setFilterCategory(category || "all");
+}
+
+if (typeof setFilterPayingBU === "function") {
+  setFilterPayingBU(payingBU || "all");
+}
+
+setFilterPlanMonth(planMonth || "all");
+
   setFilterOutsideBudget(!!outsideBudget);
 
   if (targetTab === "reports") {
@@ -8238,6 +8249,8 @@ const [cmpPeriodB, setCmpPeriodB] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterOutsideBudget, setFilterOutsideBudget] = useState(false);
   const [fyList, setFyList] = useState<string[]>([]);
+  const [filterPlanMonth, setFilterPlanMonth] = useState("all");
+  const [filterCategory, setFilterCategory] = useState("all");
 
   useEffect(() => {
   if (!tabNeedsRawItems) {
@@ -8290,10 +8303,16 @@ const renewalCount = Number(appSummary?.totals?.upcomingRenewals) || 0;
 
     const rawStatus = String(i.status ?? "").trim();
 
-    const normalizedStatus =
-      rawStatus === "" ? "Pending" :
-      rawStatus === "Cancel" ? "Cancelled" :
-      rawStatus;
+const planMonthMatch =
+  filterPlanMonth === "all" || i.planMonth === filterPlanMonth;
+
+const categoryMatch =
+  filterCategory === "all" || i.itemCategory === filterCategory;
+
+const normalizedStatus =
+  rawStatus === "" ? "Pending" :
+  rawStatus === "Cancel" ? "Cancelled" :
+  rawStatus;
 
     const statusMatch =
       filterStatus === "all" || normalizedStatus === filterStatus;
@@ -8301,9 +8320,9 @@ const renewalCount = Number(appSummary?.totals?.upcomingRenewals) || 0;
     const outsideBudgetMatch =
       !filterOutsideBudget || !!i.outsideBudget;
 
-    return buMatch && fyMatch && statusMatch && outsideBudgetMatch;
+    return buMatch && fyMatch && statusMatch && planMonthMatch && categoryMatch && outsideBudgetMatch;
   });
-}, [items, filterBU, filterFY, filterStatus, filterOutsideBudget]);
+}, [items, filterBU, filterFY, filterStatus, filterOutsideBudget, filterPlanMonth, filterCategory]);
 
  const handleSave = useCallback(async (item) => {
   if (isSaving) return;

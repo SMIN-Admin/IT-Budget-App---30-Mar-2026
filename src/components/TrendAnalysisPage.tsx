@@ -158,10 +158,11 @@ export default function TrendAnalysisPage({
   onDrillDown,
 }: TrendAnalysisPageProps) {
   const [viewType, setViewType] = useState<"budget" | "pnl" | "category">("budget");
-  const [selectedFY, setSelectedFY] = useState("all");
+  const [selectedFYs, setSelectedFYs] = useState<string[]>(["all"]);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedBU, setSelectedBU] = useState("all");
   const [selectedPayingBU, setSelectedPayingBU] = useState("all");
+  const [fyDropdownOpen, setFyDropdownOpen] = useState(false);
   const [apiLoading, setApiLoading] = useState(false);
 const [apiError, setApiError] = useState("");
 const [trendData, setTrendData] = useState<any>(null);
@@ -175,12 +176,12 @@ useEffect(() => {
       setApiError("");
 
       const params = new URLSearchParams({
-        fy: selectedFY,
-        businessUnit: selectedBU,
-        payingBU: selectedPayingBU,
-        category: selectedCategory,
-        viewType,
-      });
+  fy: selectedFYs.includes("all") ? "all" : selectedFYs.join(","),
+  businessUnit: selectedBU,
+  payingBU: selectedPayingBU,
+  category: selectedCategory,
+  viewType,
+});
 
       const res = await fetch(`/api/budget-items/trend-summary?${params.toString()}`, {
         method: "GET",
@@ -212,7 +213,7 @@ useEffect(() => {
   return () => {
     cancelled = true;
   };
-}, [selectedFY, selectedCategory, selectedBU, selectedPayingBU, viewType]);
+}, [selectedFYs, selectedCategory, selectedBU, selectedPayingBU, viewType]);
 
   const sourceItems = Array.isArray(items) ? items : [];
 
@@ -224,6 +225,29 @@ useEffect(() => {
   const fromProps = getUniqueSorted((fyOptions || []).map((f) => f));
   return getUniqueSorted([...fromApi, ...fromProps, ...fromItems]);
 }, [trendData, sourceItems, fyOptions]);
+
+const fyDisplayLabel = useMemo(() => {
+  if (selectedFYs.includes("all")) return "All Years";
+  if (selectedFYs.length === 0) return "Select FY";
+  if (selectedFYs.length === 1) return selectedFYs[0];
+  return `${selectedFYs.length} FYs selected`;
+}, [selectedFYs]);
+
+const toggleFY = (fy: string) => {
+  if (fy === "all") {
+    setSelectedFYs(["all"]);
+    return;
+  }
+
+  const current = selectedFYs.includes("all") ? [] : selectedFYs;
+  const exists = current.includes(fy);
+
+  const next = exists
+    ? current.filter((x) => x !== fy)
+    : [...current, fy].sort();
+
+  setSelectedFYs(next.length ? next : ["all"]);
+};
 
   const categoryOptions = useMemo(() => {
   const fromApi = Array.isArray(trendData?.filterOptions?.categories)
@@ -253,7 +277,7 @@ useEffect(() => {
     return sourceItems.filter((item) => {
       const fy = deriveFY(item);
 
-      const fyMatch = selectedFY === "all" || fy === selectedFY;
+      const fyMatch = selectedFYs === "all" || fy === selectedFYs;
       const categoryMatch =
         selectedCategory === "all" || String(item.itemCategory || "") === selectedCategory;
       const buMatch =
@@ -263,7 +287,7 @@ useEffect(() => {
 
       return fyMatch && categoryMatch && buMatch && payingBUMatch;
     });
-  }, [sourceItems, selectedFY, selectedCategory, selectedBU, selectedPayingBU]);
+  }, [sourceItems, selectedFYs, selectedCategory, selectedBU, selectedPayingBU]);
 
   const totalBudget = toNumber(trendData?.kpis?.totalBudget);
 
@@ -287,6 +311,19 @@ const totalPnlActual = toNumber(trendData?.kpis?.totalPnlActual);
   const chartTrend = useMemo(() => {
   return Array.isArray(trendData?.trend) ? trendData.trend : [];
 }, [trendData]);
+
+const categoryTrend = useMemo(() => {
+  const rows = Array.isArray(trendData?.trend) ? trendData.trend : [];
+
+  return rows.map((row: any) => ({
+    month: row.month,
+    label: row.label,
+    budget: Number(row.budget || 0),
+    actual: Number(row.actual || 0),
+  }));
+}, [trendData]);
+
+console.log("categoryTrend", categoryTrend);
 
 
   const monthlyTrend = useMemo(() => {
@@ -325,6 +362,49 @@ console.log("TrendAnalysis monthlyTrend", monthlyTrend);
       ...filters,
     });
   };
+
+  const toPlanMonthLabel = (monthKey: string) => {
+  if (!monthKey) return "";
+
+  const [year, month] = monthKey.split("-");
+  const monthMap: Record<string, string> = {
+    "01": "Jan",
+    "02": "Feb",
+    "03": "Mar",
+    "04": "Apr",
+    "05": "May",
+    "06": "Jun",
+    "07": "Jul",
+    "08": "Aug",
+    "09": "Sep",
+    "10": "Oct",
+    "11": "Nov",
+    "12": "Dec",
+  };
+
+  const shortYear = String(year).slice(-2);
+  return `${monthMap[month] || month}-${shortYear}`;
+};
+
+  const handleTrendPointDrillDown = (point: any) => {
+  if (!onDrillDown || !point) return;
+
+  const planMonth = toPlanMonthLabel(point.month);
+
+onDrillDown({
+  tab: "budget",
+  fromTab: "trendline",
+  planMonth,
+    fy: selectedFYs.includes("all") ? undefined : selectedFYs[0],
+    category: selectedCategory !== "all" ? selectedCategory : undefined,
+    businessUnit: selectedBU !== "all" ? selectedBU : undefined,
+    payingBU: selectedPayingBU !== "all" ? selectedPayingBU : undefined,
+  });
+};
+const handleChartPointClick = (_: any, payload: any) => {
+  if (!payload) return;
+  handleTrendPointDrillDown(payload);
+};
 
   const cardStyle = {
     background: "linear-gradient(145deg,#0B1624,#0A1320)",
@@ -402,27 +482,97 @@ console.log("TrendAnalysis monthlyTrend", monthlyTrend);
         </div>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
-          <select
-            value={selectedFY}
-            onChange={(e) => setSelectedFY(e.target.value)}
-            style={{
-              background: "#09131D",
-              border: "1px solid #213547",
-              borderRadius: 10,
-              color: "#f1f5f9",
-              padding: "8px 14px",
-              fontSize: 13,
-              fontWeight: 700,
-              minWidth: 170,
-            }}
-          >
-            <option value="all">All Years</option>
-            {resolvedFyOptions.map((fy) => (
-              <option key={fy} value={fy}>
-                {fy}
-              </option>
-            ))}
-          </select>
+          
+          <div style={{ position: "relative", minWidth: 170 }}>
+  <button
+    type="button"
+    onClick={() => setFyDropdownOpen((v) => !v)}
+    style={{
+      width: "100%",
+      background: "#09131D",
+      border: "1px solid #213547",
+      borderRadius: 10,
+      color: "#f1f5f9",
+      padding: "10px 14px",
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: "pointer",
+      textAlign: "left",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+    }}
+  >
+    <span>{fyDisplayLabel}</span>
+    <span style={{ color: "#9fb3c8", marginLeft: 10 }}>▾</span>
+  </button>
+
+  {fyDropdownOpen && (
+    <div
+      style={{
+        position: "absolute",
+        top: "calc(100% + 8px)",
+        left: 0,
+        zIndex: 50,
+        width: 240,
+        maxHeight: 260,
+        overflowY: "auto",
+        background: "#09131D",
+        border: "1px solid #213547",
+        borderRadius: 12,
+        boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
+        padding: 8,
+      }}
+    >
+      <label
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "10px 12px",
+          borderRadius: 8,
+          cursor: "pointer",
+          color: "#E0E7FF",
+          fontSize: 13,
+          fontWeight: 700,
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={selectedFYs.includes("all")}
+          onChange={() => toggleFY("all")}
+        />
+        <span>All Years</span>
+      </label>
+
+      <div style={{ height: 1, background: "#213547", margin: "6px 4px" }} />
+
+      {resolvedFyOptions.map((fy) => (
+        <label
+          key={fy}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "10px 12px",
+            borderRadius: 8,
+            cursor: "pointer",
+            color: "#E0E7FF",
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={!selectedFYs.includes("all") && selectedFYs.includes(fy)}
+            onChange={() => toggleFY(fy)}
+          />
+          <span>{fy}</span>
+        </label>
+      ))}
+    </div>
+  )}
+</div>
 
           <select
             value={selectedCategory}
@@ -490,16 +640,17 @@ console.log("TrendAnalysis monthlyTrend", monthlyTrend);
             ))}
           </select>
 
-          {(selectedFY !== "all" ||
-            selectedCategory !== "all" ||
-            selectedBU !== "all" ||
-            selectedPayingBU !== "all") && (
+          {(!selectedFYs.includes("all") ||
+  selectedCategory !== "all" ||
+  selectedBU !== "all" ||
+  selectedPayingBU !== "all") && (
             <button
               onClick={() => {
-                setSelectedFY("all");
+                setSelectedFYs(["all"]);
                 setSelectedCategory("all");
                 setSelectedBU("all");
                 setSelectedPayingBU("all");
+                setFyDropdownOpen(false);
               }}
               style={{
                 background: "#450a0a",
@@ -712,14 +863,15 @@ console.log("TrendAnalysis monthlyTrend", monthlyTrend);
     {viewType === "category" && "🏷️ Category Trend"}
   </div>
 
-  {chartTrend.length === 0 ? (
+  {viewType === "category" ? (
+  categoryTrend.length === 0 ? (
     <div style={{ color: "#88A0B8", fontSize: 13, padding: "24px 0" }}>
-      No trend data available for the selected filters.
+      No category trend data available for the selected filters.
     </div>
   ) : (
     <div style={{ width: "100%", height: 320 }}>
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={chartTrend}>
+        <ComposedChart data={categoryTrend}>
           <CartesianGrid strokeDasharray="3 3" stroke="#213547" />
           <XAxis
             dataKey="label"
@@ -744,26 +896,83 @@ console.log("TrendAnalysis monthlyTrend", monthlyTrend);
           <Legend wrapperStyle={{ fontSize: 12, color: "#9fb3c8" }} />
 
           <Area
-            type="monotone"
-            dataKey="budget"
-            fill="#5EEAD433"
-            stroke="#5EEAD4"
-            strokeWidth={2}
-            name={viewType === "pnl" ? "P&L Budget" : "Budget"}
-          />
+  type="monotone"
+  dataKey="budget"
+  fill="#F59E0B33"
+  stroke="#F59E0B"
+  strokeWidth={2}
+  name="Category Budget"
+  activeDot={{ r: 6, onClick: handleChartPointClick, style: { cursor: "pointer" } }}
+/>
+
           <Line
-            type="monotone"
-            dataKey="actual"
-            stroke="#10b981"
-            strokeWidth={3}
-            dot={{ r: 3 }}
-            activeDot={{ r: 5 }}
-            name={viewType === "pnl" ? "P&L Actual" : "Actual"}
-          />
+  type="monotone"
+  dataKey="actual"
+  stroke="#10b981"
+  strokeWidth={3}
+  dot={{ r: 3 }}
+  activeDot={{ r: 6, onClick: handleChartPointClick, style: { cursor: "pointer" } }}
+  name="Category Actual"
+/>
+
         </ComposedChart>
       </ResponsiveContainer>
     </div>
-  )}
+  )
+) : chartTrend.length === 0 ? (
+  <div style={{ color: "#88A0B8", fontSize: 13, padding: "24px 0" }}>
+    No trend data available for the selected filters.
+  </div>
+) : (
+  <div style={{ width: "100%", height: 320 }}>
+    <ResponsiveContainer width="100%" height="100%">
+      <ComposedChart data={chartTrend}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#213547" />
+        <XAxis
+          dataKey="label"
+          tick={{ fill: "#9fb3c8", fontSize: 11 }}
+        />
+        <YAxis
+          tick={{ fill: "#9fb3c8", fontSize: 11 }}
+          tickFormatter={(v) => formatShortCurrency(Number(v))}
+        />
+        <Tooltip
+          contentStyle={{
+            background: "#09131D",
+            border: "1px solid #213547",
+            borderRadius: 8,
+          }}
+          labelStyle={{ color: "#f1f5f9" }}
+          formatter={(value: any, name: string) => [
+            formatCurrency(Number(value)),
+            name,
+          ]}
+        />
+        <Legend wrapperStyle={{ fontSize: 12, color: "#9fb3c8" }} />
+
+        <Area
+  type="monotone"
+  dataKey="budget"
+  fill="#5EEAD433"
+  stroke="#5EEAD4"
+  strokeWidth={2}
+  name={viewType === "pnl" ? "P&L Budget" : "Budget"}
+  activeDot={{ r: 6, onClick: handleChartPointClick, style: { cursor: "pointer" } }}
+/>
+
+        <Line
+  type="monotone"
+  dataKey="actual"
+  stroke="#10b981"
+  strokeWidth={3}
+  dot={{ r: 3 }}
+  activeDot={{ r: 6, onClick: handleChartPointClick, style: { cursor: "pointer" } }}
+  name={viewType === "pnl" ? "P&L Actual" : "Actual"}
+/>
+      </ComposedChart>
+    </ResponsiveContainer>
+  </div>
+)}
 </div>
       </div>
     </div>
