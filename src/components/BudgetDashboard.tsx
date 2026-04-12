@@ -7,6 +7,8 @@ import {
   bulkDeleteBudgetItems,
 } from "../lib/budget-api";
 import AIInsights from "./AIInsights";
+import HeadcountPage from "./HeadcountPage";
+import HeadcountTrendPage from "./HeadcountTrendPage";
 import TrendAnalysisPage from "./TrendAnalysisPage";
 import dynamic from "next/dynamic";
 import { useState, useEffect, useMemo, useCallback, useRef, createContext, useContext } from "react";
@@ -4473,6 +4475,9 @@ function SOPPage({ onNavigate }) {
     { id:"cashflow",      icon:"💸", label:"Cash Flow" },
     { id:"payments",      icon:"📅", label:"Payment Schedule" },
     { id:"comparison",    icon:"⚖️", label:"Period Compare" },
+    { id:"trendline",     icon:"📈", label:"Trend Analysis" },
+    { id:"headcount", icon:"👥", label:"Headcount" },
+    { id:"headcounttrend", icon:"📈", label:"Headcount Trend" },
     { id:"reports",       icon:"📑", label:"Reports" },
     { id:"renewals",      icon:"🔔", label:"Renewals" },
     { id:"bualloc",       icon:"🗃️", label:"Team Allocation" },
@@ -5039,6 +5044,130 @@ function SOPPage({ onNavigate }) {
         </div>
       );
 
+      case "trendline": return (
+        <div>
+          <div style={card}>
+            <h2 style={h2}>📈 Trend Analysis</h2>
+            <p style={p}>The Trend Analysis page is the management investigation page. It is designed to show how Budget & Actuals move over time, how P&L changes over time, how Category spend evolves, and exactly which line items caused a spike or drop.</p>
+            <NavBtn tabId="trendline" label="Trend Analysis" icon="📈" />
+          </div>
+
+          <div style={card}>
+            <h2 style={h2}>🧭 Best Page Flow</h2>
+            <p style={p}>Trend Analysis should keep summary, trend, and root-cause detail on one screen:</p>
+            <ul style={{ paddingLeft:20 }}>
+              <li style={li}><strong style={{ color:"#E6FFFD" }}>Top:</strong> Multi-select filters and view selector</li>
+              <li style={li}><strong style={{ color:"#E6FFFD" }}>Middle:</strong> KPI cards</li>
+              <li style={li}><strong style={{ color:"#E6FFFD" }}>Below:</strong> Trend chart</li>
+              <li style={li}><strong style={{ color:"#E6FFFD" }}>Bottom:</strong> Detail table appears for the clicked month</li>
+            </ul>
+            {tip("This page should not navigate away on click. It should stay on the same page and reveal the root-cause rows below the chart.")}
+          </div>
+
+          <div style={card}>
+            <h2 style={h2}>⭐ Clickable Trend Logic</h2>
+            {step(1, "Select filters", "Use multi-select filters for FY, Category, BU, and Paying BU to scope the trend to the management question you are answering.")}
+            {step(2, "Choose the mode", "Switch between Budget & Actuals, P&L, and Category depending on what leadership is asking about.")}
+            {step(3, "Read the trend", "Look for jumps, drops, under-utilisation, or delayed actualisation over time.")}
+            {step(4, "Click the star", "Each month marker should be a star-shaped click target. Clicking a star selects that month and keeps the user on the same page.")}
+            {step(5, "Review the tables below", "The page should then show the FY summary table plus the clicked-month detailed rows that caused that movement.")}
+          </div>
+
+          <div style={card}>
+            <h2 style={h2}>📋 Detail Tables — What They Must Show</h2>
+            {[
+              ["Selected FY Summary","For the filtered scope, show totals by FY with item count, quantity, budget, actual, and value used."],
+              ["Clicked Month Detail","For the selected month, show description, category, BU, Paying BU, plan month, FY, quantity, budget, actual, value used, basis, and status."],
+              ["Value Used Rule","If Actual exists, use Actual. If Actual is blank, use Budget. This makes the analysis honest even when some lines are still planned and others are already realised."],
+            ].map(([title, desc]) => (
+              <div key={title} style={{ marginBottom:12, paddingBottom:12, borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
+                <div style={{ color:"#D2FFFB", fontWeight:700, fontSize:13, marginBottom:4, ...T }}>{title}</div>
+                <div style={{ color:"#6B7280", fontSize:12, lineHeight:1.65, ...T }}>{desc}</div>
+              </div>
+            ))}
+            {warn("Do not switch to My Budget when a month is clicked. Trend Analysis is intended to preserve analytical flow on one page.")}
+          </div>
+        </div>
+      );
+
+            case "headcount": return (
+        <div>
+          <div style={card}>
+            <h2 style={h2}>👥 Headcount</h2>
+            <p style={p}>
+              The Headcount page is the half-wise employee master for management visibility.
+              It helps maintain employee records by FY/Half and supports filtering, sorting,
+              select multiple, select all, export, delete selected, template download, and controlled import.
+            </p>
+            <p style={p}>
+              Each row represents one user in one FY/Half. The same user can appear in multiple halves,
+              but should not repeat within the same FY/Half.
+            </p>
+          </div>
+
+          <div style={card}>
+            <h2 style={h2}>🧾 Headcount Columns</h2>
+            <ul style={{ paddingLeft: 20 }}>
+              <li style={li}>User Email ID</li>
+              <li style={li}>Business Unit</li>
+              <li style={li}>Location</li>
+              <li style={li}>Department</li>
+              <li style={li}>Emp. Type</li>
+              <li style={li}>FY &amp; Half</li>
+            </ul>
+            {tip("Same user email is allowed in different FY/Halves, but must not repeat within the same FY/Half.")}
+          </div>
+
+          <div style={card}>
+            <h2 style={h2}>📥 Import Rules</h2>
+            {step(1, "Download template", "Use the template before uploading headcount data so the CSV structure stays consistent.")}
+            {step(2, "Prepare rows", "Each row must contain email, BU, location, department, emp. type, and FY/Half.")}
+            {step(3, "Validate duplicates", "Duplicate user email in the same FY/Half should be blocked. Same user in different halves is valid.")}
+            {step(4, "Import access", "Only Admin and Budget Collaborator should be able to import headcount data.")}
+          </div>
+        </div>
+      );
+
+      case "headcounttrend": return (
+        <div>
+          <div style={card}>
+            <h2 style={h2}>📈 Headcount Trend</h2>
+            <p style={p}>
+              The Headcount Trend page helps management compare headcount movement with Budget,
+              Actual, and Variance across FY/Halves. It is designed as a summary-first page
+              so it stays lightweight as the dataset grows over time.
+            </p>
+            <p style={p}>
+              Use this page to understand how workforce changes relate to financial movement
+              in the selected scope.
+            </p>
+            <NavBtn tabId="headcounttrend" label="Headcount Trend" icon="📈" />
+          </div>
+
+          <div style={card}>
+            <h2 style={h2}>📊 What this page should show</h2>
+            <ul style={{ paddingLeft: 20 }}>
+              <li style={li}>Headcount</li>
+              <li style={li}>Budget</li>
+              <li style={li}>Actual</li>
+              <li style={li}>Variance</li>
+              <li style={li}>Headcount Growth %</li>
+              <li style={li}>Budget Growth %</li>
+              <li style={li}>Actual Growth %</li>
+            </ul>
+          </div>
+
+          <div style={card}>
+            <h2 style={h2}>⭐ Trend interaction</h2>
+            {step(1, "Apply filters", "Use multi-select filters for FY, BU, Location, Department, and Emp. Type.")}
+            {step(2, "Read the cards", "Review the KPI cards for the selected scope.")}
+            {step(3, "Read the trend", "Use the chart to understand how headcount, budget, and actual move across halves.")}
+            {step(4, "Click the star", "Click any star-shaped marker to select that FY/Half.")}
+            {step(5, "Review details below", "The page should stay in place and show the clicked-half detail rows below the chart.")}
+          </div>
+        </div>
+      );
+
       case "reports": return (
         <div>
           <div style={card}>
@@ -5245,6 +5374,45 @@ function SOPPage({ onNavigate }) {
         </div>
       );
 
+      case "trendline": return (
+        <div>
+          <div style={card()}>
+            <div style={h2s}>Trend Analysis Logic</div>
+            <p style={ps}>Trend Analysis exists to connect summary, trend, and root cause in one place. It answers three management questions: how Budget & Actuals move over time, how P&L behaves over time, and how Category spend changes over time.</p>
+
+            <h3 style={h3s}>Required Layout</h3>
+            {table(
+              ["Zone","Purpose"],
+              [
+                ["Top","Multi-select filters for FY, Category, BU, and Paying BU, plus the mode selector"],
+                ["Middle","KPI summary cards for the filtered scope"],
+                ["Below","Trend chart for Budget & Actuals, P&L, or Category"],
+                ["Bottom","FY summary plus clicked-month detail rows"],
+              ]
+            )}
+
+            <h3 style={h3s}>Interactive Behavior</h3>
+            {table(
+              ["Rule","Expected Behavior"],
+              [
+                ["Marker Shape","Month marker should be a star"],
+                ["Hover","Star remains a star on hover; it should not change to a generic dot"],
+                ["Click Action","Clicking a month should stay on the same page and reveal the detail rows below"],
+                ["Navigation","Trend page is an analysis page, not a navigation page"],
+              ]
+            )}
+
+            <h3 style={h3s}>Value Used Rule</h3>
+            {formula("Value Used = Actual if Actual exists, else Budget", "This lets the table reflect realised spend where available and planned spend where actuals are still blank.")}
+
+            <h3 style={h3s}>FY Summary Rule</h3>
+            <p style={ps}>For the current filtered scope, the FY summary table should show each selected FY with item count, quantity, budget, actual, and value used. Example: if Category = Software and FY = 2025-H1, 2026-H1, 2027-H1, the table should show the value for each of those selected financial years separately.</p>
+
+            {infoBox("📈","Analytical Flow","Example: Budget jumps in Jul-24 → click Jul-24 star → see exact rows below. Actual drops in Sep-24 → click Sep-24 → identify missing or lower actuals. Software spikes in Oct-26 → filter Category = Software, then click Oct-26 to inspect cause.","#5EEAD4","rgba(94,234,212,0.08)")}
+          </div>
+        </div>
+      );
+
       case "cashflow": return (
         <div>
           <div style={card}>
@@ -5416,7 +5584,8 @@ function SOPPage({ onNavigate }) {
         <div>
           <div style={card}>
             <h2 style={h2}>🔍 Audit Trail</h2>
-            <p style={p}>The Audit Trail records every significant action taken in the tool — item additions, edits, deletions, actual updates, period locks and unlocks, and bulk imports. It is the complete tamper-evident history of your budget data.</p>
+            <p style={p}>The Audit Trail records every significant action taken in the tool — item additions, edits, deletions, actual updates, period locks and unlocks, bulk imports, and reconciliation actions. It is the complete tamper-evident history of your budget data.</p>
+            <p style={p}>Every audit entry should capture the actual logged-in user's email ID. It must not show generic labels such as "Finance User" in place of the real actor.</p>
             <NavBtn tabId="auditlog" label="Audit Trail" icon="🔍" />
           </div>
           <div style={card}>
@@ -7193,6 +7362,9 @@ function BiblePage() {
     { id:"audittrail",  icon:"🔍", label:"Audit Trail" },
     { id:"planning",    icon:"🗓️", label:"Forward Plan Logic" },
     { id:"comparison",  icon:"⚖️", label:"Comparison Logic" },
+    { id:"headcount", icon:"👥", label:"Headcount Logic" },
+    { id:"headcounttrend", icon:"📈", label:"Headcount Trend Logic" },
+    { id:"trendline",   icon:"📈", label:"Trend Analysis Logic" },
     { id:"glossary",    icon:"📚", label:"Glossary" },
   ];
 
@@ -7636,6 +7808,38 @@ function BiblePage() {
         </div>
       );
 
+      case "headcount": return (
+  <div>
+    <div style={card()}>
+      <div style={h2s}>Headcount Logic</div>
+      <p style={ps}>
+        Headcount is a separate dataset from Budget Items. It tracks users per FY/Half.
+      </p>
+      <p style={ps}>
+        Uniqueness rule: <b>userEmailId + fyHalf</b>
+      </p>
+      <ul style={{ paddingLeft: 20 }}>
+        <li>Same user allowed across different halves</li>
+        <li>Same user NOT allowed in same half</li>
+      </ul>
+    </div>
+  </div>
+);
+
+case "headcounttrend": return (
+  <div>
+    <div style={card()}>
+      <div style={h2s}>Headcount Trend Logic</div>
+      <p style={ps}>
+        This page shows Headcount, Budget, Actual, and Variance across FY/Halves using summary data.
+      </p>
+      <p style={ps}>
+        Users can click star markers to drill into that half without leaving the page.
+      </p>
+    </div>
+  </div>
+);
+
       case "cashflow": return (
         <div>
           <div style={card()}>
@@ -7756,6 +7960,7 @@ function BiblePage() {
           <div style={card()}>
             <div style={h2s}>Audit Trail — Complete Event Log</div>
             <p style={ps}>The Audit Trail is the tamper-evident history of every meaningful action in the tool. It is stored in browser localStorage and survives page refreshes. Export a CSV at each period-close for permanent off-system records.</p>
+            <p style={ps}>The user field should always capture the actual logged-in user email where available. It must not replace the actor with a generic label such as "Finance User". If email is unavailable, the fallback should be explicit, such as Unknown.</p>
             <h3 style={h3s}>All Logged Event Types</h3>
             {table(
               ["Action","Trigger","Key Details Logged"],
@@ -7810,6 +8015,8 @@ function BiblePage() {
                 ["Sign-Off","The Approved or Rejected decision recorded against a reconciled line item. Persisted in localStorage."],
                 ["Column Sort","Clicking a sortable column header in My Budget to order rows ascending or descending."],
                 ["Severity Filter","The clickable HIGH/MEDIUM/LOW buttons on the Out of Policy page that filter the exception table."],
+                ["Trend Drill-down","Clicking a month star in Trend Analysis to stay on the same page and reveal the root-cause rows below the chart."],
+                ["Value Used","In Trend Analysis detail tables, use Actual where actual exists, otherwise use Budget."],
               ]
             )}
           </div>
@@ -7888,6 +8095,8 @@ const TABS = [
   { id:"payments", label:"📅 Payment Schedule" },
   { id:"comparison", label:"⚖️ Period Compare" },
   { id:"trendline", label:"📈 Trend Analysis" },
+  { id: "headcount", label: "👥 Headcount" },
+{ id: "headcounttrend", label: "👣 Headcount Trend" },
   { id:"reports", label:"📄 Reports" },
   { id:"renewals", label:"🔔 Renewals" },
   { id:"bualloc", label:"💳 Team Allocation" },
@@ -7920,6 +8129,60 @@ const [itemsNextCursor, setItemsNextCursor] = useState<string | null>(null);
 const [isSaving, setIsSaving] = useState(false);
 const [isImporting, setIsImporting] = useState(false);
 const [globalFyOptions, setGlobalFyOptions] = useState<string[]>([]);
+const [headcountRecords, setHeadcountRecords] = useState([
+  {
+    id: "hc_1",
+    userEmailId: "john.doe@company.com",
+    businessUnit: "WP-India",
+    location: "Bangalore",
+    department: "IT",
+    empType: "Permanent",
+    fyHalf: "2025-H1",
+  },
+  {
+    id: "hc_2",
+    userEmailId: "john.doe@company.com",
+    businessUnit: "WP-India",
+    location: "Bangalore",
+    department: "IT",
+    empType: "Permanent",
+    fyHalf: "2025-H2",
+  },
+  {
+    id: "hc_3",
+    userEmailId: "jane.smith@company.com",
+    businessUnit: "WP-India",
+    location: "Mumbai",
+    department: "Finance",
+    empType: "Contract",
+    fyHalf: "2025-H1",
+  },
+  {
+    id: "hc_4",
+    userEmailId: "alex.tan@company.com",
+    businessUnit: "WP-Singapore",
+    location: "Singapore",
+    department: "IT",
+    empType: "Permanent",
+    fyHalf: "2026-H1",
+  },
+  {
+    id: "hc_5",
+    userEmailId: "john.doe@company.com",
+    businessUnit: "WP-India",
+    location: "Bangalore",
+    department: "IT",
+    empType: "Permanent",
+    fyHalf: "2026-H1",
+  },
+]);
+const headcountBudgetSummaryByHalf = [
+  { fyHalf: "2025-H1", budget: 120000, actual: 98000 },
+  { fyHalf: "2026-H1", budget: 180000, actual: 154000 },
+  { fyHalf: "2026-H2", budget: 210000, actual: 176000 },
+  { fyHalf: "2027-H1", budget: 260000, actual: 201000 },
+];
+
 const [appSummary, setAppSummary] = useState<any>(null);
 const [appSummaryLoading, setAppSummaryLoading] = useState(false);
 const [itemStats, setItemStats] = useState({
@@ -8851,6 +9114,21 @@ if (tabNeedsRawItems && itemsLoading && items.length === 0) {
       onDrillDown={handleDrillDown}
     />
   </>
+)}
+
+{tab === "headcount" && (
+  <HeadcountPage
+    user={user}
+    records={headcountRecords}
+    onChangeRecords={setHeadcountRecords}
+  />
+)}
+
+{tab === "headcounttrend" && (
+  <HeadcountTrendPage
+    records={headcountRecords}
+    budgetSummaryByHalf={headcountBudgetSummaryByHalf}
+  />
 )}
 
 {tab === "reports" && (
