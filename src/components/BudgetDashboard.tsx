@@ -7936,13 +7936,21 @@ const loadInitialItems = async () => {
       filterStatus === "Cancelled" ? "Cancel" :
       filterStatus;
 
+      console.log("LOAD ITEMS with:", {
+      filterFY,
+      filterBU,
+      filterStatus,
+      filterPlanMonth,
+      filterCategory,
+    });
+
     const res = await fetch(
-      `/api/budget-items?limit=100&fy=${encodeURIComponent(filterFY)}&businessUnit=${encodeURIComponent(filterBU)}&status=${encodeURIComponent(apiStatus)}`,
-      {
-        method: "GET",
-        cache: "no-store",
-      }
-    );
+  `/api/budget-items?limit=100&fy=${encodeURIComponent(filterFY)}&businessUnit=${encodeURIComponent(filterBU)}&status=${encodeURIComponent(apiStatus)}&planMonth=${encodeURIComponent(filterPlanMonth)}&category=${encodeURIComponent(filterCategory)}`,
+  {
+    method: "GET",
+    cache: "no-store",
+  }
+);
 
     const data = await res.json();
 
@@ -8158,6 +8166,7 @@ const [dashboardPayingBUs, setDashboardPayingBUs] = useState(["all"]);
   // ── Drill-down handler: called from Dashboard / Comparison links ──
   const handleDrillDown = useCallback((filters) => {
   const fromTab = filters?.fromTab || null;
+  console.log("DRILL filters received:", filters);
   const targetTab = filters?.tab || null;
 
   const bu =
@@ -8188,7 +8197,7 @@ const [dashboardPayingBUs, setDashboardPayingBUs] = useState(["all"]);
     setDashboardPayingBUs(filters.dashboardFilters.selectedPayingBUs || ["all"]);
   }
 
-  if (targetTab) setTab(targetTab);
+ 
 
   setFilterBU(bu || "all");
 setFilterFY(fy || "all");
@@ -8206,6 +8215,7 @@ if (typeof setFilterPayingBU === "function") {
 setFilterPlanMonth(planMonth || "all");
 
   setFilterOutsideBudget(!!outsideBudget);
+ if (targetTab) setTab(targetTab);
 
   if (targetTab === "reports") {
     if (reportsGroupBy) setRptGroupBy(reportsGroupBy);
@@ -8259,7 +8269,7 @@ const [cmpPeriodB, setCmpPeriodB] = useState<string[]>([]);
   }
 
   loadInitialItems();
-}, [filterFY, filterBU, filterStatus, tabNeedsRawItems]);
+}, [filterFY, filterBU, filterStatus, filterPlanMonth, filterCategory, tabNeedsRawItems]);
 
   useEffect(() => {
     loadItemStats();

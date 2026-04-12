@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -14,18 +13,8 @@ import {
   Line,
 } from "recharts";
 
-function formatCurrency(value: number) {
-  return `S$${Math.round(value).toLocaleString()}`;
-}
-
-function formatShortCurrency(value: number) {
-  if (Math.abs(value) >= 1_000_000) return `S$${(value / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(value) >= 1_000) return `S$${(value / 1_000).toFixed(0)}k`;
-  return `S$${Math.round(value)}`;
-}
-
-
 type BudgetItem = {
+  id?: string;
   fy?: string;
   planMonth?: string;
   itemCategory?: string;
@@ -33,22 +22,45 @@ type BudgetItem = {
   payingBU?: string;
   budget?: number | string | null;
   actual?: number | string | null;
+  quantity?: number | string | null;
   description?: string;
   status?: string;
+  currency?: string;
   [key: string]: any;
 };
 
-type TrendAnalysisPageProps = {
-  items: BudgetItem[];
-  fyOptions: string[];
-  onDrillDown?: (filters: any) => void;
+type TrendPoint = {
+  month: string;
+  label: string;
+  budget: number;
+  actual: number;
+  count: number;
 };
 
-
+type TrendAnalysisPageProps = {
+  items?: BudgetItem[];
+  fyOptions?: string[];
+  onDrillDown?: (filters: any) => void;
+};
 
 function toNumber(value: unknown) {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
+}
+
+function formatCurrency(value: number) {
+  return `S$${Math.round(value).toLocaleString()}`;
+}
+
+function formatShortCurrency(value: number) {
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000) return `S$${(value / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `S$${Math.round(value / 1_000)}k`;
+  return `S$${Math.round(value)}`;
+}
+
+function getUniqueSorted(values: Array<string | undefined | null>) {
+  return [...new Set(values.filter(Boolean).map((v) => String(v).trim()))].sort();
 }
 
 function deriveFY(item: BudgetItem) {
@@ -61,42 +73,18 @@ function deriveFY(item: BudgetItem) {
   if (!match) return "Unknown";
 
   const monthMap: Record<string, number> = {
-    Jan: 1,
-    Feb: 2,
-    Mar: 3,
-    Apr: 4,
-    May: 5,
-    Jun: 6,
-    Jul: 7,
-    Aug: 8,
-    Sep: 9,
-    Oct: 10,
-    Nov: 11,
-    Dec: 12,
+    Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
+    Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12,
   };
 
   const month = monthMap[match[1]] || 0;
   let year = Number(match[2]);
   if (year < 100) year += 2000;
-
   if (!month || !year) return "Unknown";
 
   const half = month >= 4 && month <= 9 ? "H1" : "H2";
-
-  let fyYear = year;
-  if (month >= 1 && month <= 3) fyYear = year - 1;
-
+  const fyYear = month >= 1 && month <= 3 ? year - 1 : year;
   return `${fyYear}-${half}`;
-}
-
-function getUniqueSorted(values: Array<string | undefined | null>) {
-  return [...new Set(values.filter(Boolean).map((v) => String(v).trim()))].sort();
-}
-
-function getViewHeading(viewType: string) {
-  if (viewType === "budget") return "💰 Budget & Actuals Trend";
-  if (viewType === "pnl") return "📊 P&L Trend";
-  return "🏷️ Category Trend";
 }
 
 function getPlanMonthKey(item: BudgetItem) {
@@ -107,23 +95,12 @@ function getPlanMonthKey(item: BudgetItem) {
   if (!match) return "Unknown";
 
   const monthMap: Record<string, string> = {
-    Jan: "01",
-    Feb: "02",
-    Mar: "03",
-    Apr: "04",
-    May: "05",
-    Jun: "06",
-    Jul: "07",
-    Aug: "08",
-    Sep: "09",
-    Oct: "10",
-    Nov: "11",
-    Dec: "12",
+    Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
+    Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12",
   };
 
   let year = Number(match[2]);
   if (year < 100) year += 2000;
-
   const month = monthMap[match[1]] || "00";
   if (!year || month === "00") return "Unknown";
 
@@ -132,279 +109,377 @@ function getPlanMonthKey(item: BudgetItem) {
 
 function formatMonthLabel(monthKey: string) {
   if (!monthKey || monthKey === "Unknown") return "Unknown";
-
   const [year, month] = monthKey.split("-");
   const labelMap: Record<string, string> = {
-    "01": "Jan",
-    "02": "Feb",
-    "03": "Mar",
-    "04": "Apr",
-    "05": "May",
-    "06": "Jun",
-    "07": "Jul",
-    "08": "Aug",
-    "09": "Sep",
-    "10": "Oct",
-    "11": "Nov",
-    "12": "Dec",
+    "01": "Jan", "02": "Feb", "03": "Mar", "04": "Apr", "05": "May", "06": "Jun",
+    "07": "Jul", "08": "Aug", "09": "Sep", "10": "Oct", "11": "Nov", "12": "Dec",
   };
-
   return `${labelMap[month] || month}-${String(year).slice(-2)}`;
 }
 
+function getViewHeading(viewType: "budget" | "pnl" | "category") {
+  if (viewType === "budget") return "💰 Budget & Actuals Trend";
+  if (viewType === "pnl") return "📊 P&L Trend";
+  return "🏷️ Category Trend";
+}
+
+function getViewChartTitle(viewType: "budget" | "pnl" | "category") {
+  if (viewType === "budget") return "💰 Budget vs Actual Trend";
+  if (viewType === "pnl") return "📊 P&L Trend";
+  return "🏷️ Category Trend";
+}
+
+function effectiveValue(item: BudgetItem) {
+  const actual = toNumber(item.actual);
+  const budget = toNumber(item.budget);
+  return actual > 0 ? actual : budget;
+}
+
+function valueBasis(item: BudgetItem) {
+  return toNumber(item.actual) > 0 ? "Actual" : "Budget";
+}
+
+function StarDot(props: any) {
+  const { cx, cy, stroke, payload, onPointSelect } = props;
+  if (cx == null || cy == null) return null;
+
+  const outer = 10;
+  const inner = 4.5;
+  const points: string[] = [];
+  for (let i = 0; i < 10; i += 1) {
+    const angle = (-90 + i * 36) * (Math.PI / 180);
+    const radius = i % 2 === 0 ? outer : inner;
+    const x = cx + Math.cos(angle) * radius;
+    const y = cy + Math.sin(angle) * radius;
+    points.push(`${x},${y}`);
+  }
+
+  return (
+    <polygon
+      points={points.join(" ")}
+      fill={stroke || "#10b981"}
+      stroke="#E6FFFA"
+      strokeWidth={2}
+      style={{ cursor: "pointer" }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onPointSelect?.(payload);
+      }}
+    />
+  );
+}
+
+function MultiSelect({
+  label,
+  options,
+  selected,
+  onChange,
+  minWidth = 170,
+}: {
+  label: string;
+  options: string[];
+  selected: string[];
+  onChange: (value: string[]) => void;
+  minWidth?: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const onDocClick = (event: MouseEvent) => {
+      if (!ref.current) return;
+      if (!ref.current.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  const allSelected = selected.includes("all") || selected.length === 0;
+
+  const display = allSelected
+    ? label
+    : selected.length === 1
+    ? selected[0]
+    : `${selected.length} selected`;
+
+  const toggle = (value: string) => {
+    if (value === "all") {
+      onChange(["all"]);
+      return;
+    }
+    const current = allSelected ? [] : selected;
+    const exists = current.includes(value);
+    const next = exists ? current.filter((x) => x !== value) : [...current, value].sort();
+    onChange(next.length ? next : ["all"]);
+  };
+
+  return (
+    <div ref={ref} style={{ position: "relative", minWidth }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          width: "100%",
+          background: "#09131D",
+          border: "1px solid #213547",
+          borderRadius: 10,
+          color: "#f1f5f9",
+          padding: "10px 14px",
+          fontSize: 13,
+          fontWeight: 700,
+          cursor: "pointer",
+          textAlign: "left",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <span>{display}</span>
+        <span style={{ color: "#9fb3c8", marginLeft: 10 }}>▾</span>
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            left: 0,
+            zIndex: 50,
+            width: 260,
+            maxHeight: 280,
+            overflowY: "auto",
+            background: "#09131D",
+            border: "1px solid #213547",
+            borderRadius: 12,
+            boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
+            padding: 8,
+          }}
+        >
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "10px 12px",
+              borderRadius: 8,
+              cursor: "pointer",
+              color: "#E0E7FF",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={() => toggle("all")}
+            />
+            <span>{label}</span>
+          </label>
+
+          <div style={{ height: 1, background: "#213547", margin: "6px 4px" }} />
+
+          {options.map((option) => (
+            <label
+              key={option}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "10px 12px",
+                borderRadius: 8,
+                cursor: "pointer",
+                color: "#E0E7FF",
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={!allSelected && selected.includes(option)}
+                onChange={() => toggle(option)}
+              />
+              <span>{option}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TrendAnalysisPage({
-  items,
-  fyOptions,
-  onDrillDown,
+  items = [],
+  fyOptions = [],
 }: TrendAnalysisPageProps) {
   const [viewType, setViewType] = useState<"budget" | "pnl" | "category">("budget");
   const [selectedFYs, setSelectedFYs] = useState<string[]>(["all"]);
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedBU, setSelectedBU] = useState("all");
-  const [selectedPayingBU, setSelectedPayingBU] = useState("all");
-  const [fyDropdownOpen, setFyDropdownOpen] = useState(false);
-  const [apiLoading, setApiLoading] = useState(false);
-const [apiError, setApiError] = useState("");
-const [trendData, setTrendData] = useState<any>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(["all"]);
+  const [selectedBUs, setSelectedBUs] = useState<string[]>(["all"]);
+  const [selectedPayingBUs, setSelectedPayingBUs] = useState<string[]>(["all"]);
 
-useEffect(() => {
-  let cancelled = false;
+  const [rawItems, setRawItems] = useState<BudgetItem[]>(Array.isArray(items) ? items : []);
+  const [loading, setLoading] = useState(!Array.isArray(items) || items.length === 0);
+  const [error, setError] = useState("");
+  const [selectedTrendPoint, setSelectedTrendPoint] = useState<TrendPoint | null>(null);
 
-  async function loadTrendSummary() {
-    try {
-      setApiLoading(true);
-      setApiError("");
+  useEffect(() => {
+    setSelectedTrendPoint(null);
+  }, [viewType, selectedFYs.join("|"), selectedCategories.join("|"), selectedBUs.join("|"), selectedPayingBUs.join("|")]);
 
-      const params = new URLSearchParams({
-  fy: selectedFYs.includes("all") ? "all" : selectedFYs.join(","),
-  businessUnit: selectedBU,
-  payingBU: selectedPayingBU,
-  category: selectedCategory,
-  viewType,
-});
+  useEffect(() => {
+    if (Array.isArray(items) && items.length > 0) {
+      setRawItems(items);
+      setLoading(false);
+      setError("");
+      return;
+    }
 
-      const res = await fetch(`/api/budget-items/trend-summary?${params.toString()}`, {
-        method: "GET",
-        cache: "no-store",
-      });
+    let cancelled = false;
 
-      const data = await res.json();
+    async function fetchAllItems() {
+      try {
+        setLoading(true);
+        setError("");
+        const collected: BudgetItem[] = [];
+        let cursor = "";
+        let guard = 0;
 
-      if (!res.ok) {
-        throw new Error(data?.error || "Failed to load trend summary");
-      }
+        while (guard < 50) {
+          const params = new URLSearchParams({
+            limit: "100",
+            fy: "all",
+            businessUnit: "all",
+            status: "all",
+          });
+          if (cursor) params.set("cursor", cursor);
 
-      if (!cancelled) {
-        setTrendData(data);
-      }
-    } catch (error: any) {
-      if (!cancelled) {
-        setApiError(error?.message || "Failed to load trend summary");
-      }
-    } finally {
-      if (!cancelled) {
-        setApiLoading(false);
+          const res = await fetch(`/api/budget-items?${params.toString()}`, {
+            method: "GET",
+            cache: "no-store",
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data?.error || "Failed to load budget items");
+          }
+
+          const batch = Array.isArray(data?.items) ? data.items : [];
+          collected.push(...batch);
+
+          if (!data?.hasMore || !data?.nextCursor) break;
+          cursor = String(data.nextCursor);
+          guard += 1;
+        }
+
+        if (!cancelled) setRawItems(collected);
+      } catch (err: any) {
+        if (!cancelled) {
+          setError(err?.message || "Failed to load budget items");
+          setRawItems([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
-  }
 
-  loadTrendSummary();
+    fetchAllItems();
+    return () => {
+      cancelled = true;
+    };
+  }, [items]);
 
-  return () => {
-    cancelled = true;
-  };
-}, [selectedFYs, selectedCategory, selectedBU, selectedPayingBU, viewType]);
-
-  const sourceItems = Array.isArray(items) ? items : [];
-
+  const categoryOptions = useMemo(() => getUniqueSorted(rawItems.map((i) => i.itemCategory)), [rawItems]);
+  const buOptions = useMemo(() => getUniqueSorted(rawItems.map((i) => i.businessUnit)), [rawItems]);
+  const payingBUOptions = useMemo(() => getUniqueSorted(rawItems.map((i) => i.payingBU)), [rawItems]);
   const resolvedFyOptions = useMemo(() => {
-  const fromApi = Array.isArray(trendData?.filterOptions?.fyOptions)
-    ? trendData.filterOptions.fyOptions
-    : [];
-  const fromItems = getUniqueSorted(sourceItems.map((i) => deriveFY(i)));
-  const fromProps = getUniqueSorted((fyOptions || []).map((f) => f));
-  return getUniqueSorted([...fromApi, ...fromProps, ...fromItems]);
-}, [trendData, sourceItems, fyOptions]);
-
-const fyDisplayLabel = useMemo(() => {
-  if (selectedFYs.includes("all")) return "All Years";
-  if (selectedFYs.length === 0) return "Select FY";
-  if (selectedFYs.length === 1) return selectedFYs[0];
-  return `${selectedFYs.length} FYs selected`;
-}, [selectedFYs]);
-
-const toggleFY = (fy: string) => {
-  if (fy === "all") {
-    setSelectedFYs(["all"]);
-    return;
-  }
-
-  const current = selectedFYs.includes("all") ? [] : selectedFYs;
-  const exists = current.includes(fy);
-
-  const next = exists
-    ? current.filter((x) => x !== fy)
-    : [...current, fy].sort();
-
-  setSelectedFYs(next.length ? next : ["all"]);
-};
-
-  const categoryOptions = useMemo(() => {
-  const fromApi = Array.isArray(trendData?.filterOptions?.categories)
-    ? trendData.filterOptions.categories
-    : [];
-  const fromItems = getUniqueSorted(sourceItems.map((i) => i.itemCategory));
-  return getUniqueSorted([...fromApi, ...fromItems]);
-}, [trendData, sourceItems]);
-
-  const buOptions = useMemo(() => {
-  const fromApi = Array.isArray(trendData?.filterOptions?.businessUnits)
-    ? trendData.filterOptions.businessUnits
-    : [];
-  const fromItems = getUniqueSorted(sourceItems.map((i) => i.businessUnit));
-  return getUniqueSorted([...fromApi, ...fromItems]);
-}, [trendData, sourceItems]);
-
-  const payingBUOptions = useMemo(() => {
-  const fromApi = Array.isArray(trendData?.filterOptions?.payingBUs)
-    ? trendData.filterOptions.payingBUs
-    : [];
-  const fromItems = getUniqueSorted(sourceItems.map((i) => i.payingBU));
-  return getUniqueSorted([...fromApi, ...fromItems]);
-}, [trendData, sourceItems]);
+    const fromItems = getUniqueSorted(rawItems.map((i) => deriveFY(i)));
+    const fromProps = getUniqueSorted(fyOptions);
+    return getUniqueSorted([...fromItems, ...fromProps]);
+  }, [rawItems, fyOptions]);
 
   const filteredItems = useMemo(() => {
-    return sourceItems.filter((item) => {
-      const fy = deriveFY(item);
-
-      const fyMatch = selectedFYs === "all" || fy === selectedFYs;
+    return rawItems.filter((item) => {
+      const fyMatch = selectedFYs.includes("all") || selectedFYs.includes(deriveFY(item));
       const categoryMatch =
-        selectedCategory === "all" || String(item.itemCategory || "") === selectedCategory;
+        selectedCategories.includes("all") || selectedCategories.includes(String(item.itemCategory || "").trim());
       const buMatch =
-        selectedBU === "all" || String(item.businessUnit || "") === selectedBU;
+        selectedBUs.includes("all") || selectedBUs.includes(String(item.businessUnit || "").trim());
       const payingBUMatch =
-        selectedPayingBU === "all" || String(item.payingBU || "") === selectedPayingBU;
-
+        selectedPayingBUs.includes("all") || selectedPayingBUs.includes(String(item.payingBU || "").trim());
       return fyMatch && categoryMatch && buMatch && payingBUMatch;
     });
-  }, [sourceItems, selectedFYs, selectedCategory, selectedBU, selectedPayingBU]);
+  }, [rawItems, selectedFYs, selectedCategories, selectedBUs, selectedPayingBUs]);
 
-  const totalBudget = toNumber(trendData?.kpis?.totalBudget);
+  const chartTrend = useMemo<TrendPoint[]>(() => {
+    const monthMap: Record<string, TrendPoint> = {};
 
-  const totalActual = toNumber(trendData?.kpis?.totalActual);
+    filteredItems.forEach((item) => {
+      const month = getPlanMonthKey(item);
+      if (month === "Unknown") return;
 
-  const totalItems = toNumber(trendData?.kpis?.totalItems);
+      if (!monthMap[month]) {
+        monthMap[month] = {
+          month,
+          label: formatMonthLabel(month),
+          budget: 0,
+          actual: 0,
+          count: 0,
+        };
+      }
 
-  const totalPnlBudget = toNumber(trendData?.kpis?.totalPnlBudget);
-const totalPnlActual = toNumber(trendData?.kpis?.totalPnlActual);
-
-  const pnlItemsWithActual = toNumber(trendData?.kpis?.itemsWithActual);
-
-  const pnlPendingActual = toNumber(trendData?.kpis?.pendingActual);
-
-  const pnlUtilPct = toNumber(trendData?.kpis?.pnlUtilPct);
-
-  const categoryCount = toNumber(trendData?.kpis?.categoryCount);
-
-  const budgetVariance = toNumber(trendData?.kpis?.budgetVariance);
-
-  const chartTrend = useMemo(() => {
-  return Array.isArray(trendData?.trend) ? trendData.trend : [];
-}, [trendData]);
-
-const categoryTrend = useMemo(() => {
-  const rows = Array.isArray(trendData?.trend) ? trendData.trend : [];
-
-  return rows.map((row: any) => ({
-    month: row.month,
-    label: row.label,
-    budget: Number(row.budget || 0),
-    actual: Number(row.actual || 0),
-  }));
-}, [trendData]);
-
-console.log("categoryTrend", categoryTrend);
-
-
-  const monthlyTrend = useMemo(() => {
-  const monthMap: Record<string, { month: string; budget: number; actual: number }> = {};
-
-  filteredItems.forEach((item) => {
-    const monthKey = getPlanMonthKey(item);
-    if (monthKey === "Unknown") return;
-
-    if (!monthMap[monthKey]) {
-      monthMap[monthKey] = {
-        month: monthKey,
-        budget: 0,
-        actual: 0,
-      };
-    }
-
-    monthMap[monthKey].budget += toNumber(item.budget);
-    monthMap[monthKey].actual += toNumber(item.actual);
-  });
-
-  return Object.values(monthMap)
-    .sort((a, b) => a.month.localeCompare(b.month))
-    .map((row) => ({
-      ...row,
-      label: formatMonthLabel(row.month),
-    }));
-}, [filteredItems]);
-
-console.log("TrendAnalysis monthlyTrend", monthlyTrend);
-
-  const drill = (filters: Record<string, any>) => {
-    if (!onDrillDown) return;
-    onDrillDown({
-      fromTab: "trendline",
-      ...filters,
+      monthMap[month].budget += toNumber(item.budget);
+      monthMap[month].actual += toNumber(item.actual);
+      monthMap[month].count += 1;
     });
+
+    return Object.values(monthMap).sort((a, b) => a.month.localeCompare(b.month));
+  }, [filteredItems]);
+
+  const totalBudget = useMemo(() => filteredItems.reduce((sum, item) => sum + toNumber(item.budget), 0), [filteredItems]);
+  const totalActual = useMemo(() => filteredItems.reduce((sum, item) => sum + toNumber(item.actual), 0), [filteredItems]);
+  const totalItems = filteredItems.length;
+  const budgetVariance = totalBudget - totalActual;
+  const totalPnlBudget = totalBudget;
+  const totalPnlActual = totalActual;
+  const pnlItemsWithActual = filteredItems.filter((item) => toNumber(item.actual) > 0).length;
+  const pnlUtilPct = totalBudget > 0 ? Math.round((totalActual / totalBudget) * 100) : 0;
+  const categoryCount = getUniqueSorted(filteredItems.map((i) => i.itemCategory)).length;
+
+  const detailRows = useMemo(() => {
+    if (!selectedTrendPoint?.month) return [];
+    return filteredItems
+      .filter((item) => getPlanMonthKey(item) === selectedTrendPoint.month)
+      .sort((a, b) => String(a.description || "").localeCompare(String(b.description || "")));
+  }, [filteredItems, selectedTrendPoint]);
+
+  const fySummaryRows = useMemo(() => {
+    const scoped = detailRows.length > 0 ? detailRows : filteredItems;
+
+    const map: Record<string, { fy: string; itemCount: number; quantity: number; budget: number; actual: number; usedValue: number }> = {};
+    scoped.forEach((item) => {
+      const fy = deriveFY(item);
+      if (!map[fy]) {
+        map[fy] = { fy, itemCount: 0, quantity: 0, budget: 0, actual: 0, usedValue: 0 };
+      }
+      map[fy].itemCount += 1;
+      map[fy].quantity += toNumber(item.quantity);
+      map[fy].budget += toNumber(item.budget);
+      map[fy].actual += toNumber(item.actual);
+      map[fy].usedValue += effectiveValue(item);
+    });
+
+    return Object.values(map).sort((a, b) => a.fy.localeCompare(b.fy));
+  }, [detailRows, filteredItems]);
+
+  const handlePointSelect = (point: TrendPoint | null) => {
+    if (!point) return;
+    setSelectedTrendPoint(point);
   };
 
-  const toPlanMonthLabel = (monthKey: string) => {
-  if (!monthKey) return "";
-
-  const [year, month] = monthKey.split("-");
-  const monthMap: Record<string, string> = {
-    "01": "Jan",
-    "02": "Feb",
-    "03": "Mar",
-    "04": "Apr",
-    "05": "May",
-    "06": "Jun",
-    "07": "Jul",
-    "08": "Aug",
-    "09": "Sep",
-    "10": "Oct",
-    "11": "Nov",
-    "12": "Dec",
+  const handleChartClick = (state: any) => {
+    const payload = state?.activePayload?.[0]?.payload || null;
+    if (payload) handlePointSelect(payload);
   };
-
-  const shortYear = String(year).slice(-2);
-  return `${monthMap[month] || month}-${shortYear}`;
-};
-
-  const handleTrendPointDrillDown = (point: any) => {
-  if (!onDrillDown || !point) return;
-
-  const planMonth = toPlanMonthLabel(point.month);
-
-onDrillDown({
-  tab: "budget",
-  fromTab: "trendline",
-  planMonth,
-    fy: selectedFYs.includes("all") ? undefined : selectedFYs[0],
-    category: selectedCategory !== "all" ? selectedCategory : undefined,
-    businessUnit: selectedBU !== "all" ? selectedBU : undefined,
-    payingBU: selectedPayingBU !== "all" ? selectedPayingBU : undefined,
-  });
-};
-const handleChartPointClick = (_: any, payload: any) => {
-  if (!payload) return;
-  handleTrendPointDrillDown(payload);
-};
 
   const cardStyle = {
     background: "linear-gradient(145deg,#0B1624,#0A1320)",
@@ -425,6 +500,15 @@ const handleChartPointClick = (_: any, payload: any) => {
     fontWeight: 900,
     fontFamily: "monospace",
   } as const;
+
+  const detailTitle =
+    !selectedTrendPoint
+      ? "📋 FY Summary & Detail Table"
+      : viewType === "category"
+      ? `📋 Category Detail Rows for ${selectedTrendPoint.label}`
+      : viewType === "pnl"
+      ? `📋 P&L Detail Rows for ${selectedTrendPoint.label}`
+      : `📋 Budget & Actual Detail Rows for ${selectedTrendPoint.label}`;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -482,175 +566,46 @@ const handleChartPointClick = (_: any, payload: any) => {
         </div>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
-          
-          <div style={{ position: "relative", minWidth: 170 }}>
-  <button
-    type="button"
-    onClick={() => setFyDropdownOpen((v) => !v)}
-    style={{
-      width: "100%",
-      background: "#09131D",
-      border: "1px solid #213547",
-      borderRadius: 10,
-      color: "#f1f5f9",
-      padding: "10px 14px",
-      fontSize: 13,
-      fontWeight: 700,
-      cursor: "pointer",
-      textAlign: "left",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-    }}
-  >
-    <span>{fyDisplayLabel}</span>
-    <span style={{ color: "#9fb3c8", marginLeft: 10 }}>▾</span>
-  </button>
-
-  {fyDropdownOpen && (
-    <div
-      style={{
-        position: "absolute",
-        top: "calc(100% + 8px)",
-        left: 0,
-        zIndex: 50,
-        width: 240,
-        maxHeight: 260,
-        overflowY: "auto",
-        background: "#09131D",
-        border: "1px solid #213547",
-        borderRadius: 12,
-        boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
-        padding: 8,
-      }}
-    >
-      <label
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          padding: "10px 12px",
-          borderRadius: 8,
-          cursor: "pointer",
-          color: "#E0E7FF",
-          fontSize: 13,
-          fontWeight: 700,
-        }}
-      >
-        <input
-          type="checkbox"
-          checked={selectedFYs.includes("all")}
-          onChange={() => toggleFY("all")}
-        />
-        <span>All Years</span>
-      </label>
-
-      <div style={{ height: 1, background: "#213547", margin: "6px 4px" }} />
-
-      {resolvedFyOptions.map((fy) => (
-        <label
-          key={fy}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "10px 12px",
-            borderRadius: 8,
-            cursor: "pointer",
-            color: "#E0E7FF",
-            fontSize: 13,
-            fontWeight: 600,
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={!selectedFYs.includes("all") && selectedFYs.includes(fy)}
-            onChange={() => toggleFY(fy)}
+          <MultiSelect
+            label="All Years"
+            options={resolvedFyOptions}
+            selected={selectedFYs}
+            onChange={setSelectedFYs}
+            minWidth={170}
           />
-          <span>{fy}</span>
-        </label>
-      ))}
-    </div>
-  )}
-</div>
-
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            style={{
-              background: "#09131D",
-              border: "1px solid #213547",
-              borderRadius: 10,
-              color: "#f1f5f9",
-              padding: "8px 14px",
-              fontSize: 13,
-              fontWeight: 700,
-              minWidth: 180,
-            }}
-          >
-            <option value="all">All Categories</option>
-            {categoryOptions.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={selectedBU}
-            onChange={(e) => setSelectedBU(e.target.value)}
-            style={{
-              background: "#09131D",
-              border: "1px solid #213547",
-              borderRadius: 10,
-              color: "#f1f5f9",
-              padding: "8px 14px",
-              fontSize: 13,
-              fontWeight: 700,
-              minWidth: 150,
-            }}
-          >
-            <option value="all">All BUs</option>
-            {buOptions.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={selectedPayingBU}
-            onChange={(e) => setSelectedPayingBU(e.target.value)}
-            style={{
-              background: "#09131D",
-              border: "1px solid #213547",
-              borderRadius: 10,
-              color: "#f1f5f9",
-              padding: "8px 14px",
-              fontSize: 13,
-              fontWeight: 700,
-              minWidth: 180,
-            }}
-          >
-            <option value="all">All Paying BUs</option>
-            {payingBUOptions.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
+          <MultiSelect
+            label="All Categories"
+            options={categoryOptions}
+            selected={selectedCategories}
+            onChange={setSelectedCategories}
+            minWidth={180}
+          />
+          <MultiSelect
+            label="All BUs"
+            options={buOptions}
+            selected={selectedBUs}
+            onChange={setSelectedBUs}
+            minWidth={160}
+          />
+          <MultiSelect
+            label="All Paying BUs"
+            options={payingBUOptions}
+            selected={selectedPayingBUs}
+            onChange={setSelectedPayingBUs}
+            minWidth={190}
+          />
 
           {(!selectedFYs.includes("all") ||
-  selectedCategory !== "all" ||
-  selectedBU !== "all" ||
-  selectedPayingBU !== "all") && (
+            !selectedCategories.includes("all") ||
+            !selectedBUs.includes("all") ||
+            !selectedPayingBUs.includes("all")) && (
             <button
               onClick={() => {
                 setSelectedFYs(["all"]);
-                setSelectedCategory("all");
-                setSelectedBU("all");
-                setSelectedPayingBU("all");
-                setFyDropdownOpen(false);
+                setSelectedCategories(["all"]);
+                setSelectedBUs(["all"]);
+                setSelectedPayingBUs(["all"]);
+                setSelectedTrendPoint(null);
               }}
               style={{
                 background: "#450a0a",
@@ -678,7 +633,6 @@ const handleChartPointClick = (_: any, payload: any) => {
           background: "linear-gradient(145deg,#0F1B2B,#0C1722)",
           borderRadius: 14,
           padding: 24,
-          minHeight: 320,
           border: "1px solid rgba(255,255,255,0.05)",
         }}
       >
@@ -686,17 +640,8 @@ const handleChartPointClick = (_: any, payload: any) => {
           {getViewHeading(viewType)}
         </div>
 
-        {apiLoading && (
-  <div style={{ color: "#88A0B8", fontSize: 13, marginBottom: 12 }}>
-    Loading trend summary...
-  </div>
-)}
-
-{!!apiError && (
-  <div style={{ color: "#f87171", fontSize: 13, marginBottom: 12 }}>
-    {apiError}
-  </div>
-)}
+        {loading && <div style={{ color: "#88A0B8", fontSize: 13, marginBottom: 12 }}>Loading data...</div>}
+        {!!error && <div style={{ color: "#f87171", fontSize: 13, marginBottom: 12 }}>{error}</div>}
 
         <div
           style={{
@@ -710,270 +655,320 @@ const handleChartPointClick = (_: any, payload: any) => {
             <>
               <div style={{ ...cardStyle, border: "1px solid rgba(124,140,255,0.18)" }}>
                 <div style={labelStyle}>Total P&amp;L Budget</div>
-                <div style={{ ...valueStyleBase, color: "#7C8CFF" }}>
-                  {formatCurrency(totalPnlBudget)}
-                </div>
+                <div style={{ ...valueStyleBase, color: "#7C8CFF" }}>{formatCurrency(totalPnlBudget)}</div>
               </div>
-
               <div style={{ ...cardStyle, border: "1px solid rgba(16,185,129,0.18)" }}>
                 <div style={labelStyle}>Total P&amp;L Actual</div>
-                <div style={{ ...valueStyleBase, color: "#10b981" }}>
-                  {formatCurrency(totalPnlActual)}
-                </div>
+                <div style={{ ...valueStyleBase, color: "#10b981" }}>{formatCurrency(totalPnlActual)}</div>
               </div>
-
               <div style={{ ...cardStyle, border: "1px solid rgba(94,234,212,0.18)" }}>
                 <div style={labelStyle}>P&amp;L Utilisation</div>
-                <div style={{ ...valueStyleBase, color: "#5EEAD4" }}>
-                  {pnlUtilPct}%
-                </div>
+                <div style={{ ...valueStyleBase, color: "#5EEAD4" }}>{pnlUtilPct}%</div>
               </div>
-
-              <div
-                style={{ ...cardStyle, border: "1px solid rgba(245,158,11,0.18)", cursor: "pointer" }}
-                onClick={() => drill({ tab: "budget" })}
-              >
+              <div style={{ ...cardStyle, border: "1px solid rgba(245,158,11,0.18)" }}>
                 <div style={labelStyle}>Items w/ Actual</div>
-                <div style={{ ...valueStyleBase, color: "#f59e0b" }}>
-                  {pnlItemsWithActual} / {totalItems}
-                </div>
+                <div style={{ ...valueStyleBase, color: "#f59e0b" }}>{pnlItemsWithActual} / {totalItems}</div>
               </div>
             </>
           ) : viewType === "category" ? (
             <>
               <div style={{ ...cardStyle, border: "1px solid rgba(245,158,11,0.18)" }}>
-                <div style={labelStyle}>Selected Category</div>
-                <div
-                  style={{
-                    color: "#f59e0b",
-                    fontSize: 24,
-                    fontWeight: 900,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {selectedCategory === "all" ? "All" : selectedCategory}
+                <div style={labelStyle}>Selected Categories</div>
+                <div style={{ color: "#f59e0b", fontSize: 24, fontWeight: 900 }}>
+                  {selectedCategories.includes("all") ? "All" : selectedCategories.length}
                 </div>
               </div>
-
-              <div
-                style={{ ...cardStyle, border: "1px solid rgba(94,234,212,0.18)", cursor: "pointer" }}
-                onClick={() =>
-                  drill({
-                    tab: "budget",
-                    ...(selectedCategory !== "all" ? { category: selectedCategory } : {}),
-                  })
-                }
-              >
+              <div style={{ ...cardStyle, border: "1px solid rgba(94,234,212,0.18)" }}>
                 <div style={labelStyle}>Category Budget</div>
-                <div style={{ ...valueStyleBase, color: "#5EEAD4" }}>
-                  {formatCurrency(totalBudget)}
-                </div>
+                <div style={{ ...valueStyleBase, color: "#5EEAD4" }}>{formatCurrency(totalBudget)}</div>
               </div>
-
-              <div
-                style={{ ...cardStyle, border: "1px solid rgba(16,185,129,0.18)", cursor: "pointer" }}
-                onClick={() =>
-                  drill({
-                    tab: "budget",
-                    ...(selectedCategory !== "all" ? { category: selectedCategory } : {}),
-                  })
-                }
-              >
+              <div style={{ ...cardStyle, border: "1px solid rgba(16,185,129,0.18)" }}>
                 <div style={labelStyle}>Category Actual</div>
-                <div style={{ ...valueStyleBase, color: "#10b981" }}>
-                  {formatCurrency(totalActual)}
-                </div>
+                <div style={{ ...valueStyleBase, color: "#10b981" }}>{formatCurrency(totalActual)}</div>
               </div>
-
               <div style={{ ...cardStyle, border: "1px solid rgba(124,140,255,0.18)" }}>
                 <div style={labelStyle}>Categories in Scope</div>
-                <div style={{ ...valueStyleBase, color: "#7C8CFF" }}>
-                  {categoryCount}
-                </div>
+                <div style={{ ...valueStyleBase, color: "#7C8CFF" }}>{categoryCount}</div>
               </div>
             </>
           ) : (
             <>
-              <div
-                style={{ ...cardStyle, border: "1px solid rgba(94,234,212,0.18)", cursor: "pointer" }}
-                onClick={() => drill({ tab: "budget" })}
-              >
+              <div style={{ ...cardStyle, border: "1px solid rgba(94,234,212,0.18)" }}>
                 <div style={labelStyle}>Total Budget</div>
-                <div style={{ ...valueStyleBase, color: "#5EEAD4" }}>
-                  {formatCurrency(totalBudget)}
-                </div>
+                <div style={{ ...valueStyleBase, color: "#5EEAD4" }}>{formatCurrency(totalBudget)}</div>
               </div>
-
-              <div
-                style={{ ...cardStyle, border: "1px solid rgba(16,185,129,0.18)", cursor: "pointer" }}
-                onClick={() => drill({ tab: "budget", status: "Completed" })}
-              >
+              <div style={{ ...cardStyle, border: "1px solid rgba(16,185,129,0.18)" }}>
                 <div style={labelStyle}>Total Actual</div>
-                <div style={{ ...valueStyleBase, color: "#10b981" }}>
-                  {formatCurrency(totalActual)}
-                </div>
+                <div style={{ ...valueStyleBase, color: "#10b981" }}>{formatCurrency(totalActual)}</div>
               </div>
-
               <div style={{ ...cardStyle, border: "1px solid rgba(245,158,11,0.18)" }}>
                 <div style={labelStyle}>Budget Variance</div>
-                <div
-                  style={{
-                    ...valueStyleBase,
-                    color: budgetVariance >= 0 ? "#f59e0b" : "#ef4444",
-                  }}
-                >
-                  {budgetVariance >= 0 ? "" : "-"}
-                  {formatCurrency(Math.abs(budgetVariance))}
+                <div style={{ ...valueStyleBase, color: budgetVariance >= 0 ? "#f59e0b" : "#ef4444" }}>
+                  {budgetVariance >= 0 ? "" : "-"}{formatCurrency(Math.abs(budgetVariance))}
                 </div>
               </div>
-
-              <div
-                style={{ ...cardStyle, border: "1px solid rgba(96,165,250,0.18)", cursor: "pointer" }}
-                onClick={() => drill({ tab: "budget" })}
-              >
+              <div style={{ ...cardStyle, border: "1px solid rgba(96,165,250,0.18)" }}>
                 <div style={labelStyle}>Total Items</div>
-                <div style={{ ...valueStyleBase, color: "#60A5FA" }}>
-                  {totalItems}
-                </div>
+                <div style={{ ...valueStyleBase, color: "#60A5FA" }}>{totalItems}</div>
               </div>
             </>
           )}
         </div>
 
         <div
-  style={{
-    background: "linear-gradient(145deg,#0B1624,#0A1320)",
-    borderRadius: 14,
-    padding: 18,
-    border: "1px solid rgba(255,255,255,0.05)",
-  }}
->
-  <div
-    style={{
-      color: "#E0E7FF",
-      fontSize: 14,
-      fontWeight: 800,
-      marginBottom: 14,
-    }}
-  >
-    {viewType === "budget" && "📈 Budget vs Actual Trend"}
-    {viewType === "pnl" && "📊 P&L Trend"}
-    {viewType === "category" && "🏷️ Category Trend"}
-  </div>
-
-  {viewType === "category" ? (
-  categoryTrend.length === 0 ? (
-    <div style={{ color: "#88A0B8", fontSize: 13, padding: "24px 0" }}>
-      No category trend data available for the selected filters.
-    </div>
-  ) : (
-    <div style={{ width: "100%", height: 320 }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={categoryTrend}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#213547" />
-          <XAxis
-            dataKey="label"
-            tick={{ fill: "#9fb3c8", fontSize: 11 }}
-          />
-          <YAxis
-            tick={{ fill: "#9fb3c8", fontSize: 11 }}
-            tickFormatter={(v) => formatShortCurrency(Number(v))}
-          />
-          <Tooltip
-            contentStyle={{
-              background: "#09131D",
-              border: "1px solid #213547",
-              borderRadius: 8,
-            }}
-            labelStyle={{ color: "#f1f5f9" }}
-            formatter={(value: any, name: string) => [
-              formatCurrency(Number(value)),
-              name,
-            ]}
-          />
-          <Legend wrapperStyle={{ fontSize: 12, color: "#9fb3c8" }} />
-
-          <Area
-  type="monotone"
-  dataKey="budget"
-  fill="#F59E0B33"
-  stroke="#F59E0B"
-  strokeWidth={2}
-  name="Category Budget"
-  activeDot={{ r: 6, onClick: handleChartPointClick, style: { cursor: "pointer" } }}
-/>
-
-          <Line
-  type="monotone"
-  dataKey="actual"
-  stroke="#10b981"
-  strokeWidth={3}
-  dot={{ r: 3 }}
-  activeDot={{ r: 6, onClick: handleChartPointClick, style: { cursor: "pointer" } }}
-  name="Category Actual"
-/>
-
-        </ComposedChart>
-      </ResponsiveContainer>
-    </div>
-  )
-) : chartTrend.length === 0 ? (
-  <div style={{ color: "#88A0B8", fontSize: 13, padding: "24px 0" }}>
-    No trend data available for the selected filters.
-  </div>
-) : (
-  <div style={{ width: "100%", height: 320 }}>
-    <ResponsiveContainer width="100%" height="100%">
-      <ComposedChart data={chartTrend}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#213547" />
-        <XAxis
-          dataKey="label"
-          tick={{ fill: "#9fb3c8", fontSize: 11 }}
-        />
-        <YAxis
-          tick={{ fill: "#9fb3c8", fontSize: 11 }}
-          tickFormatter={(v) => formatShortCurrency(Number(v))}
-        />
-        <Tooltip
-          contentStyle={{
-            background: "#09131D",
-            border: "1px solid #213547",
-            borderRadius: 8,
+          style={{
+            background: "linear-gradient(145deg,#0B1624,#0A1320)",
+            borderRadius: 14,
+            padding: 18,
+            border: "1px solid rgba(255,255,255,0.05)",
           }}
-          labelStyle={{ color: "#f1f5f9" }}
-          formatter={(value: any, name: string) => [
-            formatCurrency(Number(value)),
-            name,
-          ]}
-        />
-        <Legend wrapperStyle={{ fontSize: 12, color: "#9fb3c8" }} />
+        >
+          <div style={{ color: "#E0E7FF", fontSize: 14, fontWeight: 800, marginBottom: 8 }}>
+            {getViewChartTitle(viewType)}
+          </div>
 
-        <Area
-  type="monotone"
-  dataKey="budget"
-  fill="#5EEAD433"
-  stroke="#5EEAD4"
-  strokeWidth={2}
-  name={viewType === "pnl" ? "P&L Budget" : "Budget"}
-  activeDot={{ r: 6, onClick: handleChartPointClick, style: { cursor: "pointer" } }}
-/>
+          <div style={{ color: "#88A0B8", fontSize: 12, marginBottom: 14 }}>
+            Click any star to inspect that month. Stars remain stars even on hover.
+          </div>
 
-        <Line
-  type="monotone"
-  dataKey="actual"
-  stroke="#10b981"
-  strokeWidth={3}
-  dot={{ r: 3 }}
-  activeDot={{ r: 6, onClick: handleChartPointClick, style: { cursor: "pointer" } }}
-  name={viewType === "pnl" ? "P&L Actual" : "Actual"}
-/>
-      </ComposedChart>
-    </ResponsiveContainer>
-  </div>
-)}
-</div>
+          {chartTrend.length === 0 ? (
+            <div style={{ color: "#88A0B8", fontSize: 13, padding: "24px 0" }}>
+              No trend data available for the selected filters.
+            </div>
+          ) : (
+            <div style={{ width: "100%", height: 340 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={chartTrend} onClick={handleChartClick}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#213547" />
+                  <XAxis dataKey="label" tick={{ fill: "#9fb3c8", fontSize: 11 }} />
+                  <YAxis
+                    tick={{ fill: "#9fb3c8", fontSize: 11 }}
+                    tickFormatter={(v) => formatShortCurrency(Number(v))}
+                  />
+                  <Tooltip
+                    cursor={{ stroke: "#94a3b8", strokeWidth: 1 }}
+                    contentStyle={{
+                      background: "#09131D",
+                      border: "1px solid #213547",
+                      borderRadius: 8,
+                    }}
+                    labelStyle={{ color: "#f1f5f9" }}
+                    formatter={(value: any, name: string) => [formatCurrency(Number(value)), name]}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12, color: "#9fb3c8" }} />
+
+                  <Area
+                    type="monotone"
+                    dataKey="budget"
+                    fill={viewType === "category" ? "#F59E0B33" : "#5EEAD433"}
+                    stroke={viewType === "category" ? "#F59E0B" : "#5EEAD4"}
+                    strokeWidth={2}
+                    name={viewType === "pnl" ? "P&L Budget" : viewType === "category" ? "Category Budget" : "Budget"}
+                    dot={(props) => (
+                      <StarDot
+                        {...props}
+                        onPointSelect={(payload: TrendPoint) => handlePointSelect(payload)}
+                      />
+                    )}
+                    activeDot={(props: any) => (
+                      <StarDot
+                        {...props}
+                        onPointSelect={(payload: TrendPoint) => handlePointSelect(payload)}
+                      />
+                    )}
+                    isAnimationActive={false}
+                  />
+
+                  <Line
+                    type="monotone"
+                    dataKey="actual"
+                    stroke="#10b981"
+                    strokeWidth={3}
+                    dot={(props) => (
+                      <StarDot
+                        {...props}
+                        onPointSelect={(payload: TrendPoint) => handlePointSelect(payload)}
+                      />
+                    )}
+                    activeDot={(props: any) => (
+                      <StarDot
+                        {...props}
+                        onPointSelect={(payload: TrendPoint) => handlePointSelect(payload)}
+                      />
+                    )}
+                    isAnimationActive={false}
+                    name={viewType === "pnl" ? "P&L Actual" : viewType === "category" ? "Category Actual" : "Actual"}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        <div
+          style={{
+            marginTop: 18,
+            background: "linear-gradient(145deg,#0B1624,#0A1320)",
+            border: "1px solid rgba(94,234,212,0.14)",
+            borderRadius: 14,
+            padding: 16,
+          }}
+        >
+          <div style={{ color: "#E0E7FF", fontSize: 15, fontWeight: 800, marginBottom: 4 }}>
+            {detailTitle}
+          </div>
+
+          {!selectedTrendPoint ? (
+            <div style={{ color: "#88A0B8", fontSize: 13 }}>
+              Select a star on the chart above to see the month details. The FY summary below already reflects the current multi-select filters.
+            </div>
+          ) : null}
+
+          <div style={{ marginTop: 14, overflowX: "auto" }}>
+            <div style={{ color: "#E0E7FF", fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
+              Selected FY Summary
+            </div>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "separate",
+                borderSpacing: 0,
+                minWidth: 860,
+              }}
+            >
+              <thead>
+                <tr>
+                  {["FY", "Items", "Quantity", "Budget", "Actual", "Value Used"].map((h) => (
+                    <th
+                      key={h}
+                      style={{
+                        textAlign: "left",
+                        padding: "10px 12px",
+                        fontSize: 12,
+                        color: "#8B9BB4",
+                        borderBottom: "1px solid #1f3142",
+                        background: "rgba(255,255,255,0.02)",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {fySummaryRows.map((row) => (
+                  <tr key={row.fy}>
+                    <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#7dd3fc", fontWeight: 700 }}>{row.fy}</td>
+                    <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#cbd5e1" }}>{row.itemCount}</td>
+                    <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#cbd5e1" }}>{row.quantity}</td>
+                    <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#5EEAD4", fontWeight: 700 }}>{formatCurrency(row.budget)}</td>
+                    <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#10b981", fontWeight: 700 }}>{formatCurrency(row.actual)}</td>
+                    <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#f59e0b", fontWeight: 700 }}>{formatCurrency(row.usedValue)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {selectedTrendPoint && (
+            <div style={{ marginTop: 18, overflowX: "auto" }}>
+              <div style={{ color: "#E0E7FF", fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
+                Clicked Month Detail Rows
+              </div>
+              {detailRows.length === 0 ? (
+                <div style={{ color: "#88A0B8", fontSize: 13 }}>
+                  No matching items found for this month and current filters.
+                </div>
+              ) : (
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "separate",
+                    borderSpacing: 0,
+                    minWidth: 1320,
+                  }}
+                >
+                  <thead>
+                    <tr>
+                      {[
+                        "Description",
+                        "Category",
+                        "BU",
+                        "Paying BU",
+                        "Plan Month",
+                        "FY",
+                        "Quantity",
+                        "Budget",
+                        "Actual",
+                        "Value Used",
+                        "Basis",
+                        "Status",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          style={{
+                            textAlign: "left",
+                            padding: "10px 12px",
+                            fontSize: 12,
+                            color: "#8B9BB4",
+                            borderBottom: "1px solid #1f3142",
+                            background: "rgba(255,255,255,0.02)",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detailRows.map((row, idx) => (
+                      <tr key={row.id || `${row.description}-${idx}`}>
+                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#E5EEF8", fontWeight: 600 }}>
+                          {row.description || "-"}
+                        </td>
+                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#9fb3c8" }}>
+                          {row.itemCategory || "-"}
+                        </td>
+                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#9fb3c8" }}>
+                          {row.businessUnit || "-"}
+                        </td>
+                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#9fb3c8" }}>
+                          {row.payingBU || "-"}
+                        </td>
+                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#F59E0B", fontWeight: 700 }}>
+                          {row.planMonth || "-"}
+                        </td>
+                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#7dd3fc", fontWeight: 700 }}>
+                          {deriveFY(row)}
+                        </td>
+                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#cbd5e1" }}>
+                          {toNumber(row.quantity)}
+                        </td>
+                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#5EEAD4", fontWeight: 700 }}>
+                          {formatCurrency(toNumber(row.budget))}
+                        </td>
+                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#10b981", fontWeight: 700 }}>
+                          {formatCurrency(toNumber(row.actual))}
+                        </td>
+                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#f59e0b", fontWeight: 700 }}>
+                          {formatCurrency(effectiveValue(row))}
+                        </td>
+                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#cbd5e1" }}>
+                          {valueBasis(row)}
+                        </td>
+                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#cbd5e1" }}>
+                          {row.status || "Pending"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

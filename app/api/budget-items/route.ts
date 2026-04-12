@@ -16,9 +16,11 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(Math.max(limitParam, 1), 100);
 
     const fy = String(searchParams.get("fy") || "").trim();
-    const businessUnit = String(searchParams.get("businessUnit") || "").trim();
-    const status = String(searchParams.get("status") || "").trim();
-    const cursor = String(searchParams.get("cursor") || "").trim();
+const businessUnit = String(searchParams.get("businessUnit") || "").trim();
+const status = String(searchParams.get("status") || "").trim();
+const planMonth = String(searchParams.get("planMonth") || "").trim();
+const category = String(searchParams.get("category") || "").trim();
+const cursor = String(searchParams.get("cursor") || "").trim();
 
     let query: FirebaseFirestore.Query = adminDb.collection("budgetItems");
 
@@ -32,6 +34,14 @@ if (businessUnit && businessUnit !== "all") {
 
 if (status && status !== "all") {
   query = query.where("status", "==", status);
+}
+
+if (planMonth && planMonth !== "all") {
+  query = query.where("planMonth", "==", planMonth);
+}
+
+if (category && category !== "all") {
+  query = query.where("itemCategory", "==", category);
 }
 
     query = query.orderBy("createdAt", "desc");
