@@ -19,6 +19,9 @@ type HeadcountPageProps = {
   user?: { email?: string; role?: string };
   records?: HeadcountRecord[];
   onChangeRecords?: React.Dispatch<React.SetStateAction<HeadcountRecord[]>>;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
 };
 
 const EMP_TYPES = ["Permanent", "Contract", "Intern", "Consultant"];
@@ -249,15 +252,19 @@ function HeadcountImportModal({
   canImport: boolean;
 }) {
   const [csvText, setCsvText] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
   const [previewRows, setPreviewRows] = useState<HeadcountRecord[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
 
   useEffect(() => {
     if (!open) {
-      setCsvText("");
-      setPreviewRows([]);
-      setErrors([]);
-    }
+  setCsvText("");
+  setFileName("");
+  setIsImporting(false);
+  setPreviewRows([]);
+  setErrors([]);
+}
   }, [open]);
 
   if (!open) return null;
@@ -335,6 +342,8 @@ function HeadcountImportModal({
         style={{
           width: "100%",
           maxWidth: 860,
+          maxHeight: "88vh",
+overflowY: "auto",
           background: "#0F1B2B",
           border: "1px solid rgba(94,234,212,0.15)",
           borderRadius: 18,
@@ -388,6 +397,43 @@ function HeadcountImportModal({
               </button>
             </div>
 
+            <label
+  style={{
+    background: "rgba(124,140,255,0.08)",
+    border: "1px solid rgba(124,140,255,0.30)",
+    borderRadius: 10,
+    color: "#E0E7FF",
+    padding: "9px 14px",
+    cursor: "pointer",
+    fontWeight: 700,
+    fontSize: 12,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+  }}
+>
+  📂 Upload CSV File
+  <input
+    type="file"
+    accept=".csv,text/csv"
+    style={{ display: "none" }}
+    onChange={async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setFileName(file.name);
+
+      try {
+        const text = await file.text();
+        validateAndPreview(text);
+      } catch (err) {
+        setErrors(["Failed to read selected CSV file."]);
+        setPreviewRows([]);
+      }
+    }}
+  />
+</label>
+
             <div
               style={{
                 background: "rgba(255,255,255,0.02)",
@@ -407,6 +453,12 @@ function HeadcountImportModal({
                 <li>Same user email is allowed in different FY/Halves, but must not repeat within the same FY/Half</li>
               </ul>
             </div>
+
+            {fileName && (
+  <div style={{ color: "#93C5FD", fontSize: 12, marginBottom: 8 }}>
+    Selected file: <span style={{ fontWeight: 700 }}>{fileName}</span>
+  </div>
+)}
 
             <textarea
               value={csvText}
@@ -489,7 +541,19 @@ function HeadcountImportModal({
               </div>
             )}
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <div
+  style={{
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: 10,
+    flexWrap: "wrap",
+    marginTop: 16,
+    position: "sticky",
+    bottom: 0,
+    background: "#0F1B2B",
+    paddingTop: 12,
+  }}
+>
               <button
                 onClick={onClose}
                 style={{
@@ -505,31 +569,48 @@ function HeadcountImportModal({
                 Cancel
               </button>
               <button
-                disabled={errors.length > 0 || parseCsv(csvText).length === 0}
-                onClick={() => {
-                  if (errors.length > 0) return;
-                  const rows = parseCsv(csvText).map((row) => ({
-                    userEmailId: normalize(row.userEmailId),
-                    businessUnit: normalize(row.businessUnit),
-                    location: normalize(row.location),
-                    department: normalize(row.department),
-                    empType: normalize(row.empType),
-                    fyHalf: normalize(row.fyHalf),
-                  }));
-                  onImport(rows);
-                  onClose();
-                }}
+                disabled={isImporting || errors.length > 0 || parseCsv(csvText).length === 0}
+                onClick={async () => {
+  if (errors.length > 0 || isImporting) return;
+
+  const rows = parseCsv(csvText).map((row) => ({
+    userEmailId: normalize(row.userEmailId),
+    businessUnit: normalize(row.businessUnit),
+    location: normalize(row.location),
+    department: normalize(row.department),
+    empType: normalize(row.empType),
+    fyHalf: normalize(row.fyHalf),
+  }));
+
+  try {
+  setIsImporting(true);
+  setErrors([]);
+  await onImport(rows);
+  onClose();
+} catch (error: any) {
+  setErrors([error?.message || "Failed to import headcount rows."]);
+} finally {
+  setIsImporting(false);
+}
+}}
                 style={{
-                  background: errors.length > 0 || parseCsv(csvText).length === 0 ? "#334155" : "linear-gradient(135deg,#22D3EE,#2DD4BF)",
+                  background:
+  isImporting || errors.length > 0 || parseCsv(csvText).length === 0
+    ? "#334155"
+    : "linear-gradient(135deg,#22D3EE,#2DD4BF)",
                   border: "none",
                   borderRadius: 10,
                   color: "#04121a",
                   padding: "9px 18px",
-                  cursor: errors.length > 0 || parseCsv(csvText).length === 0 ? "not-allowed" : "pointer",
+                  cursor:
+  isImporting || errors.length > 0 || parseCsv(csvText).length === 0
+    ? "not-allowed"
+    : "pointer",
+    opacity: isImporting ? 0.75 : 1,
                   fontWeight: 800,
                 }}
               >
-                Import Rows
+                {isImporting ? "Importing..." : "Import Rows"}
               </button>
             </div>
           </>
@@ -543,6 +624,9 @@ export default function HeadcountPage({
   user,
   records = [],
   onChangeRecords,
+  hasMore = false,
+  onLoadMore,
+  isLoadingMore = false,
 }: HeadcountPageProps) {
   const role = user?.role || "viewer";
   const currentUserEmail = user?.email || "Unknown";
@@ -559,6 +643,8 @@ export default function HeadcountPage({
 
   const [sortKey, setSortKey] = useState<keyof HeadcountRecord>("fyHalf");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+const pageSize = 100;
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showImport, setShowImport] = useState(false);
@@ -599,6 +685,31 @@ jane.smith@company.com,WP-Singapore,Singapore,Finance,Contract,2026-H1`;
       });
   }, [records, search, selectedFYs, selectedBUs, selectedLocations, selectedDepartments, selectedEmpTypes, sortKey, sortDir]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+
+const pagedRows = useMemo(() => {
+  const start = (currentPage - 1) * pageSize;
+  return filtered.slice(start, start + pageSize);
+}, [filtered, currentPage]);
+
+useEffect(() => {
+  if (currentPage > totalPages) {
+    setCurrentPage(1);
+  }
+}, [currentPage, totalPages]);
+useEffect(() => {
+  setCurrentPage(1);
+}, [
+  search,
+  sortKey,
+  sortDir,
+  selectedFYs.join("|"),
+  selectedBUs.join("|"),
+  selectedLocations.join("|"),
+  selectedDepartments.join("|"),
+  selectedEmpTypes.join("|"),
+]);
+
   const selectedCount = selectedIds.size;
   const allFilteredIds = filtered.map((r) => r.id || `${r.userEmailId}__${r.fyHalf}`);
   const allSelected = filtered.length > 0 && allFilteredIds.every((id) => selectedIds.has(id));
@@ -635,20 +746,41 @@ jane.smith@company.com,WP-Singapore,Singapore,Finance,Contract,2026-H1`;
     setSortDir("asc");
   };
 
-  const handleImport = (rows: HeadcountRecord[]) => {
-    const existing = new Set(records.map((r) => `${r.userEmailId.toLowerCase()}__${r.fyHalf}`));
-    const stamped = rows
-    // Allow same user across different FY/Halves, but block duplicate user + same FY/Half
-      .filter((row) => !existing.has(`${row.userEmailId.toLowerCase()}__${row.fyHalf}`))
-      .map((row, idx) => ({
-        ...row,
-        id: `hc_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 8)}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        uploadedBy: currentUserEmail,
-      }));
-    onChangeRecords?.((prev) => [...prev, ...stamped]);
-  };
+  const handleImport = async (rows: HeadcountRecord[]) => {
+  try {
+    const res = await fetch("/api/headcount", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ rows }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Failed to import headcount rows");
+    }
+
+    const reloadRes = await fetch("/api/headcount", {
+  method: "GET",
+  cache: "no-store",
+});
+
+const reloadData = await reloadRes.json();
+
+if (!reloadRes.ok) {
+  throw new Error(reloadData?.error || "Failed to reload headcount records after import");
+}
+
+onChangeRecords?.(Array.isArray(reloadData?.items) ? reloadData.items : []);
+
+alert(`Headcount import successful. ${data?.receivedCount || rows.length} row(s) added.`);
+  } catch (error: any) {
+    console.error("Headcount import failed:", error);
+    alert(error?.message || "Failed to import headcount rows.");
+  }
+};
 
   const handleExport = () => {
     const headers = ["userEmailId", "businessUnit", "location", "department", "empType", "fyHalf", "uploadedBy"];
@@ -932,7 +1064,7 @@ jane.smith@company.com,WP-Singapore,Singapore,Finance,Contract,2026-H1`;
                   </td>
                 </tr>
               ) : (
-                filtered.map((row) => {
+                pagedRows.map((row) => {
                   const rowId = row.id || `${row.userEmailId}__${row.fyHalf}`;
                   return (
                     <tr key={rowId}>
@@ -957,6 +1089,88 @@ jane.smith@company.com,WP-Singapore,Singapore,Finance,Contract,2026-H1`;
             </tbody>
           </table>
         </div>
+        {filtered.length > 0 && (
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 12,
+      marginTop: 14,
+      flexWrap: "wrap",
+    }}
+  >
+    <div>
+  <div style={{ color: "#88A0B8", fontSize: 12 }}>
+    Showing {(currentPage - 1) * pageSize + 1}–
+    {Math.min(currentPage * pageSize, filtered.length)} of {filtered.length} loaded rows
+  </div>
+
+  {hasMore && (
+    <div style={{ color: "#F59E0B", fontSize: 11, marginTop: 4, fontWeight: 700 }}>
+      More rows are available in the cloud. Current view is not the full dataset yet.
+    </div>
+  )}
+</div>
+
+    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <button
+        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+        disabled={currentPage === 1}
+        style={{
+          background: "#09131D",
+          border: "1px solid #213547",
+          borderRadius: 8,
+          color: currentPage === 1 ? "#64748b" : "#E6FFFD",
+          padding: "6px 12px",
+          cursor: currentPage === 1 ? "not-allowed" : "pointer",
+          fontWeight: 700,
+        }}
+      >
+        Prev
+      </button>
+
+      <div style={{ color: "#E6FFFD", fontSize: 12, fontWeight: 700 }}>
+        Page {currentPage} / {totalPages}
+      </div>
+
+      <button
+        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+        disabled={currentPage === totalPages}
+        style={{
+          background: "#09131D",
+          border: "1px solid #213547",
+          borderRadius: 8,
+          color: currentPage === totalPages ? "#64748b" : "#E6FFFD",
+          padding: "6px 12px",
+          cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+          fontWeight: 700,
+        }}
+      >
+        Next
+      </button>
+      {hasMore && (
+  <button
+    onClick={onLoadMore}
+    disabled={isLoadingMore}
+    style={{
+      background: isLoadingMore ? "#334155" : "rgba(94,234,212,0.08)",
+      border: "1px solid rgba(94,234,212,0.30)",
+      borderRadius: 8,
+      color: isLoadingMore ? "#94a3b8" : "#D2FFFB",
+      padding: "6px 12px",
+      cursor: isLoadingMore ? "not-allowed" : "pointer",
+      fontWeight: 700,
+      fontSize: 12,
+      opacity: isLoadingMore ? 0.8 : 1,
+    }}
+  >
+    {isLoadingMore ? "Loading..." : "Load More"}
+  </button>
+)}
+    </div>
+  </div>
+)}
       </div>
     </div>
   );

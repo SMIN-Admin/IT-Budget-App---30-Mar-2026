@@ -8129,59 +8129,42 @@ const [itemsNextCursor, setItemsNextCursor] = useState<string | null>(null);
 const [isSaving, setIsSaving] = useState(false);
 const [isImporting, setIsImporting] = useState(false);
 const [globalFyOptions, setGlobalFyOptions] = useState<string[]>([]);
-const [headcountRecords, setHeadcountRecords] = useState([
-  {
-    id: "hc_1",
-    userEmailId: "john.doe@company.com",
-    businessUnit: "WP-India",
-    location: "Bangalore",
-    department: "IT",
-    empType: "Permanent",
-    fyHalf: "2025-H1",
-  },
-  {
-    id: "hc_2",
-    userEmailId: "john.doe@company.com",
-    businessUnit: "WP-India",
-    location: "Bangalore",
-    department: "IT",
-    empType: "Permanent",
-    fyHalf: "2025-H2",
-  },
-  {
-    id: "hc_3",
-    userEmailId: "jane.smith@company.com",
-    businessUnit: "WP-India",
-    location: "Mumbai",
-    department: "Finance",
-    empType: "Contract",
-    fyHalf: "2025-H1",
-  },
-  {
-    id: "hc_4",
-    userEmailId: "alex.tan@company.com",
-    businessUnit: "WP-Singapore",
-    location: "Singapore",
-    department: "IT",
-    empType: "Permanent",
-    fyHalf: "2026-H1",
-  },
-  {
-    id: "hc_5",
-    userEmailId: "john.doe@company.com",
-    businessUnit: "WP-India",
-    location: "Bangalore",
-    department: "IT",
-    empType: "Permanent",
-    fyHalf: "2026-H1",
-  },
-]);
+const [headcountRecords, setHeadcountRecords] = useState<any[]>([]);
+const [headcountHasMore, setHeadcountHasMore] = useState(false);
+const [headcountNextCursor, setHeadcountNextCursor] = useState<string | null>(null);
+const [headcountLoadingMore, setHeadcountLoadingMore] = useState(false);
+
 const headcountBudgetSummaryByHalf = [
   { fyHalf: "2025-H1", budget: 120000, actual: 98000 },
   { fyHalf: "2026-H1", budget: 180000, actual: 154000 },
   { fyHalf: "2026-H2", budget: 210000, actual: 176000 },
   { fyHalf: "2027-H1", budget: 260000, actual: 201000 },
 ];
+useEffect(() => {
+  const loadHeadcountRecords = async () => {
+    try {
+      const res = await fetch("/api/headcount?limit=100", {
+  method: "GET",
+  cache: "no-store",
+});
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to load headcount records");
+      }
+
+      setHeadcountRecords(Array.isArray(data?.items) ? data.items : []);
+      setHeadcountHasMore(Boolean(data?.hasMore));
+setHeadcountNextCursor(data?.nextCursor || null);
+
+    } catch (error) {
+      console.error("Failed to load headcount records:", error);
+    }
+  };
+
+  loadHeadcountRecords();
+}, []);
 
 const [appSummary, setAppSummary] = useState<any>(null);
 const [appSummaryLoading, setAppSummaryLoading] = useState(false);
@@ -8190,6 +8173,36 @@ const [itemStats, setItemStats] = useState({
   totalBudget: 0,
   totalActual: 0,
 });
+
+const loadMoreHeadcountRecords = async () => {
+  try {
+    if (!headcountHasMore || !headcountNextCursor || headcountLoadingMore) return;
+    setHeadcountLoadingMore(true);
+
+    const res = await fetch(
+      `/api/headcount?limit=100&cursor=${encodeURIComponent(headcountNextCursor)}`,
+      {
+        method: "GET",
+        cache: "no-store",
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Failed to load more headcount records");
+    }
+
+    const newItems = Array.isArray(data?.items) ? data.items : [];
+
+    setHeadcountRecords((prev) => [...prev, ...newItems]);
+    setHeadcountHasMore(Boolean(data?.hasMore));
+    setHeadcountNextCursor(data?.nextCursor || null);
+  } catch (error) {
+    console.error("Failed to load more headcount records:", error);
+  }
+};
+
 const loadInitialItems = async () => {
   try {
     setItemsLoading(true);
@@ -9121,6 +9134,9 @@ if (tabNeedsRawItems && itemsLoading && items.length === 0) {
     user={user}
     records={headcountRecords}
     onChangeRecords={setHeadcountRecords}
+    hasMore={headcountHasMore}
+    onLoadMore={loadMoreHeadcountRecords}
+    isLoadingMore={headcountLoadingMore}
   />
 )}
 
