@@ -717,10 +717,22 @@ useEffect(() => {
   const allSelected = filtered.length > 0 && allFilteredIds.every((id) => selectedIds.has(id));
 
   const totalHeadcount = filtered.length;
-  const totalBUsInScope = getUniqueSorted(filtered.map((r) => r.businessUnit)).length;
-  const totalLocationsInScope = getUniqueSorted(filtered.map((r) => r.location)).length;
-  const totalDepartmentsInScope = getUniqueSorted(filtered.map((r) => r.department)).length;
-  const selectedHalfCount = getUniqueSorted(filtered.map((r) => r.fyHalf)).length;
+
+const totalBUsInScope = getUniqueSorted(
+  filtered.map((r) => r.businessUnit)
+).length;
+
+const totalLocationsInScope = getUniqueSorted(
+  filtered.map((r) => r.location)
+).length;
+
+const totalDepartmentsInScope = getUniqueSorted(
+  filtered.map((r) => r.department)
+).length;
+
+const selectedHalfCount = getUniqueSorted(
+  filtered.map((r) => r.fyHalf)
+).length;
 
   const toggleAll = () => {
     if (allSelected) {
