@@ -8130,6 +8130,7 @@ const [isSaving, setIsSaving] = useState(false);
 const [isImporting, setIsImporting] = useState(false);
 const [globalFyOptions, setGlobalFyOptions] = useState<string[]>([]);
 const [headcountRecords, setHeadcountRecords] = useState<any[]>([]);
+const [headcountSummaryRows, setHeadcountSummaryRows] = useState<any[]>([]);
 const [headcountHasMore, setHeadcountHasMore] = useState(false);
 const [headcountNextCursor, setHeadcountNextCursor] = useState<string | null>(null);
 const [headcountLoadingMore, setHeadcountLoadingMore] = useState(false);
@@ -8164,6 +8165,29 @@ setHeadcountNextCursor(data?.nextCursor || null);
   };
 
   loadHeadcountRecords();
+}, []);
+
+useEffect(() => {
+  const loadHeadcountSummaryRows = async () => {
+    try {
+      const res = await fetch("/api/headcount-summary", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to load headcount summary");
+      }
+
+      setHeadcountSummaryRows(Array.isArray(data?.items) ? data.items : []);
+    } catch (error) {
+      console.error("Failed to load headcount summary:", error);
+    }
+  };
+
+  loadHeadcountSummaryRows();
 }, []);
 
 const [appSummary, setAppSummary] = useState<any>(null);
@@ -9137,6 +9161,7 @@ if (tabNeedsRawItems && itemsLoading && items.length === 0) {
     hasMore={headcountHasMore}
     onLoadMore={loadMoreHeadcountRecords}
     isLoadingMore={headcountLoadingMore}
+    summaryRows={headcountSummaryRows}
   />
 )}
 

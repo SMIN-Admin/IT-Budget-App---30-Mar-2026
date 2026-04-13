@@ -22,6 +22,7 @@ type HeadcountPageProps = {
   hasMore?: boolean;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
+  summaryRows?: any[];
 };
 
 const EMP_TYPES = ["Permanent", "Contract", "Intern", "Consultant"];
@@ -627,6 +628,7 @@ export default function HeadcountPage({
   hasMore = false,
   onLoadMore,
   isLoadingMore = false,
+  summaryRows = [],
 }: HeadcountPageProps) {
   const role = user?.role || "viewer";
   const currentUserEmail = user?.email || "Unknown";
