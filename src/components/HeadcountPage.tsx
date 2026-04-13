@@ -650,12 +650,15 @@ const pageSize = 100;
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showImport, setShowImport] = useState(false);
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<Partial<HeadcountRecord>>({});
 
   const templateCsv = `userEmailId,businessUnit,location,department,empType,fyHalf
 john.doe@company.com,WP-India,Bangalore,IT,Permanent,2026-H1
 jane.smith@company.com,WP-Singapore,Singapore,Finance,Contract,2026-H1`;
 
   const fyOptions = useMemo(() => getUniqueSorted(records.map((r) => r.fyHalf)), [records]);
+  const editFyOptions = fyOptions.length ? fyOptions : getUniqueSorted(summaryRows.map((r: any) => r.fyHalf));
   const buOptions = useMemo(() => getUniqueSorted(records.map((r) => r.businessUnit)), [records]);
   const locationOptions = useMemo(() => getUniqueSorted(records.map((r) => r.location)), [records]);
   const departmentOptions = useMemo(() => getUniqueSorted(records.map((r) => r.department)), [records]);
@@ -716,22 +719,58 @@ useEffect(() => {
   const allFilteredIds = filtered.map((r) => r.id || `${r.userEmailId}__${r.fyHalf}`);
   const allSelected = filtered.length > 0 && allFilteredIds.every((id) => selectedIds.has(id));
 
-  const totalHeadcount = filtered.length;
+  const filteredSummaryRows = useMemo(() => {
+  return summaryRows.filter((row: any) => {
+    const fyMatch =
+      selectedFYs.includes("all") ||
+      selectedFYs.includes(String(row.fyHalf || "").trim());
+
+    const buMatch =
+      selectedBUs.includes("all") ||
+      selectedBUs.includes(String(row.businessUnit || "").trim());
+
+    const locationMatch =
+      selectedLocations.includes("all") ||
+      selectedLocations.includes(String(row.location || "").trim());
+
+    const departmentMatch =
+      selectedDepartments.includes("all") ||
+      selectedDepartments.includes(String(row.department || "").trim());
+
+    const empTypeMatch =
+      selectedEmpTypes.includes("all") ||
+      selectedEmpTypes.includes(String(row.empType || "").trim());
+
+    return fyMatch && buMatch && locationMatch && departmentMatch && empTypeMatch;
+  });
+}, [
+  summaryRows,
+  selectedFYs,
+  selectedBUs,
+  selectedLocations,
+  selectedDepartments,
+  selectedEmpTypes,
+]);
+
+const totalHeadcount = filteredSummaryRows.reduce(
+  (sum: number, row: any) => sum + Number(row.headcount || 0),
+  0
+);
 
 const totalBUsInScope = getUniqueSorted(
-  filtered.map((r) => r.businessUnit)
+  filteredSummaryRows.map((r: any) => String(r.businessUnit || "").trim())
 ).length;
 
 const totalLocationsInScope = getUniqueSorted(
-  filtered.map((r) => r.location)
+  filteredSummaryRows.map((r: any) => String(r.location || "").trim())
 ).length;
 
 const totalDepartmentsInScope = getUniqueSorted(
-  filtered.map((r) => r.department)
+  filteredSummaryRows.map((r: any) => String(r.department || "").trim())
 ).length;
 
 const selectedHalfCount = getUniqueSorted(
-  filtered.map((r) => r.fyHalf)
+  filteredSummaryRows.map((r: any) => String(r.fyHalf || "").trim())
 ).length;
 
   const toggleAll = () => {
@@ -1068,6 +1107,19 @@ alert(`Headcount import successful. ${data?.receivedCount || rows.length} row(s)
                     {label} {sortKey === key ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}
                   </th>
                 ))}
+                <th
+  style={{
+    textAlign: "left",
+    padding: "10px 12px",
+    background: "#09131D",
+    color: "#9fb3c8",
+    borderBottom: "1px solid #1f3142",
+    fontSize: 12,
+    whiteSpace: "nowrap",
+  }}
+>
+  Actions
+</th>
               </tr>
             </thead>
             <tbody>
@@ -1080,6 +1132,7 @@ alert(`Headcount import successful. ${data?.receivedCount || rows.length} row(s)
               ) : (
                 pagedRows.map((row) => {
                   const rowId = row.id || `${row.userEmailId}__${row.fyHalf}`;
+                  const isEditing = editingRowId === rowId;
                   return (
                     <tr key={rowId}>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
@@ -1091,11 +1144,201 @@ alert(`Headcount import successful. ${data?.receivedCount || rows.length} row(s)
                         />
                       </td>
                       <td style={{ padding: "10px 12px", color: "#E5EEF8", fontWeight: 600, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>{row.userEmailId}</td>
-                      <td style={{ padding: "10px 12px", color: "#9fb3c8", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>{row.businessUnit}</td>
-                      <td style={{ padding: "10px 12px", color: "#9fb3c8", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>{row.location}</td>
-                      <td style={{ padding: "10px 12px", color: "#9fb3c8", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>{row.department}</td>
-                      <td style={{ padding: "10px 12px", color: "#cbd5e1", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>{row.empType}</td>
-                      <td style={{ padding: "10px 12px", color: "#7dd3fc", fontWeight: 700, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>{row.fyHalf}</td>
+                      <td style={{ padding: "10px 12px", color: "#9fb3c8", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+  {isEditing ? (
+    <select
+      value={String(editDraft.businessUnit || "")}
+      onChange={(e) => setEditDraft((prev) => ({ ...prev, businessUnit: e.target.value }))}
+      style={{
+        width: "100%",
+        background: "#09131D",
+        border: "1px solid #213547",
+        borderRadius: 8,
+        color: "#E6FFFD",
+        padding: "6px 8px",
+      }}
+    >
+      {buOptions.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  ) : (
+    row.businessUnit
+  )}
+</td>
+                      <td style={{ padding: "10px 12px", color: "#9fb3c8", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+  {isEditing ? (
+    <select
+      value={String(editDraft.location || "")}
+      onChange={(e) => setEditDraft((prev) => ({ ...prev, location: e.target.value }))}
+      style={{
+        width: "100%",
+        background: "#09131D",
+        border: "1px solid #213547",
+        borderRadius: 8,
+        color: "#E6FFFD",
+        padding: "6px 8px",
+      }}
+    >
+      {locationOptions.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  ) : (
+    row.location
+  )}
+</td>
+                      <td style={{ padding: "10px 12px", color: "#9fb3c8", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+  {isEditing ? (
+    <select
+      value={String(editDraft.department || "")}
+      onChange={(e) => setEditDraft((prev) => ({ ...prev, department: e.target.value }))}
+      style={{
+        width: "100%",
+        background: "#09131D",
+        border: "1px solid #213547",
+        borderRadius: 8,
+        color: "#E6FFFD",
+        padding: "6px 8px",
+      }}
+    >
+      {departmentOptions.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  ) : (
+    row.department
+  )}
+</td>
+                      <td style={{ padding: "10px 12px", color: "#cbd5e1", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+  {isEditing ? (
+    <select
+      value={String(editDraft.empType || "")}
+      onChange={(e) => setEditDraft((prev) => ({ ...prev, empType: e.target.value }))}
+      style={{
+        width: "100%",
+        background: "#09131D",
+        border: "1px solid #213547",
+        borderRadius: 8,
+        color: "#E6FFFD",
+        padding: "6px 8px",
+      }}
+    >
+      {EMP_TYPES.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  ) : (
+    row.empType
+  )}
+</td>
+                      <td style={{ padding: "10px 12px", color: "#7dd3fc", fontWeight: 700, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+  {isEditing ? (
+    <select
+      value={String(editDraft.fyHalf || "")}
+      onChange={(e) => setEditDraft((prev) => ({ ...prev, fyHalf: e.target.value }))}
+      style={{
+        width: "100%",
+        background: "#09131D",
+        border: "1px solid #213547",
+        borderRadius: 8,
+        color: "#E6FFFD",
+        padding: "6px 8px",
+      }}
+    >
+      {editFyOptions.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  ) : (
+    row.fyHalf
+  )}
+</td>
+                      <td
+  style={{
+    padding: "10px 12px",
+    borderBottom: "1px solid rgba(255,255,255,0.05)",
+  }}
+>
+  {isEditing ? (
+  <div style={{ display: "flex", gap: 8 }}>
+    <button
+      style={{
+        background: "rgba(34,197,94,0.12)",
+        border: "1px solid rgba(34,197,94,0.35)",
+        borderRadius: 8,
+        color: "#BBF7D0",
+        padding: "6px 10px",
+        cursor: "pointer",
+        fontWeight: 700,
+        fontSize: 12,
+      }}
+      onClick={() => {
+        console.log("Save row:", rowId, editDraft);
+      }}
+    >
+      Save
+    </button>
+
+    <button
+      style={{
+        background: "rgba(239,68,68,0.10)",
+        border: "1px solid rgba(239,68,68,0.30)",
+        borderRadius: 8,
+        color: "#FECACA",
+        padding: "6px 10px",
+        cursor: "pointer",
+        fontWeight: 700,
+        fontSize: 12,
+      }}
+      onClick={() => {
+        setEditingRowId(null);
+        setEditDraft({});
+      }}
+    >
+      Cancel
+    </button>
+  </div>
+) : (
+  <button
+    style={{
+      background: "rgba(124,140,255,0.08)",
+      border: "1px solid rgba(124,140,255,0.30)",
+      borderRadius: 8,
+      color: "#D2E0FF",
+      padding: "6px 10px",
+      cursor: canImport ? "pointer" : "not-allowed",
+      fontWeight: 700,
+      fontSize: 12,
+      opacity: canImport ? 1 : 0.6,
+    }}
+    disabled={!canImport}
+    onClick={() => {
+      setEditingRowId(rowId);
+      setEditDraft({
+        userEmailId: row.userEmailId,
+        businessUnit: row.businessUnit,
+        location: row.location,
+        department: row.department,
+        empType: row.empType,
+        fyHalf: row.fyHalf,
+      });
+    }}
+  >
+    Edit
+  </button>
+)}
+</td>
                     </tr>
                   );
                 })
