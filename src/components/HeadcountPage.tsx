@@ -844,19 +844,55 @@ const handleSaveEdit = async (rowId: string) => {
     setIsSavingEdit(true);
     setEditError("");
 
+    const businessUnit = String(editDraft.businessUnit || "").trim();
+const location = String(editDraft.location || "").trim();
+const department = String(editDraft.department || "").trim();
+const empType = String(editDraft.empType || "").trim();
+const fyHalf = String(editDraft.fyHalf || "").trim();
+  
+if (!businessUnit) {
+  setEditError("Business Unit is required.");
+  setIsSavingEdit(false);
+  return;
+}
+
+if (!location) {
+  setEditError("Location is required.");
+  setIsSavingEdit(false);
+  return;
+}
+
+if (!department) {
+  setEditError("Department is required.");
+  setIsSavingEdit(false);
+  return;
+}
+
+if (!empType) {
+  setEditError("Emp. Type is required.");
+  setIsSavingEdit(false);
+  return;
+}
+
+if (!/^\d{4}-H[12]$/.test(fyHalf)) {
+  setEditError("FY & Half must be in format YYYY-H1 or YYYY-H2.");
+  setIsSavingEdit(false);
+  return;
+}
+
     const res = await fetch("/api/headcount/update", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        id: rowId,
-        businessUnit: String(editDraft.businessUnit || "").trim(),
-        location: String(editDraft.location || "").trim(),
-        department: String(editDraft.department || "").trim(),
-        empType: String(editDraft.empType || "").trim(),
-        fyHalf: String(editDraft.fyHalf || "").trim(),
-      }),
+  id: rowId,
+  businessUnit,
+  location,
+  department,
+  empType,
+  fyHalf,
+}),
     });
 
     const data = await res.json();
@@ -1211,138 +1247,114 @@ if (!rebuildRes.ok) {
                       <td style={{ padding: "10px 12px", color: "#E5EEF8", fontWeight: 600, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>{row.userEmailId}</td>
                       <td style={{ padding: "10px 12px", color: "#9fb3c8", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
   {isEditing ? (
-    <select
-      value={String(editDraft.businessUnit || "")}
-      onChange={(e) => {
-  setEditError("");
-  setEditDraft((prev) => ({ ...prev, businessUnit: e.target.value }));
-}}
-      style={{
-        width: "100%",
-        background: "#09131D",
-        border: "1px solid #213547",
-        borderRadius: 8,
-        color: "#E6FFFD",
-        padding: "6px 8px",
-      }}
-    >
-      {buOptions.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-  ) : (
-    row.businessUnit
-  )}
+  <input
+    type="text"
+    value={String(editDraft.businessUnit || "")}
+    onChange={(e) => {
+      setEditError("");
+      setEditDraft((prev) => ({ ...prev, businessUnit: e.target.value }));
+    }}
+    style={{
+      width: "100%",
+      background: "#09131D",
+      border: "1px solid #213547",
+      borderRadius: 8,
+      color: "#E6FFFD",
+      padding: "6px 8px",
+    }}
+  />
+) : (
+  row.businessUnit
+)}
 </td>
                       <td style={{ padding: "10px 12px", color: "#9fb3c8", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
   {isEditing ? (
-    <select
-      value={String(editDraft.location || "")}
-      onChange={(e) => {
-  setEditError("");
-  setEditDraft((prev) => ({ ...prev, location: e.target.value }));
-}}
-      style={{
-        width: "100%",
-        background: "#09131D",
-        border: "1px solid #213547",
-        borderRadius: 8,
-        color: "#E6FFFD",
-        padding: "6px 8px",
-      }}
-    >
-      {locationOptions.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-  ) : (
-    row.location
-  )}
+  <input
+    type="text"
+    value={String(editDraft.location || "")}
+    onChange={(e) => {
+      setEditError("");
+      setEditDraft((prev) => ({ ...prev, location: e.target.value }));
+    }}
+    style={{
+      width: "100%",
+      background: "#09131D",
+      border: "1px solid #213547",
+      borderRadius: 8,
+      color: "#E6FFFD",
+      padding: "6px 8px",
+    }}
+  />
+) : (
+  row.location
+)}
 </td>
                       <td style={{ padding: "10px 12px", color: "#9fb3c8", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
   {isEditing ? (
-    <select
-      value={String(editDraft.department || "")}
-      onChange={(e) => {
-  setEditError("");
-  setEditDraft((prev) => ({ ...prev, department: e.target.value }));
-}}
-      style={{
-        width: "100%",
-        background: "#09131D",
-        border: "1px solid #213547",
-        borderRadius: 8,
-        color: "#E6FFFD",
-        padding: "6px 8px",
-      }}
-    >
-      {departmentOptions.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-  ) : (
-    row.department
-  )}
+  <input
+    type="text"
+    value={String(editDraft.department || "")}
+    onChange={(e) => {
+      setEditError("");
+      setEditDraft((prev) => ({ ...prev, department: e.target.value }));
+    }}
+    style={{
+      width: "100%",
+      background: "#09131D",
+      border: "1px solid #213547",
+      borderRadius: 8,
+      color: "#E6FFFD",
+      padding: "6px 8px",
+    }}
+  />
+) : (
+  row.department
+)}
 </td>
                       <td style={{ padding: "10px 12px", color: "#cbd5e1", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
   {isEditing ? (
-    <select
-      value={String(editDraft.empType || "")}
-      onChange={(e) => {
-  setEditError("");
-  setEditDraft((prev) => ({ ...prev, empType: e.target.value }));
-}}
-      style={{
-        width: "100%",
-        background: "#09131D",
-        border: "1px solid #213547",
-        borderRadius: 8,
-        color: "#E6FFFD",
-        padding: "6px 8px",
-      }}
-    >
-      {EMP_TYPES.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-  ) : (
-    row.empType
-  )}
+  <input
+    type="text"
+    value={String(editDraft.empType || "")}
+    onChange={(e) => {
+      setEditError("");
+      setEditDraft((prev) => ({ ...prev, empType: e.target.value }));
+    }}
+    style={{
+      width: "100%",
+      background: "#09131D",
+      border: "1px solid #213547",
+      borderRadius: 8,
+      color: "#E6FFFD",
+      padding: "6px 8px",
+    }}
+  />
+) : (
+  row.empType
+)}
 </td>
                       <td style={{ padding: "10px 12px", color: "#7dd3fc", fontWeight: 700, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
   {isEditing ? (
-    <select
-      value={String(editDraft.fyHalf || "")}
-      onChange={(e) => {
-  setEditError("");
-  setEditDraft((prev) => ({ ...prev, fyHalf: e.target.value }));
-}}
-      style={{
-        width: "100%",
-        background: "#09131D",
-        border: "1px solid #213547",
-        borderRadius: 8,
-        color: "#E6FFFD",
-        padding: "6px 8px",
-      }}
-    >
-      {editFyOptions.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-  ) : (
-    row.fyHalf
-  )}
+  <input
+    type="text"
+    value={String(editDraft.fyHalf || "")}
+    onChange={(e) => {
+      setEditError("");
+      setEditDraft((prev) => ({ ...prev, fyHalf: e.target.value }));
+    }}
+    placeholder="YYYY-H1 or YYYY-H2"
+    style={{
+      width: "100%",
+      background: "#09131D",
+      border: "1px solid #213547",
+      borderRadius: 8,
+      color: "#E6FFFD",
+      padding: "6px 8px",
+    }}
+  />
+) : (
+  row.fyHalf
+)}
 </td>
                       <td
   style={{
