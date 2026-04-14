@@ -911,19 +911,6 @@ const rebuildData = await rebuildRes.json();
 if (!rebuildRes.ok) {
   throw new Error(rebuildData?.error || "Failed to rebuild headcount summary after update");
 }
-
-    const reloadRes = await fetch("/api/headcount?limit=100", {
-      method: "GET",
-      cache: "no-store",
-    });
-
-    const reloadData = await reloadRes.json();
-
-    if (!reloadRes.ok) {
-      throw new Error(reloadData?.error || "Failed to reload headcount records after update");
-    }
-
-    onChangeRecords?.(Array.isArray(reloadData?.items) ? reloadData.items : []);
     await onReloadRecords?.();
     await onReloadSummary?.();
     setEditingRowId(null);

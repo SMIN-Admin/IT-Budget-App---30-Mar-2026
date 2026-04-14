@@ -8141,8 +8141,7 @@ const headcountBudgetSummaryByHalf = [
   { fyHalf: "2026-H2", budget: 210000, actual: 176000 },
   { fyHalf: "2027-H1", budget: 260000, actual: 201000 },
 ];
-useEffect(() => {
-  const loadHeadcountRecords = async () => {
+const loadHeadcountRecords = async () => {
   try {
     const res = await fetch("/api/headcount?limit=100", {
       method: "GET",
@@ -9192,7 +9191,8 @@ if (tabNeedsRawItems && itemsLoading && items.length === 0) {
     />
   </>
 )}
-        {tab === "renewals" && (
+
+{tab === "renewals" && (
   <>
     <DrillBackButton
       visible={!!drillBackTab}
@@ -9207,16 +9207,26 @@ if (tabNeedsRawItems && itemsLoading && items.length === 0) {
     </div>
   </>
 )}
-        {tab === "planning" && (
-          <NextYearPlanning items={items} onApply={async (newItems) => {
-            setItems(prev => [...prev, ...newItems]);
-            await refreshSummaryState();
-          }} />
-        )}
-        {tab === "cashflow"   && <CashFlowForecast items={items} />}
-        {tab === "payments"   && <PaymentSchedulePage items={items} />}
-        {tab === "exceptions" && <ExceptionsPage items={items} fyOptions={globalFyOptions} />}
-        {tab === "reconcile" && (
+
+{tab === "planning" && (
+  <NextYearPlanning
+    items={items}
+    onApply={async (newItems) => {
+      setItems(prev => [...prev, ...newItems]);
+      await refreshSummaryState();
+    }}
+  />
+)}
+
+{tab === "cashflow" && <CashFlowForecast items={items} />}
+
+{tab === "payments" && <PaymentSchedulePage items={items} />}
+
+{tab === "exceptions" && (
+  <ExceptionsPage items={items} fyOptions={globalFyOptions} />
+)}
+
+{tab === "reconcile" && (
   <ReconciliationPage
     items={items}
     fyOptions={globalFyOptions}
@@ -9227,8 +9237,10 @@ if (tabNeedsRawItems && itemsLoading && items.length === 0) {
     canApproveReject={canApproveReject}
   />
 )}
-        {tab === "auditlog"   && <AuditLogPage auditLog={auditLog} />}
-       {tab === "freeze" && role === "admin" && (
+
+{tab === "auditlog" && <AuditLogPage auditLog={auditLog} />}
+
+{tab === "freeze" && role === "admin" && (
   <BudgetFreezePage
     items={items}
     fyOptions={globalFyOptions}
@@ -9240,18 +9252,25 @@ if (tabNeedsRawItems && itemsLoading && items.length === 0) {
     currentUserEmail={user?.email || "Unknown"}
   />
 )}
-        {tab === "bualloc" && <BUAllocationPage items={items} fyOptions={globalFyOptions} />}
-        {tab === "sop" && <SOPPage onNavigate={handleTabClick} />}
-        {tab === "bible" && <BiblePage />}
-        {tab === "fx" && (
-          <FXRatesManager
-            fxRates={fxRates}
-            setFxRates={setFxRates}
-            items={items}
-            setItems={setItems}
-          />
-        )}
-        {tab === "ai" && (
+
+{tab === "bualloc" && (
+  <BUAllocationPage items={items} fyOptions={globalFyOptions} />
+)}
+
+{tab === "sop" && <SOPPage onNavigate={handleTabClick} />}
+
+{tab === "bible" && <BiblePage />}
+
+{tab === "fx" && (
+  <FXRatesManager
+    fxRates={fxRates}
+    setFxRates={setFxRates}
+    items={items}
+    setItems={setItems}
+  />
+)}
+
+{tab === "ai" && (
   <AIInsights
     items={items}
     fxRates={fxRates}
