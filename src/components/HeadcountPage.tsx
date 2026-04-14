@@ -658,6 +658,7 @@ const pageSize = 100;
   const [editDraft, setEditDraft] = useState<Partial<HeadcountRecord>>({});
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState("");
+  const [editSuccess, setEditSuccess] = useState("");
 
   const templateCsv = `userEmailId,businessUnit,location,department,empType,fyHalf
 john.doe@company.com,WP-India,Bangalore,IT,Permanent,2026-H1
@@ -917,7 +918,8 @@ if (!rebuildRes.ok) {
     setEditDraft({});
 
 
-    alert("Headcount row updated successfully.");
+    setEditSuccess("Headcount updated successfully.");
+
   } catch (error: any) {
     console.error("Headcount row update failed:", error);
     setEditError(error?.message || "Failed to update headcount row.");
@@ -1397,6 +1399,18 @@ if (!rebuildRes.ok) {
   <div style={{ color: "#fca5a5", fontSize: 12, fontWeight: 700 }}>
     {editError}
   </div>
+    )}
+  {editSuccess && editingRowId === rowId && (
+  <div
+    style={{
+      color: "#4ade80",
+      fontSize: 12,
+      fontWeight: 700,
+      marginTop: 4,
+    }}
+  >
+    {editSuccess}
+  </div>
 )}
   </div>
 ) : (
@@ -1414,6 +1428,7 @@ if (!rebuildRes.ok) {
     }}
     disabled={!canImport}
     onClick={() => {
+      setEditSuccess("");
       setEditingRowId(rowId);
       setEditDraft({
         userEmailId: row.userEmailId,
