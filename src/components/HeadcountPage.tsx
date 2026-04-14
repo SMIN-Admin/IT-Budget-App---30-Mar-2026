@@ -23,6 +23,7 @@ type HeadcountPageProps = {
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
   summaryRows?: any[];
+  onReloadSummary?: () => Promise<void>;
 };
 
 const EMP_TYPES = ["Permanent", "Contract", "Intern", "Consultant"];
@@ -629,6 +630,7 @@ export default function HeadcountPage({
   onLoadMore,
   isLoadingMore = false,
   summaryRows = [],
+  onReloadSummary,
 }: HeadcountPageProps) {
   const role = user?.role || "viewer";
   const currentUserEmail = user?.email || "Unknown";
@@ -652,6 +654,7 @@ const pageSize = 100;
   const [showImport, setShowImport] = useState(false);
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Partial<HeadcountRecord>>({});
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const templateCsv = `userEmailId,businessUnit,location,department,empType,fyHalf
 john.doe@company.com,WP-India,Bangalore,IT,Permanent,2026-H1
@@ -832,6 +835,66 @@ alert(`Headcount import successful. ${data?.receivedCount || rows.length} row(s)
   } catch (error: any) {
     console.error("Headcount import failed:", error);
     alert(error?.message || "Failed to import headcount rows.");
+  }
+};
+
+const handleSaveEdit = async (rowId: string) => {
+  try {
+    setIsSavingEdit(true);
+
+    const res = await fetch("/api/headcount/update", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: rowId,
+        businessUnit: String(editDraft.businessUnit || "").trim(),
+        location: String(editDraft.location || "").trim(),
+        department: String(editDraft.department || "").trim(),
+        empType: String(editDraft.empType || "").trim(),
+        fyHalf: String(editDraft.fyHalf || "").trim(),
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Failed to update headcount row");
+    }
+    const rebuildRes = await fetch("/api/headcount-summary/rebuild", {
+  method: "POST",
+});
+
+const rebuildData = await rebuildRes.json();
+
+if (!rebuildRes.ok) {
+  throw new Error(rebuildData?.error || "Failed to rebuild headcount summary after update");
+}
+
+    const reloadRes = await fetch("/api/headcount?limit=100", {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    const reloadData = await reloadRes.json();
+
+    if (!reloadRes.ok) {
+      throw new Error(reloadData?.error || "Failed to reload headcount records after update");
+    }
+
+    onChangeRecords?.(Array.isArray(reloadData?.items) ? reloadData.items : []);
+    await onReloadSummary?.();
+    setEditingRowId(null);
+    setEditDraft({});
+
+
+    alert("Headcount row updated successfully.");
+  } catch (error: any) {
+    console.error("Headcount row update failed:", error);
+    alert(error?.message || "Failed to update headcount row.");
+  } finally {
+    setIsSavingEdit(false);
   }
 };
 
@@ -1273,21 +1336,23 @@ alert(`Headcount import successful. ${data?.receivedCount || rows.length} row(s)
   {isEditing ? (
   <div style={{ display: "flex", gap: 8 }}>
     <button
+  disabled={isSavingEdit}
       style={{
-        background: "rgba(34,197,94,0.12)",
-        border: "1px solid rgba(34,197,94,0.35)",
-        borderRadius: 8,
-        color: "#BBF7D0",
-        padding: "6px 10px",
-        cursor: "pointer",
-        fontWeight: 700,
-        fontSize: 12,
-      }}
+  background: isSavingEdit ? "#334155" : "rgba(34,197,94,0.12)",
+  border: "1px solid rgba(34,197,94,0.35)",
+  borderRadius: 8,
+  color: isSavingEdit ? "#94a3b8" : "#BBF7D0",
+  padding: "6px 10px",
+  cursor: isSavingEdit ? "not-allowed" : "pointer",
+  fontWeight: 700,
+  fontSize: 12,
+  opacity: isSavingEdit ? 0.8 : 1,
+}}
       onClick={() => {
-        console.log("Save row:", rowId, editDraft);
+        handleSaveEdit(rowId);
       }}
     >
-      Save
+      {isSavingEdit ? "Saving..." : "Save"}
     </button>
 
     <button
