@@ -655,6 +655,7 @@ const pageSize = 100;
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Partial<HeadcountRecord>>({});
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editError, setEditError] = useState("");
 
   const templateCsv = `userEmailId,businessUnit,location,department,empType,fyHalf
 john.doe@company.com,WP-India,Bangalore,IT,Permanent,2026-H1
@@ -841,6 +842,7 @@ alert(`Headcount import successful. ${data?.receivedCount || rows.length} row(s)
 const handleSaveEdit = async (rowId: string) => {
   try {
     setIsSavingEdit(true);
+    setEditError("");
 
     const res = await fetch("/api/headcount/update", {
       method: "POST",
@@ -892,7 +894,7 @@ if (!rebuildRes.ok) {
     alert("Headcount row updated successfully.");
   } catch (error: any) {
     console.error("Headcount row update failed:", error);
-    alert(error?.message || "Failed to update headcount row.");
+    setEditError(error?.message || "Failed to update headcount row.");
   } finally {
     setIsSavingEdit(false);
   }
@@ -1211,7 +1213,10 @@ if (!rebuildRes.ok) {
   {isEditing ? (
     <select
       value={String(editDraft.businessUnit || "")}
-      onChange={(e) => setEditDraft((prev) => ({ ...prev, businessUnit: e.target.value }))}
+      onChange={(e) => {
+  setEditError("");
+  setEditDraft((prev) => ({ ...prev, businessUnit: e.target.value }));
+}}
       style={{
         width: "100%",
         background: "#09131D",
@@ -1235,7 +1240,10 @@ if (!rebuildRes.ok) {
   {isEditing ? (
     <select
       value={String(editDraft.location || "")}
-      onChange={(e) => setEditDraft((prev) => ({ ...prev, location: e.target.value }))}
+      onChange={(e) => {
+  setEditError("");
+  setEditDraft((prev) => ({ ...prev, location: e.target.value }));
+}}
       style={{
         width: "100%",
         background: "#09131D",
@@ -1259,7 +1267,10 @@ if (!rebuildRes.ok) {
   {isEditing ? (
     <select
       value={String(editDraft.department || "")}
-      onChange={(e) => setEditDraft((prev) => ({ ...prev, department: e.target.value }))}
+      onChange={(e) => {
+  setEditError("");
+  setEditDraft((prev) => ({ ...prev, department: e.target.value }));
+}}
       style={{
         width: "100%",
         background: "#09131D",
@@ -1283,7 +1294,10 @@ if (!rebuildRes.ok) {
   {isEditing ? (
     <select
       value={String(editDraft.empType || "")}
-      onChange={(e) => setEditDraft((prev) => ({ ...prev, empType: e.target.value }))}
+      onChange={(e) => {
+  setEditError("");
+  setEditDraft((prev) => ({ ...prev, empType: e.target.value }));
+}}
       style={{
         width: "100%",
         background: "#09131D",
@@ -1307,7 +1321,10 @@ if (!rebuildRes.ok) {
   {isEditing ? (
     <select
       value={String(editDraft.fyHalf || "")}
-      onChange={(e) => setEditDraft((prev) => ({ ...prev, fyHalf: e.target.value }))}
+      onChange={(e) => {
+  setEditError("");
+  setEditDraft((prev) => ({ ...prev, fyHalf: e.target.value }));
+}}
       style={{
         width: "100%",
         background: "#09131D",
@@ -1334,7 +1351,7 @@ if (!rebuildRes.ok) {
   }}
 >
   {isEditing ? (
-  <div style={{ display: "flex", gap: 8 }}>
+  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
     <button
   disabled={isSavingEdit}
       style={{
@@ -1367,12 +1384,18 @@ if (!rebuildRes.ok) {
         fontSize: 12,
       }}
       onClick={() => {
-        setEditingRowId(null);
-        setEditDraft({});
-      }}
+  setEditingRowId(null);
+  setEditDraft({});
+  setEditError("");
+}}
     >
       Cancel
     </button>
+    {editError && editingRowId === rowId && (
+  <div style={{ color: "#fca5a5", fontSize: 12, fontWeight: 700 }}>
+    {editError}
+  </div>
+)}
   </div>
 ) : (
   <button

@@ -63,6 +63,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Headcount row not found" }, { status: 404 });
     }
 
+    const existingData = existingDoc.data() || {};
+const userEmailId = String(existingData.userEmailId || "").trim().toLowerCase();
+
+const duplicateSnapshot = await adminDb
+  .collection("headcountRecords")
+  .where("userEmailId", "==", userEmailId)
+  .where("fyHalf", "==", fyHalf)
+  .get();
+
+const duplicateExists = duplicateSnapshot.docs.some((doc) => doc.id !== id);
+
+if (duplicateExists) {
+  return NextResponse.json(
+    { error: `Another row already exists for ${userEmailId} in ${fyHalf}` },
+    { status: 400 }
+  );
+}
+
     await docRef.update({
       businessUnit,
       location,
