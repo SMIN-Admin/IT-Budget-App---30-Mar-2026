@@ -24,6 +24,7 @@ type HeadcountPageProps = {
   isLoadingMore?: boolean;
   summaryRows?: any[];
   onReloadSummary?: () => Promise<void>;
+  onReloadRecords?: () => Promise<void>;
 };
 
 const EMP_TYPES = ["Permanent", "Contract", "Intern", "Consultant"];
@@ -631,6 +632,7 @@ export default function HeadcountPage({
   isLoadingMore = false,
   summaryRows = [],
   onReloadSummary,
+  onReloadRecords,
 }: HeadcountPageProps) {
   const role = user?.role || "viewer";
   const currentUserEmail = user?.email || "Unknown";
@@ -922,6 +924,7 @@ if (!rebuildRes.ok) {
     }
 
     onChangeRecords?.(Array.isArray(reloadData?.items) ? reloadData.items : []);
+    await onReloadRecords?.();
     await onReloadSummary?.();
     setEditingRowId(null);
     setEditDraft({});

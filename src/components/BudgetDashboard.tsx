@@ -8143,27 +8143,27 @@ const headcountBudgetSummaryByHalf = [
 ];
 useEffect(() => {
   const loadHeadcountRecords = async () => {
-    try {
-      const res = await fetch("/api/headcount?limit=100", {
-  method: "GET",
-  cache: "no-store",
-});
+  try {
+    const res = await fetch("/api/headcount?limit=100", {
+      method: "GET",
+      cache: "no-store",
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data?.error || "Failed to load headcount records");
-      }
-
-      setHeadcountRecords(Array.isArray(data?.items) ? data.items : []);
-      setHeadcountHasMore(Boolean(data?.hasMore));
-setHeadcountNextCursor(data?.nextCursor || null);
-
-    } catch (error) {
-      console.error("Failed to load headcount records:", error);
+    if (!res.ok) {
+      throw new Error(data?.error || "Failed to load headcount records");
     }
-  };
 
+    setHeadcountRecords(Array.isArray(data?.items) ? data.items : []);
+    setHeadcountHasMore(Boolean(data?.hasMore));
+    setHeadcountNextCursor(data?.nextCursor || null);
+  } catch (error) {
+    console.error("Failed to load headcount records:", error);
+  }
+};
+
+useEffect(() => {
   loadHeadcountRecords();
 }, []);
 
@@ -9163,6 +9163,7 @@ if (tabNeedsRawItems && itemsLoading && items.length === 0) {
     isLoadingMore={headcountLoadingMore}
     summaryRows={headcountSummaryRows}
     onReloadSummary={loadHeadcountSummaryRows}
+    onReloadRecords={loadHeadcountRecords}
   />
 )}
 
