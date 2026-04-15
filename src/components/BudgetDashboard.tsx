@@ -92,7 +92,7 @@ const CHART_COLORS = ["#5EEAD4","#7C8CFF","#F4B860","#34D399","#60A5FA","#C084FC
 const PLAN_MONTH_YEARS: number[] = [];
 for (let y = 2024; y <= 2035; y++) PLAN_MONTH_YEARS.push(y);
 
-function parsePlanMonth(pm) {
+function parsePlanMonth(pm: string | null | undefined) {
   if (!pm) return null;
   const [m, y] = pm.split("-");
   const mi = MONTHS.indexOf(m);
