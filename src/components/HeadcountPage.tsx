@@ -940,16 +940,44 @@ if (!rebuildRes.ok) {
     );
   };
 
-  const handleDeleteSelected = () => {
-    if (!canDelete || selectedIds.size === 0) return;
-    const ok = window.confirm(`Delete ${selectedIds.size} selected headcount row(s)? This cannot be undone.`);
-    if (!ok) return;
-    onChangeRecords?.((prev) =>
-  prev.filter((row) => !selectedIds.has(row.id || `${row.userEmailId}__${row.fyHalf}`))
-);
-    setSelectedIds(new Set());
-  };
+  const handleDeleteSelected = async () => {
+  try {
+    const ids = Array.from(selectedIds);
 
+    if (!ids.length) {
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete ${ids.length} selected headcount row(s)? This cannot be undone.`);
+    if (!confirmed) {
+      return;
+    }
+
+    const res = await fetch("/api/headcount/delete", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ ids }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Failed to delete headcount rows");
+    }
+
+    await onReloadRecords?.();
+    await onReloadSummary?.();
+
+    setSelectedIds(new Set());
+    setEditError("");
+    setEditSuccess(`Deleted ${ids.length} headcount row(s) successfully.`);
+  } catch (error: any) {
+    console.error("Headcount delete failed:", error);
+    setEditError(error?.message || "Failed to delete headcount rows.");
+  }
+};
   const kpiCard = (label: string, value: string | number, color: string) => (
     <div
       style={{
@@ -1120,16 +1148,21 @@ if (!rebuildRes.ok) {
           </span>
           <button
             onClick={handleDeleteSelected}
+disabled={selectedIds.size === 0}
             style={{
-              background: "linear-gradient(135deg,#ef4444,#b91c1c)",
-              border: "none",
-              borderRadius: 8,
-              color: "#fff",
-              padding: "6px 18px",
-              cursor: "pointer",
-              fontWeight: 700,
-              fontSize: 12,
-            }}
+  background:
+    selectedIds.size === 0
+      ? "#334155"
+      : "linear-gradient(135deg,#ef4444,#b91c1c)",
+  border: "none",
+  borderRadius: 8,
+  color: selectedIds.size === 0 ? "#94a3b8" : "#fff",
+  padding: "6px 18px",
+  cursor: selectedIds.size === 0 ? "not-allowed" : "pointer",
+  fontWeight: 700,
+  fontSize: 12,
+  opacity: selectedIds.size === 0 ? 0.7 : 1,
+}}
           >
             Delete Selected ({selectedCount})
           </button>
