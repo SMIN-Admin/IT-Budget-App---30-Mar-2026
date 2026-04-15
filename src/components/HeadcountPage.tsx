@@ -659,6 +659,17 @@ const pageSize = 100;
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState("");
   const [editSuccess, setEditSuccess] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+  if (!editSuccess) return;
+
+  const timer = window.setTimeout(() => {
+    setEditSuccess("");
+  }, 2500);
+
+  return () => window.clearTimeout(timer);
+}, [editSuccess]);
 
   const templateCsv = `userEmailId,businessUnit,location,department,empType,fyHalf
 john.doe@company.com,WP-India,Bangalore,IT,Permanent,2026-H1
@@ -942,6 +953,9 @@ if (!rebuildRes.ok) {
 
   const handleDeleteSelected = async () => {
   try {
+    setEditError("");
+    setEditSuccess("");
+    setIsDeleting(true);
     const ids = Array.from(selectedIds);
 
     if (!ids.length) {
@@ -977,6 +991,9 @@ if (!rebuildRes.ok) {
     console.error("Headcount delete failed:", error);
     setEditError(error?.message || "Failed to delete headcount rows.");
   }
+  finally {
+  setIsDeleting(false);
+}
 };
   const kpiCard = (label: string, value: string | number, color: string) => (
     <div
@@ -1148,23 +1165,18 @@ if (!rebuildRes.ok) {
           </span>
           <button
             onClick={handleDeleteSelected}
-disabled={selectedIds.size === 0}
+disabled={selectedIds.size === 0 || isDeleting}
             style={{
   background:
-    selectedIds.size === 0
-      ? "#334155"
-      : "linear-gradient(135deg,#ef4444,#b91c1c)",
-  border: "none",
-  borderRadius: 8,
-  color: selectedIds.size === 0 ? "#94a3b8" : "#fff",
-  padding: "6px 18px",
-  cursor: selectedIds.size === 0 ? "not-allowed" : "pointer",
-  fontWeight: 700,
-  fontSize: 12,
-  opacity: selectedIds.size === 0 ? 0.7 : 1,
+  selectedIds.size === 0 || isDeleting
+    ? "#334155"
+    : "linear-gradient(135deg,#ef4444,#b91c1c)",
+color: selectedIds.size === 0 || isDeleting ? "#94a3b8" : "#fff",
+cursor: selectedIds.size === 0 || isDeleting ? "not-allowed" : "pointer",
+opacity: selectedIds.size === 0 || isDeleting ? 0.7 : 1,
 }}
           >
-            Delete Selected ({selectedCount})
+            {isDeleting ? "Deleting..." : `Delete Selected (${selectedCount})`}
           </button>
           <button
             onClick={() => setSelectedIds(new Set())}
