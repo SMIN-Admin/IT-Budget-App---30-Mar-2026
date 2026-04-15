@@ -115,6 +115,7 @@ function getFY(planMonth: string | null | undefined) {
 }
 
 function getPnLBreakup(billingFreq: string | null | undefined) {
+  if (!billingFreq) return 12;
   return PNL_BREAKUP[billingFreq] || 12;
 }
 
