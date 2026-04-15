@@ -101,7 +101,7 @@ function parsePlanMonth(pm: string | null | undefined) {
   return { month: mi, year };
 }
 
-function getFY(planMonth) {
+function getFY(planMonth: string | null | undefined) {
   const p = parsePlanMonth(planMonth);
   if (!p) return "";
   const { month, year } = p;
