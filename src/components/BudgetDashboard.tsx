@@ -121,7 +121,12 @@ function getPnLBreakup(billingFreq: string | null | undefined) {
   return PNL_BREAKUP[freq] || 12;
 }
 
-function calcBudget(rate, qty, currency, rates) {
+function calcBudget(
+  rate: string | number | null | undefined,
+  qty: string | number | null | undefined,
+  currency: string | null | undefined,
+  rates: Record<string, number> | null | undefined
+) {
   const r = rates || DEFAULT_CONVERSION_RATES;
   const total = (parseFloat(rate) || 0) * (parseFloat(qty) || 0);
   const rate2sgd = r[currency] || 1;
