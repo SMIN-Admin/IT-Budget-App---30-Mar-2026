@@ -1,0 +1,863 @@
+src/components/BudgetDashboard.tsx(124,21): error TS7006: Parameter 'rate' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(124,27): error TS7006: Parameter 'qty' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(124,32): error TS7006: Parameter 'currency' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(124,42): error TS7006: Parameter 'rates' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(131,20): error TS7006: Parameter 'rate' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(131,26): error TS7006: Parameter 'qty' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(137,19): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(143,20): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(148,24): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(162,5): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/components/BudgetDashboard.tsx(162,20): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/components/BudgetDashboard.tsx(176,26): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(176,32): error TS7006: Parameter 'fyHalf' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(194,74): error TS18046: 'val' is of type 'unknown'.
+src/components/BudgetDashboard.tsx(196,96): error TS18046: 'val' is of type 'unknown'.
+src/components/BudgetDashboard.tsx(202,23): error TS7006: Parameter 'planMonth' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(207,27): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/components/BudgetDashboard.tsx(207,36): error TS2363: The right-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/components/BudgetDashboard.tsx(230,19): error TS7031: Binding element 'label' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(230,26): error TS7031: Binding element 'value' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(230,33): error TS7031: Binding element 'onChange' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(230,43): error TS7031: Binding element 'options' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(230,52): error TS7031: Binding element 'required' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(237,22): error TS7006: Parameter 'o' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(244,29): error TS7031: Binding element 'label' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(244,36): error TS7031: Binding element 'value' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(244,43): error TS7031: Binding element 'onChange' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(244,53): error TS7031: Binding element 'options' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(244,62): error TS7031: Binding element 'onAddNew' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(244,72): error TS7031: Binding element 'required' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(248,25): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(270,22): error TS7006: Parameter 'o' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(309,18): error TS7031: Binding element 'label' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(309,25): error TS7031: Binding element 'value' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(309,32): error TS7031: Binding element 'onChange' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(309,71): error TS7031: Binding element 'required' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(322,30): error TS7006: Parameter 'pm' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(328,25): error TS7006: Parameter 'month' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(328,32): error TS7006: Parameter 'year' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(333,28): error TS7031: Binding element 'value' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(333,35): error TS7031: Binding element 'onChange' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(333,45): error TS7031: Binding element 'required' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(346,24): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(352,23): error TS7006: Parameter 'y' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(395,26): error TS7006: Parameter 'key' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(395,31): error TS7006: Parameter 'initial' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(429,27): error TS7006: Parameter 'action' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(429,35): error TS7006: Parameter 'details' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(429,44): error TS7006: Parameter 'user' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(439,16): error TS7006: Parameter 'iso' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(459,5): error TS2503: Cannot find namespace 'JSX'.
+src/components/BudgetDashboard.tsx(465,16): error TS7006: Parameter 'k' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(465,23): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(465,37): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(469,65): error TS2339: Property 'itemType' does not exist on type '{}'.
+src/components/BudgetDashboard.tsx(470,65): error TS2339: Property 'itemCategory' does not exist on type '{}'.
+src/components/BudgetDashboard.tsx(471,65): error TS2339: Property 'subCategory' does not exist on type '{}'.
+src/components/BudgetDashboard.tsx(472,65): error TS2339: Property 'businessUnit' does not exist on type '{}'.
+src/components/BudgetDashboard.tsx(473,65): error TS2339: Property 'payingBU' does not exist on type '{}'.
+src/components/BudgetDashboard.tsx(474,65): error TS2339: Property 'location' does not exist on type '{}'.
+src/components/BudgetDashboard.tsx(475,65): error TS2339: Property 'country' does not exist on type '{}'.
+src/components/BudgetDashboard.tsx(476,65): error TS2339: Property 'currency' does not exist on type '{}'.
+src/components/BudgetDashboard.tsx(477,65): error TS2339: Property 'status' does not exist on type '{}'.
+src/components/BudgetDashboard.tsx(480,19): error TS7006: Parameter 'field' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(480,30): error TS7006: Parameter 'val' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(484,20): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ AUD: number; INR: number; THB: number; USD: number; HKD: number; CNY: number; EUR: number; PHP: number; MYR: number; AED: number; VND: number; GBP: number; IDR: number; JPY: number; KRW: number; TWD: number; CHF: number; SAR: number; CAD: number; SGD: number; }'.
+src/components/BudgetDashboard.tsx(488,15): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(492,15): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(499,45): error TS2339: Property 'periods' does not exist on type '{}'.
+src/components/BudgetDashboard.tsx(542,10): error TS2741: Property 'required' is missing in type '{ label: string; value: any; onChange: (v: any) => void; options: any[]; onAddNew: (val: any) => any; }' but required in type '{ label: any; value: any; onChange: any; options: any; onAddNew: any; required: any; }'.
+src/components/BudgetDashboard.tsx(545,10): error TS2741: Property 'required' is missing in type '{ label: string; value: any; onChange: (v: any) => void; options: any[]; onAddNew: (val: any) => any; }' but required in type '{ label: any; value: any; onChange: any; options: any; onAddNew: any; required: any; }'.
+src/components/BudgetDashboard.tsx(546,10): error TS2741: Property 'required' is missing in type '{ label: string; value: any; onChange: (v: any) => void; options: any[]; onAddNew: (val: any) => any; }' but required in type '{ label: any; value: any; onChange: any; options: any; onAddNew: any; required: any; }'.
+src/components/BudgetDashboard.tsx(549,10): error TS2741: Property 'required' is missing in type '{ label: string; value: any; onChange: (v: any) => void; placeholder: string; }' but required in type '{ label: any; value: any; onChange: any; type?: string | undefined; placeholder?: string | undefined; required: any; }'.
+src/components/BudgetDashboard.tsx(553,10): error TS2741: Property 'required' is missing in type '{ label: string; type: string; value: any; onChange: () => void; }' but required in type '{ label: any; value: any; onChange: any; type?: string | undefined; placeholder?: string | undefined; required: any; }'.
+src/components/BudgetDashboard.tsx(554,10): error TS2741: Property 'required' is missing in type '{ label: string; type: string; value: any; onChange: (v: any) => void; }' but required in type '{ label: any; value: any; onChange: any; type?: string | undefined; placeholder?: string | undefined; required: any; }'.
+src/components/BudgetDashboard.tsx(557,13): error TS2322: Type '{ label: string; type: string; value: any; onChange: () => void; style: { background: string; borderColor: string; color: string; } | {}; }' is not assignable to type 'IntrinsicAttributes & { label: any; value: any; onChange: any; type?: string | undefined; placeholder?: string | undefined; required: any; }'.
+  Property 'style' does not exist on type 'IntrinsicAttributes & { label: any; value: any; onChange: any; type?: string | undefined; placeholder?: string | undefined; required: any; }'.
+src/components/BudgetDashboard.tsx(563,13): error TS2322: Type '{ label: string; type: string; value: any; onChange: (v: any) => void; placeholder: string; style: { borderColor: string; background: string; } | {}; }' is not assignable to type 'IntrinsicAttributes & { label: any; value: any; onChange: any; type?: string | undefined; placeholder?: string | undefined; required: any; }'.
+  Property 'style' does not exist on type 'IntrinsicAttributes & { label: any; value: any; onChange: any; type?: string | undefined; placeholder?: string | undefined; required: any; }'.
+src/components/BudgetDashboard.tsx(567,10): error TS2741: Property 'required' is missing in type '{ label: string; value: any; onChange: (v: any) => void; options: any[]; onAddNew: (val: any) => any; }' but required in type '{ label: any; value: any; onChange: any; options: any; onAddNew: any; required: any; }'.
+src/components/BudgetDashboard.tsx(569,12): error TS2741: Property 'required' is missing in type '{ label: string; value: any; onChange: (v: any) => void; placeholder: string; }' but required in type '{ label: any; value: any; onChange: any; type?: string | undefined; placeholder?: string | undefined; required: any; }'.
+src/components/BudgetDashboard.tsx(610,26): error TS7031: Binding element 'items' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(613,15): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(614,12): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(615,15): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(616,14): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(616,17): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(627,19): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(664,73): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(676,73): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(680,20): error TS7006: Parameter 'rows' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(680,26): error TS7006: Parameter 'filename' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(681,15): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(688,17): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(709,21): error TS7006: Parameter 'rows' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(709,27): error TS7006: Parameter 'filename' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(711,18): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(715,21): error TS7006: Parameter 'ci' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(720,29): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(728,34): error TS7006: Parameter 'cell' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(728,40): error TS7006: Parameter 'ci' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(761,15): error TS7006: Parameter 'str' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(777,17): error TS7006: Parameter 'u8' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(785,15): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(786,15): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(802,17): error TS7006: Parameter 'bytes' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(803,19): error TS7006: Parameter 'u8' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(870,24): error TS7031: Binding element 'items' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(870,31): error TS7031: Binding element 'allItems' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(870,41): error TS7031: Binding element 'onEdit' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(870,49): error TS7031: Binding element 'onUpdateActual' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(870,65): error TS7031: Binding element 'onDelete' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(870,75): error TS7031: Binding element 'onDeleteMultiple' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(870,93): error TS7031: Binding element 'onApprove' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(870,104): error TS7031: Binding element 'onReject' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(870,114): error TS7031: Binding element 'searchTerm' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(870,146): error TS7031: Binding element 'isSaving' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(881,22): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(881,74): error TS2339: Property 'contains' does not exist on type 'never'.
+src/components/BudgetDashboard.tsx(889,25): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(899,20): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(900,11): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(901,18): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(902,17): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(903,19): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(904,11): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(905,12): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(906,17): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(907,13): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(908,14): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(909,19): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(910,19): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(911,16): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(912,16): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(913,15): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(920,18): error TS2349: This expression is not callable.
+  Type 'never' has no call signatures.
+src/components/BudgetDashboard.tsx(920,30): error TS2349: This expression is not callable.
+  Type 'never' has no call signatures.
+src/components/BudgetDashboard.tsx(927,23): error TS7006: Parameter 'col' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(932,25): error TS7006: Parameter 'scope' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(932,32): error TS7006: Parameter 'format' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(945,37): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(946,73): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(955,22): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(965,97): error TS2345: Argument of type '"all"' is not assignable to parameter of type 'SetStateAction<null>'.
+src/components/BudgetDashboard.tsx(966,27): error TS2345: Argument of type '"multi"' is not assignable to parameter of type 'SetStateAction<null>'.
+src/components/BudgetDashboard.tsx(1040,30): error TS2345: Argument of type '"all"' is not assignable to parameter of type 'SetStateAction<null>'.
+src/components/BudgetDashboard.tsx(1109,25): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1118,37): error TS2339: Property 'periods' does not exist on type '{}'.
+src/components/BudgetDashboard.tsx(1199,94): error TS2345: Argument of type '"single"' is not assignable to parameter of type 'SetStateAction<null>'.
+src/components/BudgetDashboard.tsx(1218,24): error TS7031: Binding element 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1218,30): error TS7031: Binding element 'onSave' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1218,38): error TS7031: Binding element 'onCancel' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1218,48): error TS7031: Binding element 'isSaving' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1228,10): error TS2741: Property 'required' is missing in type '{ label: string; type: string; value: string; onChange: Dispatch<SetStateAction<string>>; placeholder: string; }' but required in type '{ label: any; value: any; onChange: any; type?: string | undefined; placeholder?: string | undefined; required: any; }'.
+src/components/BudgetDashboard.tsx(1229,10): error TS2741: Property 'required' is missing in type '{ label: string; value: any; onChange: Dispatch<any>; options: string[]; }' but required in type '{ label: any; value: any; onChange: any; options: any; required: any; }'.
+src/components/BudgetDashboard.tsx(1230,10): error TS2741: Property 'required' is missing in type '{ label: string; value: any; onChange: Dispatch<any>; placeholder: string; }' but required in type '{ label: any; value: any; onChange: any; type?: string | undefined; placeholder?: string | undefined; required: any; }'.
+src/components/BudgetDashboard.tsx(1261,20): error TS7031: Binding element 'label' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1261,27): error TS7031: Binding element 'value' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1261,34): error TS7031: Binding element 'sub' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1261,58): error TS7031: Binding element 'icon' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1275,26): error TS7031: Binding element 'fyOptions' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1275,37): error TS7031: Binding element 'selectedFYs' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1275,50): error TS7031: Binding element 'onChange' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1277,19): error TS7006: Parameter 'fy' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1279,43): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1281,38): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1316,53): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1318,20): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/BudgetDashboard.tsx(1319,150): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(1350,36): error TS7031: Binding element 'label' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1350,43): error TS7031: Binding element 'color' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1350,50): error TS7031: Binding element 'fyOptions' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1350,61): error TS7031: Binding element 'selectedFYs' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1350,74): error TS7031: Binding element 'onChange' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1353,19): error TS7006: Parameter 'fy' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1355,36): error TS7006: Parameter 'x' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1412,27): error TS7006: Parameter 'fy' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1474,32): error TS7031: Binding element 'label' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1474,39): error TS7031: Binding element 'icon' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1474,45): error TS7031: Binding element 'options' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1474,54): error TS7031: Binding element 'selected' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1474,64): error TS7031: Binding element 'onChange' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1476,19): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1478,40): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1480,38): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1503,65): error TS7006: Parameter 'o' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1525,32): error TS7031: Binding element 'monthlyTrend' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1555,126): error TS18048: 'v' is possibly 'undefined'.
+src/components/BudgetDashboard.tsx(1566,3): error TS7031: Binding element 'items' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1567,3): error TS7031: Binding element 'itemStats' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1568,12): error TS7031: Binding element 'externalSummary' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1569,3): error TS7031: Binding element 'onDrillDown' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1570,3): error TS7031: Binding element 'selectedFYs' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1571,3): error TS7031: Binding element 'setSelectedFYs' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1572,3): error TS7031: Binding element 'selectedBUs' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1573,3): error TS7031: Binding element 'setSelectedBUs' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1574,3): error TS7031: Binding element 'selectedPayingBUs' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1575,3): error TS7031: Binding element 'setSelectedPayingBUs' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1632,44): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1635,56): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1638,44): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1641,62): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1645,25): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1702,18): error TS7006: Parameter 'filters' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1921,36): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1921,38): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1923,130): error TS18048: 'v' is possibly 'undefined'.
+src/components/BudgetDashboard.tsx(1945,8): error TS2339: Property 'activePayload' does not exist on type 'MouseHandlerDataParam'.
+src/components/BudgetDashboard.tsx(1946,43): error TS2339: Property 'activePayload' does not exist on type 'MouseHandlerDataParam'.
+src/components/BudgetDashboard.tsx(1952,163): error TS18048: 'v' is possibly 'undefined'.
+src/components/BudgetDashboard.tsx(1971,31): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1971,33): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1973,130): error TS18048: 'v' is possibly 'undefined'.
+src/components/BudgetDashboard.tsx(1989,34): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1989,36): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(1994,136): error TS18048: 'v' is possibly 'undefined'.
+src/components/BudgetDashboard.tsx(2015,8): error TS2339: Property 'activePayload' does not exist on type 'MouseHandlerDataParam'.
+src/components/BudgetDashboard.tsx(2016,52): error TS2339: Property 'activePayload' does not exist on type 'MouseHandlerDataParam'.
+src/components/BudgetDashboard.tsx(2022,130): error TS18048: 'v' is possibly 'undefined'.
+src/components/BudgetDashboard.tsx(2042,8): error TS2339: Property 'activePayload' does not exist on type 'MouseHandlerDataParam'.
+src/components/BudgetDashboard.tsx(2043,49): error TS2339: Property 'activePayload' does not exist on type 'MouseHandlerDataParam'.
+src/components/BudgetDashboard.tsx(2049,130): error TS18048: 'v' is possibly 'undefined'.
+src/components/BudgetDashboard.tsx(2072,31): error TS7006: Parameter 'cat' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2072,36): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2075,75): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2075,140): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2075,142): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2109,24): error TS7006: Parameter 'items' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2109,31): error TS7006: Parameter 'fy' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2110,23): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2113,22): error TS7006: Parameter 'items' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2113,29): error TS7006: Parameter 'key' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2113,34): error TS7006: Parameter 'mode' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2115,17): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2117,10): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(2117,18): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(2118,5): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(2119,28): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(2122,7): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(2122,55): error TS18046: 's' is of type 'unknown'.
+src/components/BudgetDashboard.tsx(2122,57): error TS18046: 'v' is of type 'unknown'.
+src/components/BudgetDashboard.tsx(2125,38): error TS2698: Spread types may only be created from object types.
+src/components/BudgetDashboard.tsx(2125,61): error TS18046: 'd' is of type 'unknown'.
+src/components/BudgetDashboard.tsx(2125,89): error TS18046: 'd' is of type 'unknown'.
+src/components/BudgetDashboard.tsx(2125,114): error TS18046: 'd' is of type 'unknown'.
+src/components/BudgetDashboard.tsx(2128,22): error TS7031: Binding element 'label' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2128,29): error TS7031: Binding element 'onClick' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2138,3): error TS7031: Binding element 'items' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2139,3): error TS7031: Binding element 'fyOptions' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2140,3): error TS7031: Binding element 'onDrillDown' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2141,3): error TS7031: Binding element 'periodA' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2142,3): error TS7031: Binding element 'setPeriodA' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2143,3): error TS7031: Binding element 'periodB' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2144,3): error TS7031: Binding element 'setPeriodB' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2145,3): error TS7031: Binding element 'groupBy' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2146,3): error TS7031: Binding element 'setGroupBy' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2147,3): error TS7031: Binding element 'mode' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2148,3): error TS7031: Binding element 'setMode' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2156,36): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2159,9): error TS7034: Variable 'all' implicitly has type 'any[]' in some locations where its type cannot be determined.
+src/components/BudgetDashboard.tsx(2185,17): error TS7005: Variable 'all' implicitly has an 'any[]' type.
+src/components/BudgetDashboard.tsx(2193,12): error TS7005: Variable 'all' implicitly has an 'any[]' type.
+src/components/BudgetDashboard.tsx(2213,31): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type 'any[]' is not assignable to type 'never[]'.
+    Type 'any' is not assignable to type 'never'.
+src/components/BudgetDashboard.tsx(2236,27): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2242,27): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2287,28): error TS7006: Parameter 'arr' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2287,33): error TS7006: Parameter 'currentMode' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2288,23): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2289,59): error TS18046: 's' is of type 'unknown'.
+src/components/BudgetDashboard.tsx(2289,63): error TS18046: 'v' is of type 'unknown'.
+src/components/BudgetDashboard.tsx(2291,36): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2292,35): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2297,36): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2297,39): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2298,36): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2298,39): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2301,20): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2302,20): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2302,23): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2305,30): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2308,43): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2308,46): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2309,43): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2309,46): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2312,42): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2312,45): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2313,42): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2313,45): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2323,23): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2324,59): error TS18046: 's' is of type 'unknown'.
+src/components/BudgetDashboard.tsx(2324,63): error TS18046: 'v' is of type 'unknown'.
+src/components/BudgetDashboard.tsx(2326,18): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2332,21): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2333,7): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(2333,30): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(2336,21): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2337,7): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(2337,30): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(2345,23): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/components/BudgetDashboard.tsx(2346,23): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/components/BudgetDashboard.tsx(2347,28): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/components/BudgetDashboard.tsx(2347,45): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/components/BudgetDashboard.tsx(2349,12): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/components/BudgetDashboard.tsx(2350,29): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/components/BudgetDashboard.tsx(2350,46): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/components/BudgetDashboard.tsx(2350,64): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/components/BudgetDashboard.tsx(2777,22): error TS2339: Property 'activePayload' does not exist on type 'MouseHandlerDataParam'.
+src/components/BudgetDashboard.tsx(2778,55): error TS2339: Property 'activePayload' does not exist on type 'MouseHandlerDataParam'.
+src/components/BudgetDashboard.tsx(2786,43): error TS18048: 'v' is possibly 'undefined'.
+src/components/BudgetDashboard.tsx(2823,85): error TS2339: Property 'label' does not exist on type 'PieSectorDataItem'.
+src/components/BudgetDashboard.tsx(2825,34): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2825,37): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(2831,47): error TS18048: 'v' is possibly 'undefined'.
+src/components/BudgetDashboard.tsx(3035,29): error TS7031: Binding element 'items' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3035,36): error TS7031: Binding element 'onApply' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3045,45): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3065,18): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3069,61): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3070,61): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3074,31): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3085,19): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3085,59): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(3088,59): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3093,41): error TS2339: Property 'split' does not exist on type '{}'.
+src/components/BudgetDashboard.tsx(3098,40): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3098,45): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(3098,65): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3099,22): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(3151,40): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/BudgetDashboard.tsx(3151,48): error TS2322: Type 'unknown' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/BudgetDashboard.tsx(3151,58): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(3157,21): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/BudgetDashboard.tsx(3158,40): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/BudgetDashboard.tsx(3158,48): error TS2322: Type 'unknown' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/BudgetDashboard.tsx(3158,58): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(3167,102): error TS2322: Type '{}' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(3175,65): error TS2322: Type '{}' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(3200,36): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/BudgetDashboard.tsx(3200,44): error TS2322: Type 'unknown' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/BudgetDashboard.tsx(3200,54): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(3206,37): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/BudgetDashboard.tsx(3206,45): error TS2322: Type 'unknown' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/BudgetDashboard.tsx(3206,55): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(3265,37): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3265,43): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3266,34): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(3272,40): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(3274,37): error TS7006: Parameter 'field' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3274,44): error TS7006: Parameter 'val' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3275,69): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(3306,69): error TS2339: Property 'split' does not exist on type '{}'.
+src/components/BudgetDashboard.tsx(3388,65): error TS2322: Type '{}' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(3399,26): error TS7031: Binding element 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3399,32): error TS7031: Binding element 'onConfirm' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3399,43): error TS7031: Binding element 'onCancel' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3525,26): error TS7006: Parameter 'filename' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3525,36): error TS7006: Parameter 'content' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3525,45): error TS7006: Parameter 'mimeType' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3556,23): error TS7006: Parameter 'text' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3561,25): error TS7006: Parameter 'src' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3595,35): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/components/BudgetDashboard.tsx(3597,20): error TS2339: Property 'description' does not exist on type '{}'.
+src/components/BudgetDashboard.tsx(3609,23): error TS7006: Parameter 'rows' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3610,9): error TS7034: Variable 'errors' implicitly has type 'any[]' in some locations where its type cannot be determined.
+src/components/BudgetDashboard.tsx(3611,17): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3611,22): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3634,10): error TS7005: Variable 'errors' implicitly has an 'any[]' type.
+src/components/BudgetDashboard.tsx(3637,26): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3648,31): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3660,24): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3749,17): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ AUD: number; INR: number; THB: number; USD: number; HKD: number; CNY: number; EUR: number; PHP: number; MYR: number; AED: number; VND: number; GBP: number; IDR: number; JPY: number; KRW: number; TWD: number; CHF: number; SAR: number; CAD: number; SGD: number; }'.
+src/components/BudgetDashboard.tsx(3769,24): error TS7031: Binding element 'onImport' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3769,34): error TS7031: Binding element 'onCancel' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3769,44): error TS7031: Binding element 'isImporting' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3788,29): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3794,20): error TS18047: 'ev.target' is possibly 'null'.
+src/components/BudgetDashboard.tsx(3795,18): error TS2345: Argument of type 'string | ArrayBuffer | null' is not assignable to parameter of type 'SetStateAction<string>'.
+  Type 'null' is not assignable to type 'SetStateAction<string>'.
+src/components/BudgetDashboard.tsx(3799,20): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type 'any[]' is not assignable to type 'never[]'.
+    Type 'any' is not assignable to type 'never'.
+src/components/BudgetDashboard.tsx(3800,18): error TS2345: Argument of type '{}[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type '{}[]' is not assignable to type 'never[]'.
+    Type '{}' is not assignable to type 'never'.
+src/components/BudgetDashboard.tsx(3808,31): error TS7006: Parameter 'url' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3839,7): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3840,7): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3841,7): error TS7006: Parameter 'u' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3857,20): error TS2345: Argument of type '{}[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type '{}[]' is not assignable to type 'never[]'.
+    Type '{}' is not assignable to type 'never'.
+src/components/BudgetDashboard.tsx(3861,30): error TS18046: 'e' is of type 'unknown'.
+src/components/BudgetDashboard.tsx(3877,18): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type 'any[]' is not assignable to type 'never[]'.
+    Type 'any' is not assignable to type 'never'.
+src/components/BudgetDashboard.tsx(3889,20): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3889,24): error TS7006: Parameter 'icon' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3889,30): error TS7006: Parameter 'label' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3889,37): error TS7006: Parameter 'desc' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(3958,38): error TS2339: Property 'select' does not exist on type 'EventTarget'.
+src/components/BudgetDashboard.tsx(4138,27): error TS7031: Binding element 'fxRates' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4138,36): error TS7031: Binding element 'setFxRates' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4138,48): error TS7031: Binding element 'items' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4138,55): error TS7031: Binding element 'setItems' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4153,45): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4166,23): error TS7006: Parameter 'fy' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4166,43): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4168,21): error TS7006: Parameter 'fy' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4169,18): error TS2345: Argument of type '(prev: never[]) => any[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type '(prev: never[]) => any[]' is not assignable to type '(prevState: never[]) => never[]'.
+    Type 'any[]' is not assignable to type 'never[]'.
+      Type 'any' is not assignable to type 'never'.
+src/components/BudgetDashboard.tsx(4169,40): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/components/BudgetDashboard.tsx(4177,7): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/components/BudgetDashboard.tsx(4177,51): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ AUD: number; INR: number; THB: number; USD: number; HKD: number; CNY: number; EUR: number; PHP: number; MYR: number; AED: number; VND: number; GBP: number; IDR: number; JPY: number; KRW: number; TWD: number; CHF: number; SAR: number; CAD: number; SGD: number; }'.
+  No index signature with a parameter of type 'string' was found on type '{ AUD: number; INR: number; THB: number; USD: number; HKD: number; CNY: number; EUR: number; PHP: number; MYR: number; AED: number; VND: number; GBP: number; IDR: number; JPY: number; KRW: number; TWD: number; CHF: number; SAR: number; CAD: number; SGD: number; }'.
+src/components/BudgetDashboard.tsx(4189,30): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/components/BudgetDashboard.tsx(4190,33): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ SGD: number; AUD: number; INR: number; THB: number; USD: number; HKD: number; CNY: number; EUR: number; PHP: number; MYR: number; AED: number; VND: number; GBP: number; IDR: number; JPY: number; KRW: number; TWD: number; CHF: number; SAR: number; CAD: number; }'.
+  No index signature with a parameter of type 'string' was found on type '{ SGD: number; AUD: number; INR: number; THB: number; USD: number; HKD: number; CNY: number; EUR: number; PHP: number; MYR: number; AED: number; VND: number; GBP: number; IDR: number; JPY: number; KRW: number; TWD: number; CHF: number; SAR: number; CAD: number; }'.
+src/components/BudgetDashboard.tsx(4196,14): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4196,31): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4198,31): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/components/BudgetDashboard.tsx(4200,44): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ AUD: number; INR: number; THB: number; USD: number; HKD: number; CNY: number; EUR: number; PHP: number; MYR: number; AED: number; VND: number; GBP: number; IDR: number; JPY: number; KRW: number; TWD: number; CHF: number; SAR: number; CAD: number; SGD: number; }'.
+src/components/BudgetDashboard.tsx(4210,35): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4210,59): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/components/BudgetDashboard.tsx(4222,17): error TS7006: Parameter 'active' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4267,50): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'never'.
+src/components/BudgetDashboard.tsx(4269,41): error TS2538: Type 'unknown' cannot be used as an index type.
+src/components/BudgetDashboard.tsx(4270,65): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4270,67): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4272,20): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/BudgetDashboard.tsx(4274,117): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(4310,31): error TS18046: 'rates' is of type 'unknown'.
+src/components/BudgetDashboard.tsx(4311,71): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ AUD: number; INR: number; THB: number; USD: number; HKD: number; CNY: number; EUR: number; PHP: number; MYR: number; AED: number; VND: number; GBP: number; IDR: number; JPY: number; KRW: number; TWD: number; CHF: number; SAR: number; CAD: number; SGD: number; }'.
+  No index signature with a parameter of type 'string' was found on type '{ AUD: number; INR: number; THB: number; USD: number; HKD: number; CNY: number; EUR: number; PHP: number; MYR: number; AED: number; VND: number; GBP: number; IDR: number; JPY: number; KRW: number; TWD: number; CHF: number; SAR: number; CAD: number; SGD: number; }'.
+src/components/BudgetDashboard.tsx(4316,78): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ AUD: number; INR: number; THB: number; USD: number; HKD: number; CNY: number; EUR: number; PHP: number; MYR: number; AED: number; VND: number; GBP: number; IDR: number; JPY: number; KRW: number; TWD: number; CHF: number; SAR: number; CAD: number; SGD: number; }'.
+  No index signature with a parameter of type 'string' was found on type '{ AUD: number; INR: number; THB: number; USD: number; HKD: number; CNY: number; EUR: number; PHP: number; MYR: number; AED: number; VND: number; GBP: number; IDR: number; JPY: number; KRW: number; TWD: number; CHF: number; SAR: number; CAD: number; SGD: number; }'.
+src/components/BudgetDashboard.tsx(4321,56): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/BudgetDashboard.tsx(4321,109): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/BudgetDashboard.tsx(4366,29): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/components/BudgetDashboard.tsx(4367,29): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ AUD: number; INR: number; THB: number; USD: number; HKD: number; CNY: number; EUR: number; PHP: number; MYR: number; AED: number; VND: number; GBP: number; IDR: number; JPY: number; KRW: number; TWD: number; CHF: number; SAR: number; CAD: number; SGD: number; }'.
+  No index signature with a parameter of type 'string' was found on type '{ AUD: number; INR: number; THB: number; USD: number; HKD: number; CNY: number; EUR: number; PHP: number; MYR: number; AED: number; VND: number; GBP: number; IDR: number; JPY: number; KRW: number; TWD: number; CHF: number; SAR: number; CAD: number; SGD: number; }'.
+src/components/BudgetDashboard.tsx(4431,27): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4431,51): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/components/BudgetDashboard.tsx(4464,20): error TS7031: Binding element 'onNavigate' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4467,16): error TS7006: Parameter 'tabId' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4505,16): error TS7006: Parameter 'color' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4505,23): error TS7006: Parameter 'bg' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4505,27): error TS7006: Parameter 'text' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4508,21): error TS7031: Binding element 'tabId' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4508,28): error TS7031: Binding element 'label' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4508,35): error TS7031: Binding element 'icon' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4514,19): error TS7006: Parameter 'icon' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4514,25): error TS7006: Parameter 'name' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4514,31): error TS7006: Parameter 'color' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4514,38): error TS7006: Parameter 'desc' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4523,17): error TS7006: Parameter 'num' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4523,22): error TS7006: Parameter 'title' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4523,29): error TS7006: Parameter 'desc' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4532,17): error TS7006: Parameter 'text' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(4538,16): error TS7006: Parameter 'text' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5382,23): error TS2349: This expression is not callable.
+  Type '{ background: string; borderRadius: number; border: string; padding: string; marginBottom: number; }' has no call signatures.
+src/components/BudgetDashboard.tsx(5383,25): error TS2304: Cannot find name 'h2s'.
+src/components/BudgetDashboard.tsx(5384,23): error TS2304: Cannot find name 'ps'.
+src/components/BudgetDashboard.tsx(5386,24): error TS2304: Cannot find name 'h3s'.
+src/components/BudgetDashboard.tsx(5387,14): error TS2304: Cannot find name 'table'.
+src/components/BudgetDashboard.tsx(5397,24): error TS2304: Cannot find name 'h3s'.
+src/components/BudgetDashboard.tsx(5398,14): error TS2304: Cannot find name 'table'.
+src/components/BudgetDashboard.tsx(5408,24): error TS2304: Cannot find name 'h3s'.
+src/components/BudgetDashboard.tsx(5409,14): error TS2304: Cannot find name 'formula'.
+src/components/BudgetDashboard.tsx(5411,24): error TS2304: Cannot find name 'h3s'.
+src/components/BudgetDashboard.tsx(5412,23): error TS2304: Cannot find name 'ps'.
+src/components/BudgetDashboard.tsx(5414,14): error TS2304: Cannot find name 'infoBox'.
+src/components/BudgetDashboard.tsx(5744,33): error TS7031: Binding element 'items' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5746,37): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5748,54): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5750,49): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5750,51): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5751,48): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5751,75): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5751,77): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5752,49): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5752,76): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5752,78): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5754,35): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5755,33): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5756,33): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5757,33): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5758,42): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5758,78): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5758,80): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5759,41): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5759,76): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5759,78): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5762,31): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5769,38): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5770,67): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5770,98): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5770,100): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5770,169): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5770,216): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5770,218): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5773,71): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5773,118): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5773,120): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5773,190): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5773,221): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5773,223): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5776,16): error TS7006: Parameter 'icon' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5776,21): error TS7006: Parameter 'label' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5776,27): error TS7006: Parameter 'val' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5776,31): error TS7006: Parameter 'sub' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5792,17): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/BudgetDashboard.tsx(5794,31): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/BudgetDashboard.tsx(5794,39): error TS2322: Type 'unknown' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/BudgetDashboard.tsx(5794,49): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(5818,20): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/BudgetDashboard.tsx(5820,72): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(5837,26): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5837,31): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5858,20): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/BudgetDashboard.tsx(5860,78): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(5871,114): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5886,36): error TS7031: Binding element 'items' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5888,41): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5889,37): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5889,39): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5892,29): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5893,42): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5893,44): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5894,41): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5894,68): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5894,70): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5895,42): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5895,69): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5895,71): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5897,37): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5898,36): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5915,18): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/BudgetDashboard.tsx(5916,86): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(5934,21): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/BudgetDashboard.tsx(5935,87): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(5962,26): error TS7031: Binding element 'items' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5964,34): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5965,52): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5965,54): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5967,18): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ Monthly: number; Quarterly: number; "Half Yearly": number; Annual: number; }'.
+src/components/BudgetDashboard.tsx(5973,21): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5973,74): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(5973,85): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(5973,100): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/BudgetDashboard.tsx(5974,57): error TS18046: 'arr' is of type 'unknown'.
+src/components/BudgetDashboard.tsx(5977,42): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5978,60): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5978,118): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5978,149): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5978,151): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(5996,94): error TS18046: 'arr' is of type 'unknown'.
+src/components/BudgetDashboard.tsx(5998,18): error TS18046: 'arr' is of type 'unknown'.
+src/components/BudgetDashboard.tsx(5998,26): error TS7006: Parameter 'it' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6010,18): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/BudgetDashboard.tsx(6011,62): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(6018,28): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6018,30): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6018,92): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6018,97): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6037,27): error TS7031: Binding element 'items' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6037,34): error TS7031: Binding element 'fyOptions' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6040,49): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6052,31): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6058,11): error TS7034: Variable 'results' implicitly has type 'any[]' in some locations where its type cannot be determined.
+src/components/BudgetDashboard.tsx(6060,20): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6117,12): error TS7005: Variable 'results' implicitly has an 'any[]' type.
+src/components/BudgetDashboard.tsx(6122,22): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ HIGH: number; MEDIUM: number; LOW: number; }'.
+src/components/BudgetDashboard.tsx(6122,68): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ HIGH: number; MEDIUM: number; LOW: number; }'.
+src/components/BudgetDashboard.tsx(6163,23): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/BudgetDashboard.tsx(6163,31): error TS2322: Type 'unknown' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/BudgetDashboard.tsx(6163,41): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(6173,47): error TS2345: Argument of type 'string | number' is not assignable to parameter of type 'SetStateAction<string>'.
+  Type 'number' is not assignable to type 'SetStateAction<string>'.
+src/components/BudgetDashboard.tsx(6179,21): error TS2322: Type 'string | number' is not assignable to type 'Color | undefined'.
+  Type 'number' is not assignable to type 'Color | undefined'.
+src/components/BudgetDashboard.tsx(6273,41): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ HIGH: string; MEDIUM: string; LOW: string; }'.
+src/components/BudgetDashboard.tsx(6274,33): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ HIGH: string; MEDIUM: string; LOW: string; }'.
+src/components/BudgetDashboard.tsx(6365,22): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6369,17): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6369,65): error TS2538: Type 'unknown' cannot be used as an index type.
+src/components/BudgetDashboard.tsx(6376,17): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6376,65): error TS2538: Type 'unknown' cannot be used as an index type.
+src/components/BudgetDashboard.tsx(6635,26): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6674,26): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6699,24): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6725,24): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6768,25): error TS7031: Binding element 'auditLog' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6768,35): error TS7031: Binding element 'onExport' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6772,44): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6773,36): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6790,37): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/BudgetDashboard.tsx(6790,45): error TS2322: Type 'unknown' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/BudgetDashboard.tsx(6790,55): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(6793,55): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6810,32): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6810,34): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(6814,85): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ "Item Added": string; "Item Edited": string; "Item Deleted": string; "Actual Updated": string; "Period Locked": string; "Period Unlocked": string; "Bulk Import": string; "Item Moved": string; "Reconciliation Approved": string; "Reconciliation Rejected": string; "Reconciliation Cleared": string; "Reconciliation Sig...'.
+src/components/BudgetDashboard.tsx(6814,129): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ "Item Added": string; "Item Edited": string; "Item Deleted": string; "Actual Updated": string; "Period Locked": string; "Period Unlocked": string; "Bulk Import": string; "Item Moved": string; "Reconciliation Approved": string; "Reconciliation Rejected": string; "Reconciliation Cleared": string; "Reconciliation Sig...'.
+src/components/BudgetDashboard.tsx(7226,33): error TS7031: Binding element 'items' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7229,37): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7229,39): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7230,44): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7232,29): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7233,36): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7233,38): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7234,45): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7234,47): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7236,62): error TS2538: Type 'unknown' cannot be used as an index type.
+src/components/BudgetDashboard.tsx(7259,19): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/BudgetDashboard.tsx(7260,85): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(7283,29): error TS7031: Binding element 'items' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7283,36): error TS7031: Binding element 'fyOptions' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7293,48): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7294,38): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7296,30): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7297,42): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7297,44): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7298,41): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7298,68): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7298,70): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7299,42): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7299,69): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7299,71): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7321,16): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/BudgetDashboard.tsx(7324,80): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/BudgetDashboard.tsx(7334,103): error TS2322: Type 'string | number' is not assignable to type 'Color | undefined'.
+  Type 'number' is not assignable to type 'Color | undefined'.
+src/components/BudgetDashboard.tsx(7380,18): error TS7006: Parameter 'txt' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7381,20): error TS7006: Parameter 'txt' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7381,25): error TS7006: Parameter 'desc' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7387,17): error TS7006: Parameter 'txt' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7390,20): error TS7006: Parameter 'icon' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7390,26): error TS7006: Parameter 'title' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7390,33): error TS7006: Parameter 'text' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7399,18): error TS7006: Parameter 'headers' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7399,27): error TS7006: Parameter 'rows' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7403,29): error TS7006: Parameter 'h' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7403,31): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7406,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7406,26): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7408,25): error TS7006: Parameter 'cell' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7408,30): error TS7006: Parameter 'j' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7415,17): error TS7006: Parameter 'num' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7415,22): error TS7006: Parameter 'title' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7415,29): error TS7006: Parameter 'desc' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(7604,14): error TS2554: Expected 2 arguments, but got 1.
+src/components/BudgetDashboard.tsx(7607,190): error TS2554: Expected 3-4 arguments, but got 5.
+src/components/BudgetDashboard.tsx(7612,266): error TS2554: Expected 3-4 arguments, but got 5.
+src/components/BudgetDashboard.tsx(7633,280): error TS2554: Expected 3-4 arguments, but got 5.
+src/components/BudgetDashboard.tsx(7687,215): error TS2554: Expected 3-4 arguments, but got 5.
+src/components/BudgetDashboard.tsx(7730,207): error TS2554: Expected 3-4 arguments, but got 5.
+src/components/BudgetDashboard.tsx(7785,242): error TS2554: Expected 3-4 arguments, but got 5.
+src/components/BudgetDashboard.tsx(7809,236): error TS2554: Expected 3-4 arguments, but got 5.
+src/components/BudgetDashboard.tsx(7897,291): error TS2554: Expected 3-4 arguments, but got 5.
+src/components/BudgetDashboard.tsx(7918,332): error TS2554: Expected 3-4 arguments, but got 5.
+src/components/BudgetDashboard.tsx(7942,194): error TS2554: Expected 3-4 arguments, but got 5.
+src/components/BudgetDashboard.tsx(7944,323): error TS2554: Expected 3-4 arguments, but got 5.
+src/components/BudgetDashboard.tsx(7985,304): error TS2554: Expected 3-4 arguments, but got 5.
+src/components/BudgetDashboard.tsx(8067,28): error TS7031: Binding element 'visible' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8067,53): error TS7031: Binding element 'onClick' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8401,46): error TS7006: Parameter 'field' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8401,53): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8402,22): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8415,38): error TS7006: Parameter 'action' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8415,46): error TS7006: Parameter 'details' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8416,16): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8423,33): error TS7006: Parameter 'fy' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8469,40): error TS7006: Parameter 'filters' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8513,12): error TS2304: Cannot find name 'setFilterPayingBU'.
+src/components/BudgetDashboard.tsx(8514,3): error TS2304: Cannot find name 'setFilterPayingBU'.
+src/components/BudgetDashboard.tsx(8535,39): error TS7006: Parameter 'tabId' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8639,40): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8682,33): error TS2345: Argument of type '"moveHalf"' is not assignable to parameter of type 'SetStateAction<null>'.
+src/components/BudgetDashboard.tsx(8752,43): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8775,48): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8792,47): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8809,51): error TS7006: Parameter 'ids' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8826,48): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8831,22): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8834,39): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8834,42): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(8899,64): error TS2339: Property 'click' does not exist on type 'never'.
+src/components/BudgetDashboard.tsx(8916,54): error TS18047: 'ev.target' is possibly 'null'.
+src/components/BudgetDashboard.tsx(8916,54): error TS2345: Argument of type 'string | ArrayBuffer | null' is not assignable to parameter of type 'SetStateAction<string>'.
+  Type 'null' is not assignable to type 'SetStateAction<string>'.
+src/components/BudgetDashboard.tsx(8953,47): error TS2345: Argument of type '"import"' is not assignable to parameter of type 'SetStateAction<null>'.
+src/components/BudgetDashboard.tsx(8968,70): error TS2353: Object literal may only specify known properties, and '_new' does not exist in type '(prevState: null) => null'.
+src/components/BudgetDashboard.tsx(8968,93): error TS2345: Argument of type '"add"' is not assignable to parameter of type 'SetStateAction<null>'.
+src/components/BudgetDashboard.tsx(9025,41): error TS2339: Property 'charAt' does not exist on type 'never'.
+src/components/BudgetDashboard.tsx(9025,80): error TS2339: Property 'slice' does not exist on type 'never'.
+src/components/BudgetDashboard.tsx(9083,16): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(9083,55): error TS2345: Argument of type '"edit"' is not assignable to parameter of type 'SetStateAction<null>'.
+src/components/BudgetDashboard.tsx(9084,24): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(9084,63): error TS2345: Argument of type '"actual"' is not assignable to parameter of type 'SetStateAction<null>'.
+src/components/BudgetDashboard.tsx(9217,21): error TS7006: Parameter 'newItems' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(9244,25): error TS2741: Property 'onExport' is missing in type '{ auditLog: any; }' but required in type '{ auditLog: any; onExport: any; }'.
+src/components/BudgetDashboard.tsx(9312,22): error TS7006: Parameter 'newItems' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(9327,43): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(9337,45): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(9337,51): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(9354,20): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(9406,29): error TS7006: Parameter 'newPlanMonth' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(9406,43): error TS7006: Parameter 'newFY' implicitly has an 'any' type.
+src/components/BudgetDashboard.tsx(9410,45): error TS2339: Property 'id' does not exist on type 'never'.
+src/components/BudgetDashboard.tsx(9410,52): error TS2698: Spread types may only be created from object types.
+src/components/BudgetDashboard.tsx(9413,23): error TS2698: Spread types may only be created from object types.
+src/components/BudgetDashboard.tsx(9421,51): error TS2339: Property 'outsideBudget' does not exist on type 'never'.
+src/components/BudgetDashboard.tsx(9422,62): error TS2339: Property 'billingFreq' does not exist on type 'never'.
+src/components/PnlView.tsx(25,25): error TS7006: Parameter 'pm' implicitly has an 'any' type.
+src/components/PnlView.tsx(34,16): error TS7006: Parameter 'planMonth' implicitly has an 'any' type.
+src/components/PnlView.tsx(47,24): error TS7006: Parameter 'billingFreq' implicitly has an 'any' type.
+src/components/PnlView.tsx(48,10): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ Monthly: number; Quarterly: number; "Half Yearly": number; Annual: number; "One Time Cost": number; }'.
+src/components/PnlView.tsx(51,24): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/PnlView.tsx(65,5): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/components/PnlView.tsx(65,20): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/components/PnlView.tsx(72,26): error TS7031: Binding element 'monthlyChartData' implicitly has an 'any' type.
+src/components/PnlView.tsx(104,124): error TS18048: 'v' is possibly 'undefined'.
+src/components/PnlView.tsx(114,23): error TS7006: Parameter 'itemsWithPnL' implicitly has an 'any' type.
+src/components/PnlView.tsx(114,37): error TS7006: Parameter 'showMonths' implicitly has an 'any' type.
+src/components/PnlView.tsx(114,49): error TS7006: Parameter 'colTotals' implicitly has an 'any' type.
+src/components/PnlView.tsx(114,60): error TS7006: Parameter 'filename' implicitly has an 'any' type.
+src/components/PnlView.tsx(115,15): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/components/PnlView.tsx(126,37): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/PnlView.tsx(127,33): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/components/PnlView.tsx(127,77): error TS18046: 's' is of type 'unknown'.
+src/components/PnlView.tsx(127,79): error TS18046: 'v' is of type 'unknown'.
+src/components/PnlView.tsx(139,38): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/components/PnlView.tsx(146,61): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/PnlView.tsx(146,63): error TS7006: Parameter 'it' implicitly has an 'any' type.
+src/components/PnlView.tsx(147,60): error TS7006: Parameter 'it' implicitly has an 'any' type.
+src/components/PnlView.tsx(147,102): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/PnlView.tsx(147,104): error TS7006: Parameter 'it' implicitly has an 'any' type.
+src/components/PnlView.tsx(148,40): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/components/PnlView.tsx(148,79): error TS18046: 's' is of type 'unknown'.
+src/components/PnlView.tsx(148,81): error TS18046: 'v' is of type 'unknown'.
+src/components/PnlView.tsx(151,38): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/components/PnlView.tsx(152,40): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/components/PnlView.tsx(152,79): error TS18046: 's' is of type 'unknown'.
+src/components/PnlView.tsx(152,81): error TS18046: 'v' is of type 'unknown'.
+src/components/PnlView.tsx(169,20): error TS7031: Binding element 'items' implicitly has an 'any' type.
+src/components/PnlView.tsx(169,27): error TS7031: Binding element 'fyOptions' implicitly has an 'any' type.
+src/components/PnlView.tsx(177,55): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/PnlView.tsx(178,55): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/PnlView.tsx(193,13): error TS7022: 'url' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/components/PnlView.tsx(197,13): error TS7022: 'res' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/components/PnlView.tsx(202,13): error TS7022: 'data' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/components/PnlView.tsx(228,21): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/components/PnlView.tsx(234,21): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/components/PnlView.tsx(251,31): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/PnlView.tsx(263,22): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/PnlView.tsx(264,7): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/PnlView.tsx(271,22): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/PnlView.tsx(272,19): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/PnlView.tsx(276,24): error TS18046: 'a' is of type 'unknown'.
+src/components/PnlView.tsx(276,55): error TS18046: 'b' is of type 'unknown'.
+src/components/PnlView.tsx(283,25): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/PnlView.tsx(288,12): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/PnlView.tsx(295,38): error TS2538: Type 'unknown' cannot be used as an index type.
+src/components/PnlView.tsx(295,64): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/PnlView.tsx(295,67): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/PnlView.tsx(295,90): error TS2538: Type 'unknown' cannot be used as an index type.
+src/components/PnlView.tsx(300,40): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/PnlView.tsx(300,42): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/PnlView.tsx(301,39): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/PnlView.tsx(301,86): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/PnlView.tsx(301,88): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/PnlView.tsx(302,64): error TS18046: 's' is of type 'unknown'.
+src/components/PnlView.tsx(302,66): error TS18046: 'v' is of type 'unknown'.
+src/components/PnlView.tsx(303,43): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/PnlView.tsx(304,43): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/PnlView.tsx(311,24): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/PnlView.tsx(312,20): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/PnlView.tsx(316,24): error TS2538: Type 'unknown' cannot be used as an index type.
+src/components/PnlView.tsx(326,26): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/PnlView.tsx(328,12): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/PnlView.tsx(328,20): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/PnlView.tsx(329,62): error TS18046: 's' is of type 'unknown'.
+src/components/PnlView.tsx(329,64): error TS18046: 'v' is of type 'unknown'.
+src/components/PnlView.tsx(330,7): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/PnlView.tsx(332,43): error TS18046: 'b' is of type 'unknown'.
+src/components/PnlView.tsx(332,51): error TS18046: 'a' is of type 'unknown'.
+src/components/PnlView.tsx(332,80): error TS2698: Spread types may only be created from object types.
+src/components/PnlView.tsx(332,102): error TS18046: 'd' is of type 'unknown'.
+src/components/PnlView.tsx(338,26): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/PnlView.tsx(340,12): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/PnlView.tsx(340,20): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/PnlView.tsx(341,62): error TS18046: 's' is of type 'unknown'.
+src/components/PnlView.tsx(341,64): error TS18046: 'v' is of type 'unknown'.
+src/components/PnlView.tsx(342,23): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/PnlView.tsx(343,12): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/components/PnlView.tsx(345,40): error TS2698: Spread types may only be created from object types.
+src/components/PnlView.tsx(345,63): error TS18046: 'd' is of type 'unknown'.
+src/components/PnlView.tsx(345,91): error TS18046: 'd' is of type 'unknown'.
+src/components/PnlView.tsx(367,18): error TS2322: Type '{ position: string; top: string; left: number; zIndex: number; background: string; border: string; borderRadius: number; padding: number; minWidth: number; maxHeight: number; overflowY: string; boxShadow: string; }' is not assignable to type 'Properties<string | number, string & {}>'.
+  Types of property 'overflowY' are incompatible.
+    Type 'string' is not assignable to type 'OverflowY | undefined'.
+src/components/PnlView.tsx(369,97): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/components/PnlView.tsx(371,24): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/PnlView.tsx(373,21): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/PnlView.tsx(388,18): error TS2322: Type '{ position: string; top: string; left: number; zIndex: number; background: string; border: string; borderRadius: number; padding: number; minWidth: number; maxHeight: number; overflowY: string; boxShadow: string; }' is not assignable to type 'Properties<string | number, string & {}>'.
+  Types of property 'overflowY' are incompatible.
+    Type 'string' is not assignable to type 'OverflowY | undefined'.
+src/components/PnlView.tsx(406,35): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/PnlView.tsx(406,43): error TS2322: Type 'unknown' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/PnlView.tsx(406,53): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/PnlView.tsx(472,128): error TS18048: 'v' is possibly 'undefined'.
+src/components/PnlView.tsx(529,42): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/PnlView.tsx(529,166): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/PnlView.tsx(533,34): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/PnlView.tsx(533,40): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/components/PnlView.tsx(534,78): error TS18046: 's' is of type 'unknown'.
+src/components/PnlView.tsx(534,80): error TS18046: 'v' is of type 'unknown'.
+src/components/PnlView.tsx(539,145): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/components/PnlView.tsx(546,27): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/PnlView.tsx(546,104): error TS2538: Type 'unknown' cannot be used as an index type.
+src/components/PnlView.tsx(547,41): error TS2538: Type 'unknown' cannot be used as an index type.
+src/components/PnlView.tsx(547,72): error TS2538: Type 'unknown' cannot be used as an index type.
+src/components/PnlView.tsx(555,116): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+src/components/PnlView.tsx(555,155): error TS18046: 's' is of type 'unknown'.
+src/components/PnlView.tsx(555,157): error TS18046: 'v' is of type 'unknown'.
+src/components/PnlView.tsx(558,23): error TS2322: Type 'unknown' is not assignable to type 'Key | null | undefined'.
+src/components/PnlView.tsx(559,43): error TS2538: Type 'unknown' cannot be used as an index type.
+src/components/Reports.tsx(298,39): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/Reports.tsx(298,42): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/components/Reports.tsx(299,39): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/Reports.tsx(299,42): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/components/Reports.tsx(301,38): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/components/Reports.tsx(301,41): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/components/Reports.tsx(563,27): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/components/Reports.tsx(563,32): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/TrendAnalysisPage.tsx(756,21): error TS2322: Type '(value: any, name: string) => [string, string]' is not assignable to type 'Formatter<ValueType, NameType> & ((value: ValueType, name: NameType, item: TooltipPayloadEntry, index: number, payload: TooltipPayload) => ReactNode | [...])'.
+  Type '(value: any, name: string) => [string, string]' is not assignable to type 'Formatter<ValueType, NameType>'.
+    Types of parameters 'name' and 'name' are incompatible.
+      Type 'NameType | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.

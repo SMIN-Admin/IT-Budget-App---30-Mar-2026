@@ -1,0 +1,23 @@
+
+> it-budget-app@0.1.0 build
+> next build
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.9s
+  Running TypeScript ...
+Failed to compile.
+
+./src/components/BudgetDashboard.tsx:124:21
+Type error: Parameter 'rate' implicitly has an 'any' type.
+
+[0m [90m 122 |[39m }
+ [90m 123 |[39m
+[31m[1m>[22m[39m[90m 124 |[39m [36mfunction[39m calcBudget(rate[33m,[39m qty[33m,[39m currency[33m,[39m rates) {
+ [90m     |[39m                     [31m[1m^[22m[39m
+ [90m 125 |[39m   [36mconst[39m r [33m=[39m rates [33m||[39m [33mDEFAULT_CONVERSION_RATES[39m[33m;[39m
+ [90m 126 |[39m   [36mconst[39m total [33m=[39m (parseFloat(rate) [33m||[39m [35m0[39m) [33m*[39m (parseFloat(qty) [33m||[39m [35m0[39m)[33m;[39m
+ [90m 127 |[39m   [36mconst[39m rate2sgd [33m=[39m r[currency] [33m||[39m [35m1[39m[33m;[39m[0m
+Next.js build worker exited with code: 1 and signal: null
