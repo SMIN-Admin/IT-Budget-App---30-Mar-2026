@@ -3,6 +3,14 @@ import { adminAuth, adminDb } from "../../../../src/lib/firebase-admin";
 
 const ALLOWED_DOMAIN = "spacematrix.com";
 
+export async function GET() {
+  try {
+    return NextResponse.json({ ok: true, message: "Session route live" });
+  } catch {
+    return NextResponse.json({ error: "Session check failed" }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { idToken } = await req.json();
@@ -14,13 +22,6 @@ export async function POST(req: NextRequest) {
     const decoded = await adminAuth.verifyIdToken(idToken);
     const email = String(decoded.email || "").trim().toLowerCase();
 
-    if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
-      return NextResponse.json(
-        { error: "Only @spacematrix.com users are allowed" },
-        { status: 403 }
-      );
-    }
-
     if (!email) {
       return NextResponse.json(
         { error: "Invalid email from Google" },
@@ -28,17 +29,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. First try new email-based user document
+    if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+      return NextResponse.json(
+        { error: "Only @spacematrix.com users are allowed" },
+        { status: 403 }
+      );
+    }
+
     let userRef = adminDb.collection("users").doc(email);
     let userSnap = await userRef.get();
 
-    // 2. Fallback to old UID-based user document
     if (!userSnap.exists) {
       userRef = adminDb.collection("users").doc(decoded.uid);
       userSnap = await userRef.get();
     }
 
-    // 3. Final fallback: query by email field
     if (!userSnap.exists) {
       const querySnap = await adminDb
         .collection("users")
@@ -89,7 +94,7 @@ export async function POST(req: NextRequest) {
 
     response.cookies.set("session", sessionCookie, {
       httpOnly: true,
-      secure: false,
+      secure: true,
       sameSite: "lax",
       path: "/",
       maxAge: expiresIn / 1000,
