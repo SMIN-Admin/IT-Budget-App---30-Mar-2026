@@ -9,7 +9,7 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, googleProvider);
       const idToken = await result.user.getIdToken();
 
-      const res = await fetch("/api/auth/firebase-session", {
+      const res = await fetch("/api/firebase-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
