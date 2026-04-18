@@ -484,13 +484,13 @@ export default function HeadcountTrendPage({
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 14 }}>
-        {card("Headcount", totalHeadcount, "#5EEAD4")}
-        {card("Budget", formatCurrency(totalBudget), "#7C8CFF")}
-        {card("Actual", formatCurrency(totalActual), "#10B981")}
-        {card("Variance", formatCurrency(totalVariance), totalVariance >= 0 ? "#F59E0B" : "#EF4444")}
-        {card("HC Growth %", `${headcountGrowth}%`, "#60A5FA")}
-        {card("Budget Growth %", `${budgetGrowth}%`, "#A78BFA")}
-        {card("Actual Growth %", `${actualGrowth}%`, "#34D399")}
+        {card("Headcount", totalHeadcount, "#FFA500")}
+{card("Budget", formatCurrency(totalBudget), "#3B82F6")}
+{card("Actual", formatCurrency(totalActual), "#16A34A")}
+{card("Variance", formatCurrency(totalVariance), totalVariance >= 0 ? "#F59E0B" : "#EF4444")}
+{card("HC Growth %", `${headcountGrowth}%`, "#FFA500")}
+{card("Budget Growth %", `${budgetGrowth}%`, "#3B82F6")}
+{card("Actual Growth %", `${actualGrowth}%`, "#16A34A")}
       </div>
 
       <div
