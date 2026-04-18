@@ -534,8 +534,8 @@ export default function HeadcountTrendPage({
                   yAxisId="right"
                   type="monotone"
                   dataKey="budget"
-                  fill="#5EEAD433"
-                  stroke="#5EEAD4"
+                  fill="#3B82F633"
+                  stroke="#2563EB"
                   strokeWidth={2}
                   name="Budget"
                   dot={(props) => <StarDot {...props} onPointSelect={handlePointSelect} />}
@@ -547,7 +547,7 @@ export default function HeadcountTrendPage({
                   yAxisId="right"
                   type="monotone"
                   dataKey="actual"
-                  stroke="#10B981"
+                  stroke="#16A34A"
                   strokeWidth={3}
                   name="Actual"
                   dot={(props) => <StarDot {...props} onPointSelect={handlePointSelect} />}
@@ -559,7 +559,7 @@ export default function HeadcountTrendPage({
                   yAxisId="left"
                   type="monotone"
                   dataKey="headcount"
-                  stroke="#F59E0B"
+                  stroke="#FFA500"
                   strokeWidth={3}
                   name="Headcount"
                   dot={(props) => <StarDot {...props} onPointSelect={handlePointSelect} />}
