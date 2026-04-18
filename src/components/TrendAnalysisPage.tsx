@@ -811,31 +811,31 @@ export default function TrendAnalysisPage({
                   <Legend wrapperStyle={{ fontSize: 12, color: "#9fb3c8" }} />
 
                   <Area
-                    type="monotone"
-                    dataKey="budget"
-                    fill={viewType === "category" ? "#F59E0B33" : "#5EEAD433"}
-                    stroke={viewType === "category" ? "#F59E0B" : "#5EEAD4"}
-                    strokeWidth={2}
-                    name={viewType === "pnl" ? "P&L Budget" : viewType === "category" ? "Category Budget" : "Budget"}
-                    dot={(props) => (
-                      <StarDot
-                        {...props}
-                        onPointSelect={(payload: TrendPoint) => handlePointSelect(payload)}
-                      />
-                    )}
-                    activeDot={(props: any) => (
-                      <StarDot
-                        {...props}
-                        onPointSelect={(payload: TrendPoint) => handlePointSelect(payload)}
-                      />
-                    )}
-                    isAnimationActive={false}
-                  />
+  type="monotone"
+  dataKey="budget"
+  fill="#3B82F633"
+  stroke="#2563EB"
+  strokeWidth={2}
+  name={viewType === "pnl" ? "P&L Budget" : viewType === "category" ? "Category Budget" : "Budget"}
+  dot={(props) => (
+    <StarDot
+      {...props}
+      onPointSelect={(payload: TrendPoint) => handlePointSelect(payload)}
+    />
+  )}
+  activeDot={(props: any) => (
+    <StarDot
+      {...props}
+      onPointSelect={(payload: TrendPoint) => handlePointSelect(payload)}
+    />
+  )}
+  isAnimationActive={false}
+/>
 
                   <Line
                     type="monotone"
                     dataKey="actual"
-                    stroke="#10b981"
+                    stroke="#16A34A"
                     strokeWidth={3}
                     dot={(props) => (
                       <StarDot
