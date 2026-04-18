@@ -30,7 +30,7 @@ type BudgetItem = {
 };
 
 type TrendPoint = {
-  month: string;
+  period: string;
   label: string;
   budget: number;
   actual: number;
@@ -50,6 +50,40 @@ function toNumber(value: unknown) {
 
 function formatCurrency(value: number) {
   return `S$${Math.round(value).toLocaleString()}`;
+}
+
+function getFYHalfFromPlanMonth(planMonth: string) {
+  if (!planMonth) return "";
+
+  const [mon, yy] = planMonth.split("-");
+  const monthMap: Record<string, number> = {
+    Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
+    Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12,
+  };
+
+  const monthNum = monthMap[mon];
+  const year2 = Number(yy);
+  const fullYear = year2 >= 0 && year2 <= 99 ? 2000 + year2 : year2;
+
+  if (!monthNum || !fullYear) return planMonth;
+
+  const fy = monthNum >= 4 ? fullYear + 1 : fullYear;
+  const half = monthNum >= 4 && monthNum <= 9 ? "H1" : "H2";
+
+  return `FY${fy}-${half}`;
+}
+
+function sortFYHalf(a: string, b: string) {
+  const ma = a.match(/^FY(\d+)-H([12])$/);
+  const mb = b.match(/^FY(\d+)-H([12])$/);
+
+  if (!ma || !mb) return a.localeCompare(b);
+
+  const fyA = Number(ma[1]);
+  const fyB = Number(mb[1]);
+  if (fyA !== fyB) return fyA - fyB;
+
+  return Number(ma[2]) - Number(mb[2]);
 }
 
 function formatShortCurrency(value: number) {
@@ -411,29 +445,29 @@ export default function TrendAnalysisPage({
   }, [rawItems, selectedFYs, selectedCategories, selectedBUs, selectedPayingBUs]);
 
   const chartTrend = useMemo<TrendPoint[]>(() => {
-    const monthMap: Record<string, TrendPoint> = {};
+  const periodMap: Record<string, TrendPoint> = {};
 
-    filteredItems.forEach((item) => {
-      const month = getPlanMonthKey(item);
-      if (month === "Unknown") return;
+  filteredItems.forEach((item) => {
+    const period = getFYHalfFromPlanMonth(getPlanMonthKey(item));
+    if (!period || period === "Unknown") return;
 
-      if (!monthMap[month]) {
-        monthMap[month] = {
-          month,
-          label: formatMonthLabel(month),
-          budget: 0,
-          actual: 0,
-          count: 0,
-        };
-      }
+    if (!periodMap[period]) {
+      periodMap[period] = {
+        period,
+        label: period,
+        budget: 0,
+        actual: 0,
+        count: 0,
+      };
+    }
 
-      monthMap[month].budget += toNumber(item.budget);
-      monthMap[month].actual += toNumber(item.actual);
-      monthMap[month].count += 1;
-    });
+    periodMap[period].budget += toNumber(item.budget);
+    periodMap[period].actual += toNumber(item.actual);
+    periodMap[period].count += 1;
+  });
 
-    return Object.values(monthMap).sort((a, b) => a.month.localeCompare(b.month));
-  }, [filteredItems]);
+  return Object.values(periodMap).sort((a, b) => sortFYHalf(a.period, b.period));
+}, [filteredItems]);
 
   const totalBudget = useMemo(() => filteredItems.reduce((sum, item) => sum + toNumber(item.budget), 0), [filteredItems]);
   const totalActual = useMemo(() => filteredItems.reduce((sum, item) => sum + toNumber(item.actual), 0), [filteredItems]);
@@ -446,9 +480,9 @@ export default function TrendAnalysisPage({
   const categoryCount = getUniqueSorted(filteredItems.map((i) => i.itemCategory)).length;
 
   const detailRows = useMemo(() => {
-    if (!selectedTrendPoint?.month) return [];
+    if (!selectedTrendPoint?.period) return [];
     return filteredItems
-      .filter((item) => getPlanMonthKey(item) === selectedTrendPoint.month)
+      .filter((item) => getFYHalfFromPlanMonth(getPlanMonthKey(item)) === selectedTrendPoint.period)
       .sort((a, b) => String(a.description || "").localeCompare(String(b.description || "")));
   }, [filteredItems, selectedTrendPoint]);
 
