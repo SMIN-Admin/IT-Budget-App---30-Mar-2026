@@ -55,6 +55,25 @@ function formatCurrency(value: number) {
 function getFYHalfFromPlanMonth(planMonth: string) {
   if (!planMonth) return "";
 
+  // supports both:
+  // 1) YYYY-MM  -> 2024-04
+  // 2) Mon-YY   -> Apr-24
+
+  // case 1: YYYY-MM
+  const isoMatch = planMonth.match(/^(\d{4})-(\d{2})$/);
+  if (isoMatch) {
+    const year = Number(isoMatch[1]);
+    const monthNum = Number(isoMatch[2]);
+
+    if (!year || !monthNum) return planMonth;
+
+    const fy = monthNum >= 4 ? year + 1 : year;
+    const half = monthNum >= 4 && monthNum <= 9 ? "H1" : "H2";
+
+    return `FY${fy}-${half}`;
+  }
+
+  // case 2: Mon-YY
   const [mon, yy] = planMonth.split("-");
   const monthMap: Record<string, number> = {
     Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
