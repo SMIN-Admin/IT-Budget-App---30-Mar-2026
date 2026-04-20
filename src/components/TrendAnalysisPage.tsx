@@ -116,26 +116,28 @@ function getUniqueSorted(values: Array<string | undefined | null>) {
   return [...new Set(values.filter(Boolean).map((v) => String(v).trim()))].sort();
 }
 
-function normalizeFYValue(fy: string) {
-  const val = String(fy || "").trim();
-  if (!val) return "Unknown";
-
-  const direct = val.match(/^FY(\d+)-H([12])$/i);
-  if (direct) return `FY${direct[1]}-H${direct[2]}`;
-
-  const noPrefix = val.match(/^(\d+)-H([12])$/i);
-  if (noPrefix) return `FY${noPrefix[1]}-H${noPrefix[2]}`;
-
-  return val;
-}
-
 function deriveFY(item: BudgetItem) {
-  if (item.fy && String(item.fy).trim()) return normalizeFYValue(String(item.fy));
+  if (item.fy && String(item.fy).trim()) return String(item.fy).trim();
 
   const pm = String(item.planMonth || "").trim();
   if (!pm) return "Unknown";
 
-  return getFYHalfFromPlanMonth(pm) || "Unknown";
+  const match = pm.match(/^([A-Za-z]{3})-(\d{2,4})$/);
+  if (!match) return "Unknown";
+
+  const monthMap: Record<string, number> = {
+    Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
+    Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12,
+  };
+
+  const month = monthMap[match[1]] || 0;
+  let year = Number(match[2]);
+  if (year < 100) year += 2000;
+  if (!month || !year) return "Unknown";
+
+  const half = month >= 4 && month <= 9 ? "H1" : "H2";
+  const fyYear = month >= 1 && month <= 3 ? year - 1 : year;
+  return `${fyYear}-${half}`;
 }
 
 function getPlanMonthKey(item: BudgetItem) {
@@ -369,7 +371,6 @@ export default function TrendAnalysisPage({
   const [selectedPayingBUs, setSelectedPayingBUs] = useState<string[]>(["all"]);
 
   const [selectedTrendPoint, setSelectedTrendPoint] = useState<TrendPoint | null>(null);
-
   const sourceItems = useMemo<BudgetItem[]>(() => (Array.isArray(items) ? items : []), [items]);
 
   useEffect(() => {
@@ -377,7 +378,6 @@ export default function TrendAnalysisPage({
   }, [viewType, selectedFYs.join("|"), selectedCategories.join("|"), selectedBUs.join("|"), selectedPayingBUs.join("|")]);
 
   const categoryOptions = useMemo(() => getUniqueSorted(sourceItems.map((i) => i.itemCategory)), [sourceItems]);
-
   const buOptions = useMemo(() => getUniqueSorted(sourceItems.map((i) => i.businessUnit)), [sourceItems]);
   const payingBUOptions = useMemo(() => getUniqueSorted(sourceItems.map((i) => i.payingBU)), [sourceItems]);
   const resolvedFyOptions = useMemo(() => {
@@ -457,7 +457,7 @@ export default function TrendAnalysisPage({
       map[fy].usedValue += effectiveValue(item);
     });
 
-    return Object.values(map).sort((a, b) => sortFYHalf(a.fy, b.fy));
+    return Object.values(map).sort((a, b) => a.fy.localeCompare(b.fy));
   }, [detailRows, filteredItems]);
 
   const handlePointSelect = (point: TrendPoint | null) => {
@@ -506,7 +506,7 @@ export default function TrendAnalysisPage({
           background: "linear-gradient(135deg,#0C1722,#0F1B2B)",
           borderRadius: 14,
           padding: "18px 20px",
-          border: "1px solid rgba(59,130,246,0.18)",
+          border: "1px solid rgba(94,234,212,0.18)",
         }}
       >
         <div
@@ -646,32 +646,32 @@ export default function TrendAnalysisPage({
               </div>
               <div style={{ ...cardStyle, border: "1px solid rgba(16,185,129,0.18)" }}>
                 <div style={labelStyle}>Total P&amp;L Actual</div>
-                <div style={{ ...valueStyleBase, color: "#16A34A" }}>{formatCurrency(totalPnlActual)}</div>
+                <div style={{ ...valueStyleBase, color: "#10b981" }}>{formatCurrency(totalPnlActual)}</div>
               </div>
-              <div style={{ ...cardStyle, border: "1px solid rgba(59,130,246,0.18)" }}>
+              <div style={{ ...cardStyle, border: "1px solid rgba(94,234,212,0.18)" }}>
                 <div style={labelStyle}>P&amp;L Utilisation</div>
-                <div style={{ ...valueStyleBase, color: "#3B82F6" }}>{pnlUtilPct}%</div>
+                <div style={{ ...valueStyleBase, color: "#5EEAD4" }}>{pnlUtilPct}%</div>
               </div>
               <div style={{ ...cardStyle, border: "1px solid rgba(245,158,11,0.18)" }}>
                 <div style={labelStyle}>Items w/ Actual</div>
-                <div style={{ ...valueStyleBase, color: "#F59E0B" }}>{pnlItemsWithActual} / {totalItems}</div>
+                <div style={{ ...valueStyleBase, color: "#f59e0b" }}>{pnlItemsWithActual} / {totalItems}</div>
               </div>
             </>
           ) : viewType === "category" ? (
             <>
               <div style={{ ...cardStyle, border: "1px solid rgba(245,158,11,0.18)" }}>
                 <div style={labelStyle}>Selected Categories</div>
-                <div style={{ color: "#F59E0B", fontSize: 24, fontWeight: 900 }}>
+                <div style={{ color: "#f59e0b", fontSize: 24, fontWeight: 900 }}>
                   {selectedCategories.includes("all") ? "All" : selectedCategories.length}
                 </div>
               </div>
-              <div style={{ ...cardStyle, border: "1px solid rgba(59,130,246,0.18)" }}>
+              <div style={{ ...cardStyle, border: "1px solid rgba(94,234,212,0.18)" }}>
                 <div style={labelStyle}>Category Budget</div>
-                <div style={{ ...valueStyleBase, color: "#3B82F6" }}>{formatCurrency(totalBudget)}</div>
+                <div style={{ ...valueStyleBase, color: "#5EEAD4" }}>{formatCurrency(totalBudget)}</div>
               </div>
               <div style={{ ...cardStyle, border: "1px solid rgba(16,185,129,0.18)" }}>
                 <div style={labelStyle}>Category Actual</div>
-                <div style={{ ...valueStyleBase, color: "#16A34A" }}>{formatCurrency(totalActual)}</div>
+                <div style={{ ...valueStyleBase, color: "#10b981" }}>{formatCurrency(totalActual)}</div>
               </div>
               <div style={{ ...cardStyle, border: "1px solid rgba(124,140,255,0.18)" }}>
                 <div style={labelStyle}>Categories in Scope</div>
@@ -680,13 +680,13 @@ export default function TrendAnalysisPage({
             </>
           ) : (
             <>
-              <div style={{ ...cardStyle, border: "1px solid rgba(59,130,246,0.18)" }}>
+              <div style={{ ...cardStyle, border: "1px solid rgba(94,234,212,0.18)" }}>
                 <div style={labelStyle}>Total Budget</div>
-                <div style={{ ...valueStyleBase, color: "#3B82F6" }}>{formatCurrency(totalBudget)}</div>
+                <div style={{ ...valueStyleBase, color: "#5EEAD4" }}>{formatCurrency(totalBudget)}</div>
               </div>
               <div style={{ ...cardStyle, border: "1px solid rgba(16,185,129,0.18)" }}>
                 <div style={labelStyle}>Total Actual</div>
-                <div style={{ ...valueStyleBase, color: "#16A34A" }}>{formatCurrency(totalActual)}</div>
+                <div style={{ ...valueStyleBase, color: "#10b981" }}>{formatCurrency(totalActual)}</div>
               </div>
               <div style={{ ...cardStyle, border: "1px solid rgba(245,158,11,0.18)" }}>
                 <div style={labelStyle}>Budget Variance</div>
@@ -715,7 +715,7 @@ export default function TrendAnalysisPage({
           </div>
 
           <div style={{ color: "#88A0B8", fontSize: 12, marginBottom: 14 }}>
-            Click any star to inspect that FY/Half. Stars remain stars even on hover.
+            Click any star to inspect that month. Stars remain stars even on hover.
           </div>
 
           {chartTrend.length === 0 ? (
@@ -796,7 +796,7 @@ export default function TrendAnalysisPage({
           style={{
             marginTop: 18,
             background: "linear-gradient(145deg,#0B1624,#0A1320)",
-            border: "1px solid rgba(59,130,246,0.14)",
+            border: "1px solid rgba(94,234,212,0.14)",
             borderRadius: 14,
             padding: 16,
           }}
@@ -807,7 +807,7 @@ export default function TrendAnalysisPage({
 
           {!selectedTrendPoint ? (
             <div style={{ color: "#88A0B8", fontSize: 13 }}>
-              Select a star on the chart above to see the FY/Half details. The FY summary below already reflects the current multi-select filters.
+              Select a star on the chart above to see the month details. The FY summary below already reflects the current multi-select filters.
             </div>
           ) : null}
 
@@ -849,9 +849,9 @@ export default function TrendAnalysisPage({
                     <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#7dd3fc", fontWeight: 700 }}>{row.fy}</td>
                     <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#cbd5e1" }}>{row.itemCount}</td>
                     <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#cbd5e1" }}>{row.quantity}</td>
-                    <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#3B82F6", fontWeight: 700 }}>{formatCurrency(row.budget)}</td>
-                    <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#16A34A", fontWeight: 700 }}>{formatCurrency(row.actual)}</td>
-                    <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#F59E0B", fontWeight: 700 }}>{formatCurrency(row.usedValue)}</td>
+                    <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#5EEAD4", fontWeight: 700 }}>{formatCurrency(row.budget)}</td>
+                    <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#10b981", fontWeight: 700 }}>{formatCurrency(row.actual)}</td>
+                    <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#f59e0b", fontWeight: 700 }}>{formatCurrency(row.usedValue)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -861,11 +861,11 @@ export default function TrendAnalysisPage({
           {selectedTrendPoint && (
             <div style={{ marginTop: 18, overflowX: "auto" }}>
               <div style={{ color: "#E0E7FF", fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
-                Clicked FY/Half Detail Rows
+                Clicked Month Detail Rows
               </div>
               {detailRows.length === 0 ? (
                 <div style={{ color: "#88A0B8", fontSize: 13 }}>
-                  No matching items found for this FY/Half and current filters.
+                  No matching items found for this month and current filters.
                 </div>
               ) : (
                 <table
@@ -933,13 +933,13 @@ export default function TrendAnalysisPage({
                         <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#cbd5e1" }}>
                           {toNumber(row.quantity)}
                         </td>
-                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#3B82F6", fontWeight: 700 }}>
+                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#5EEAD4", fontWeight: 700 }}>
                           {formatCurrency(toNumber(row.budget))}
                         </td>
-                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#16A34A", fontWeight: 700 }}>
+                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#10b981", fontWeight: 700 }}>
                           {formatCurrency(toNumber(row.actual))}
                         </td>
-                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#F59E0B", fontWeight: 700 }}>
+                        <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#f59e0b", fontWeight: 700 }}>
                           {formatCurrency(effectiveValue(row))}
                         </td>
                         <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#cbd5e1" }}>

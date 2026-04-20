@@ -8438,6 +8438,7 @@ loadAppSummary();
     "budget",
     "pnl",
     "comparison",
+    "trendline",
     "reports",
     "renewals",
     "planning",
