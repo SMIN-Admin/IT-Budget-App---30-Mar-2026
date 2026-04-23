@@ -41,6 +41,7 @@ type TrendAnalysisPageProps = {
   items?: BudgetItem[];
   fyOptions?: string[];
   onDrillDown?: (filters: any) => void;
+  summaryRows?: any[];
 };
 
 function toNumber(value: unknown) {
@@ -363,6 +364,8 @@ function MultiSelect({
 export default function TrendAnalysisPage({
   items = [],
   fyOptions = [],
+  onDrillDown,
+  summaryRows = [],
 }: TrendAnalysisPageProps) {
   const [viewType, setViewType] = useState<"budget" | "pnl" | "category">("budget");
   const [selectedFYs, setSelectedFYs] = useState<string[]>(["all"]);
@@ -371,11 +374,134 @@ export default function TrendAnalysisPage({
   const [selectedPayingBUs, setSelectedPayingBUs] = useState<string[]>(["all"]);
 
   const [selectedTrendPoint, setSelectedTrendPoint] = useState<TrendPoint | null>(null);
-  const sourceItems = useMemo<BudgetItem[]>(() => (Array.isArray(items) ? items : []), [items]);
+  const [clickedHalfRows, setClickedHalfRows] = useState<BudgetItem[]>([]);
+const [clickedHalfLoading, setClickedHalfLoading] = useState(false);
+const [clickedHalfLoadedPeriod, setClickedHalfLoadedPeriod] = useState<string | null>(null);
+const [summaryData, setSummaryData] = useState<any[]>([]);
+const [isSummaryMode, setIsSummaryMode] = useState(false);
+const sourceItems = useMemo<BudgetItem[]>(() => (Array.isArray(items) ? items : []), [items]);
 
   useEffect(() => {
-    setSelectedTrendPoint(null);
-  }, [viewType, selectedFYs.join("|"), selectedCategories.join("|"), selectedBUs.join("|"), selectedPayingBUs.join("|")]);
+  setSelectedTrendPoint(null);
+  setClickedHalfRows([]);
+  setClickedHalfLoading(false);
+  setClickedHalfLoadedPeriod(null);
+}, [viewType, selectedFYs.join("|"), selectedCategories.join("|"), selectedBUs.join("|"), selectedPayingBUs.join("|")]);
+
+  useEffect(() => {
+  const hasSummaryRows = Array.isArray(summaryRows) && summaryRows.length > 0;
+
+  if (hasSummaryRows) {
+    setSummaryData(summaryRows);
+    setIsSummaryMode(true);
+    return;
+  }
+
+  let cancelled = false;
+
+  async function fetchSummaryFallback() {
+    try {
+      const res = await fetch("/api/budget-items/trend-summary", {
+        cache: "no-store",
+      });
+
+      const json = await res.json();
+
+      const rows =
+        Array.isArray(json) ? json :
+        Array.isArray(json?.trend) ? json.trend :
+        Array.isArray(json?.data) ? json.data :
+        Array.isArray(json?.items) ? json.items :
+        Array.isArray(json?.rows) ? json.rows :
+        Array.isArray(json?.summary) ? json.summary :
+        [];
+
+      if (!cancelled && rows.length > 0) {
+        setSummaryData(rows);
+        setIsSummaryMode(true);
+      } else if (!cancelled) {
+        setSummaryData([]);
+        setIsSummaryMode(false);
+      }
+    } catch (e) {
+      console.error("Summary fallback failed", e);
+      if (!cancelled) {
+        setSummaryData([]);
+        setIsSummaryMode(false);
+      }
+    }
+  }
+
+  fetchSummaryFallback();
+
+  return () => {
+    cancelled = true;
+  };
+}, [summaryRows]);
+
+useEffect(() => {
+  if (!selectedTrendPoint?.period) return;
+  if (clickedHalfLoadedPeriod === selectedTrendPoint.period) return;
+
+  let cancelled = false;
+
+  async function loadClickedHalfRows() {
+    try {
+      setClickedHalfLoading(true);
+
+      const params = new URLSearchParams();
+      params.set("fy", selectedFYs.join(","));
+      params.set("businessUnit", selectedBUs.join(","));
+      params.set("payingBU", selectedPayingBUs.join(","));
+      params.set("category", selectedCategories.join(","));
+
+      const res = await fetch(`/api/budget-items?${params.toString()}`, {
+        cache: "no-store",
+      });
+
+      const json = await res.json();
+
+      const rows = Array.isArray(json?.items)
+        ? json.items
+        : Array.isArray(json)
+        ? json
+        : [];
+
+      const matched = rows.filter(
+        (item: any) =>
+          getFYHalfFromPlanMonth(getPlanMonthKey(item)) === selectedTrendPoint.period
+      );
+
+      if (!cancelled) {
+        setClickedHalfRows(matched);
+        setClickedHalfLoadedPeriod(selectedTrendPoint.period);
+      }
+    } catch (error) {
+      console.error("Failed to load clicked half rows:", error);
+      if (!cancelled) {
+        setClickedHalfRows([]);
+        setClickedHalfLoadedPeriod(selectedTrendPoint.period);
+      }
+    } finally {
+      if (!cancelled) {
+        setClickedHalfLoading(false);
+      }
+    }
+  }
+
+  loadClickedHalfRows();
+
+  return () => {
+    cancelled = true;
+  };
+}, [
+  selectedTrendPoint?.period,
+  clickedHalfLoadedPeriod,
+  selectedFYs,
+  selectedBUs,
+  selectedPayingBUs,
+  selectedCategories,
+]);
 
   const categoryOptions = useMemo(() => getUniqueSorted(sourceItems.map((i) => i.itemCategory)), [sourceItems]);
   const buOptions = useMemo(() => getUniqueSorted(sourceItems.map((i) => i.businessUnit)), [sourceItems]);
@@ -424,41 +550,137 @@ export default function TrendAnalysisPage({
   return Object.values(periodMap).sort((a, b) => sortFYHalf(a.period, b.period));
 }, [filteredItems]);
 
-  const totalBudget = useMemo(() => filteredItems.reduce((sum, item) => sum + toNumber(item.budget), 0), [filteredItems]);
-  const totalActual = useMemo(() => filteredItems.reduce((sum, item) => sum + toNumber(item.actual), 0), [filteredItems]);
-  const totalItems = filteredItems.length;
-  const budgetVariance = totalBudget - totalActual;
-  const totalPnlBudget = totalBudget;
-  const totalPnlActual = totalActual;
-  const pnlItemsWithActual = filteredItems.filter((item) => toNumber(item.actual) > 0).length;
-  const pnlUtilPct = totalBudget > 0 ? Math.round((totalActual / totalBudget) * 100) : 0;
-  const categoryCount = getUniqueSorted(filteredItems.map((i) => i.itemCategory)).length;
+const displayTrendData = useMemo<TrendPoint[]>(() => {
+  const source = isSummaryMode
+    ? (Array.isArray(summaryData) ? summaryData : [])
+    : chartTrend;
+
+  const map: Record<string, TrendPoint> = {};
+
+  source.forEach((row: any) => {
+    const rawPeriod = String(row.period || row.label || row.fy || "").trim();
+    if (!rawPeriod) return;
+
+    let fyHalf = "";
+
+    if (/^FY\d{4}-H[12]$/i.test(rawPeriod)) {
+      fyHalf = rawPeriod.toUpperCase();
+    } else {
+      fyHalf = getFYHalfFromPlanMonth(rawPeriod);
+    }
+
+    if (!fyHalf) return;
+
+    if (!map[fyHalf]) {
+      map[fyHalf] = {
+        period: fyHalf,
+        label: fyHalf,
+        budget: 0,
+        actual: 0,
+        count: 0,
+      };
+    }
+
+    map[fyHalf].budget += Number(row.budget || 0);
+    map[fyHalf].actual += Number(row.actual || 0);
+    map[fyHalf].count += Number(row.count || row.items || 0);
+  });
+
+  return Object.values(map).sort((a, b) => sortFYHalf(a.period, b.period));
+}, [isSummaryMode, summaryData, chartTrend]);
+
+  const totalBudget = useMemo(
+  () => displayTrendData.reduce((sum, row) => sum + toNumber(row.budget), 0),
+  [displayTrendData]
+);
+
+const totalActual = useMemo(
+  () => displayTrendData.reduce((sum, row) => sum + toNumber(row.actual), 0),
+  [displayTrendData]
+);
+
+const totalItems = isSummaryMode
+  ? displayTrendData.reduce((sum, row) => sum + toNumber(row.count), 0)
+  : filteredItems.length;
+
+const budgetVariance = totalBudget - totalActual;
+const totalPnLBudget = totalBudget;
+const totalPnLActual = totalActual;
+const pnlItemsWithActual = isSummaryMode
+  ? displayTrendData.filter((row) => toNumber(row.actual) > 0).length
+  : filteredItems.filter((item) => toNumber(item.actual) > 0).length;
+
+const pnlUtilPct = totalBudget > 0 ? Math.round((totalActual / totalBudget) * 100) : 0;
+const categoryCount = getUniqueSorted(filteredItems.map((i) => i.itemCategory)).length;
 
   const detailRows = useMemo(() => {
-    if (!selectedTrendPoint?.period) return [];
-    return filteredItems
-      .filter((item) => getFYHalfFromPlanMonth(getPlanMonthKey(item)) === selectedTrendPoint.period)
-      .sort((a, b) => String(a.description || "").localeCompare(String(b.description || "")));
-  }, [filteredItems, selectedTrendPoint]);
+  if (!selectedTrendPoint?.period) return [];
+
+  // 🚀 If using summary mode → no raw drilldown
+  // If summary mode is active but raw filtered items are already available,
+// still allow FY/Half drilldown from raw items.
+if (isSummaryMode && filteredItems.length === 0) {
+  return [];
+}
+
+  return filteredItems
+    .filter(
+      (item) =>
+        getFYHalfFromPlanMonth(getPlanMonthKey(item)) === selectedTrendPoint.period
+    )
+    .sort((a, b) =>
+      String(a.description || "").localeCompare(String(b.description || ""))
+    );
+}, [isSummaryMode, filteredItems, selectedTrendPoint]);
 
   const fySummaryRows = useMemo(() => {
-    const scoped = detailRows.length > 0 ? detailRows : filteredItems;
+  if (isSummaryMode) {
+  return displayTrendData.map((row: any) => ({
+    fy: String(row.period || row.label || ""),
+    itemCount: toNumber(row.count || row.itemCount),
+    quantity: toNumber(row.quantity),
+    budget: toNumber(row.budget),
+    actual: toNumber(row.actual),
+    usedValue: Math.max(toNumber(row.actual), 0),
+  }));
+}
 
-    const map: Record<string, { fy: string; itemCount: number; quantity: number; budget: number; actual: number; usedValue: number }> = {};
-    scoped.forEach((item) => {
-      const fy = deriveFY(item);
-      if (!map[fy]) {
-        map[fy] = { fy, itemCount: 0, quantity: 0, budget: 0, actual: 0, usedValue: 0 };
-      }
-      map[fy].itemCount += 1;
-      map[fy].quantity += toNumber(item.quantity);
-      map[fy].budget += toNumber(item.budget);
-      map[fy].actual += toNumber(item.actual);
-      map[fy].usedValue += effectiveValue(item);
-    });
+  const scoped = detailRows.length > 0 ? detailRows : filteredItems;
 
-    return Object.values(map).sort((a, b) => a.fy.localeCompare(b.fy));
-  }, [detailRows, filteredItems]);
+  const map: Record<
+    string,
+    {
+      fy: string;
+      itemCount: number;
+      quantity: number;
+      budget: number;
+      actual: number;
+      usedValue: number;
+    }
+  > = {};
+
+  scoped.forEach((item) => {
+    const fy = deriveFY(item);
+    if (!map[fy]) {
+      map[fy] = {
+        fy,
+        itemCount: 0,
+        quantity: 0,
+        budget: 0,
+        actual: 0,
+        usedValue: 0,
+      };
+    }
+
+    map[fy].itemCount += 1;
+    map[fy].quantity += toNumber(item.quantity);
+    map[fy].budget += toNumber(item.budget);
+    map[fy].actual += toNumber(item.actual);
+    map[fy].usedValue += effectiveValue(item);
+  });
+
+  return Object.values(map).sort((a, b) => sortFYHalf(a.fy, b.fy));
+}, [isSummaryMode, displayTrendData, detailRows, filteredItems]);
 
   const handlePointSelect = (point: TrendPoint | null) => {
     if (!point) return;
@@ -718,14 +940,14 @@ export default function TrendAnalysisPage({
             Click any star to inspect that month. Stars remain stars even on hover.
           </div>
 
-          {chartTrend.length === 0 ? (
+          {displayTrendData.length === 0 ? (
             <div style={{ color: "#88A0B8", fontSize: 13, padding: "24px 0" }}>
               No trend data available for the selected filters.
             </div>
           ) : (
             <div style={{ width: "100%", height: 340 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={chartTrend} onClick={handleChartClick}>
+                <ComposedChart data={displayTrendData} onClick={handleChartClick}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#213547" />
                   <XAxis dataKey="label" tick={{ fill: "#9fb3c8", fontSize: 11 }} />
                   <YAxis
@@ -861,12 +1083,16 @@ export default function TrendAnalysisPage({
           {selectedTrendPoint && (
             <div style={{ marginTop: 18, overflowX: "auto" }}>
               <div style={{ color: "#E0E7FF", fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
-                Clicked Month Detail Rows
+                Clicked Half Detail Rows
               </div>
-              {detailRows.length === 0 ? (
-                <div style={{ color: "#88A0B8", fontSize: 13 }}>
-                  No matching items found for this month and current filters.
-                </div>
+              {clickedHalfLoading ? (
+  <div style={{ color: "#88A0B8", fontSize: 13 }}>
+    Loading details...
+  </div>
+) : clickedHalfRows.length === 0 ? (
+  <div style={{ color: "#88A0B8", fontSize: 13 }}>
+    No matching items found for this FY/Half and current filters.
+  </div>
               ) : (
                 <table
                   style={{
@@ -910,7 +1136,7 @@ export default function TrendAnalysisPage({
                     </tr>
                   </thead>
                   <tbody>
-                    {detailRows.map((row, idx) => (
+                    {clickedHalfRows.map((row, idx) => (
                       <tr key={row.id || `${row.description}-${idx}`}>
                         <td style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "#E5EEF8", fontWeight: 600 }}>
                           {row.description || "-"}

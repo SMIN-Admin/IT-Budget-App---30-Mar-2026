@@ -8434,11 +8434,13 @@ loadAppSummary();
     return merged;
   }, [fxRates]);
   const [tab, setTab] = useState("dashboard");
+  const [trendSummaryData, setTrendSummaryData] = useState<any[]>([]);
+const [trendSummaryLoading, setTrendSummaryLoading] = useState(false);
+const [trendSummaryLoaded, setTrendSummaryLoaded] = useState(false);
   const RAW_DATA_TABS = useMemo(() => new Set([
     "budget",
     "pnl",
     "comparison",
-    "trendline",
     "reports",
     "renewals",
     "planning",
@@ -8458,6 +8460,56 @@ loadAppSummary();
       setTab("dashboard");
     }
   }, [tab, visibleTabs]);
+
+  useEffect(() => {
+  if (trendSummaryLoaded || trendSummaryLoading) return;
+  if (tab !== "trendline") return;
+
+  let cancelled = false;
+
+  async function loadTrendSummary() {
+    try {
+      setTrendSummaryLoading(true);
+
+      const res = await fetch("/api/budget-items/trend-summary", {
+        cache: "no-store",
+      });
+
+      const json = await res.json();
+
+      const rows =
+        Array.isArray(json) ? json :
+        Array.isArray(json?.trend) ? json.trend :
+        Array.isArray(json?.data) ? json.data :
+        Array.isArray(json?.items) ? json.items :
+        Array.isArray(json?.rows) ? json.rows :
+        Array.isArray(json?.summary) ? json.summary :
+        [];
+
+      if (!cancelled) {
+        setTrendSummaryData(rows);
+        setTrendSummaryLoaded(true);
+      }
+    } catch (error) {
+      console.error("Failed to load trend summary:", error);
+      if (!cancelled) {
+        setTrendSummaryData([]);
+        setTrendSummaryLoaded(true);
+      }
+    } finally {
+      if (!cancelled) {
+        setTrendSummaryLoading(false);
+      }
+    }
+  }
+
+  loadTrendSummary();
+
+  return () => {
+    cancelled = true;
+  };
+}, [tab, trendSummaryLoaded, trendSummaryLoading]);
+
   const [drillBackTab, setDrillBackTab] = useState(null); // tab to go back to (set only on drill-through)
   const [dashboardFYs, setDashboardFYs] = useState(["all"]);
 const [dashboardBUs, setDashboardBUs] = useState(["all"]);
@@ -8849,15 +8901,16 @@ const normalizedStatus =
 }, [items, addAuditEntry]);
   const buList = useMemo(() => [...new Set(items.map(i => i.businessUnit).filter(Boolean))].sort(), [items]);
   
-if (tabNeedsRawItems && itemsLoading && items.length === 0) {
+const showGlobalLoader = tabNeedsRawItems && itemsLoading && items.length === 0;
+
   return (
-    <div style={{ padding: 30, color: "white" }}>
-      Loading Budget Dashboard...
-    </div>
-  );
-}
-  return (
-    <RatesContext.Provider value={activeRates}>
+  <RatesContext.Provider value={activeRates}>
+    {showGlobalLoader && (
+      <div style={{ padding: 10, color: "#94a3b8", fontSize: 12 }}>
+        Loading data...
+      </div>
+    )}
+
     <div style={{ minHeight:"100vh", background:"#07111A", fontFamily:"'Montserrat', 'Segoe UI', sans-serif", color:"#f1f5f9" }}>
       {/* Header */}
       <div style={{ background:"linear-gradient(135deg,#08121B 0%, #0E1C2A 45%, #13273A 100%)", borderBottom:"1px solid rgba(94,234,212,0.20)", padding:"0 28px", boxShadow:"0 4px 32px rgba(0,0,0,0.5)", position:"relative" }}>
@@ -9146,10 +9199,11 @@ if (tabNeedsRawItems && itemsLoading && items.length === 0) {
       onClick={handleDrillBack}
     />
     <TrendAnalysisPage
-      items={items}
-      fyOptions={globalFyOptions}
-      onDrillDown={handleDrillDown}
-    />
+  items={items}
+  summaryRows={trendSummaryData}
+  fyOptions={globalFyOptions}
+  onDrillDown={handleDrillDown}
+/>
   </>
 )}
 

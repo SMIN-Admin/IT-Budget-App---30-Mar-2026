@@ -165,22 +165,35 @@ const selectedFYs =
       new Set(filteredItems.map((i) => String(i.itemCategory || "").trim()).filter(Boolean))
     ).length;
 
-    const trendMap: Record<string, { month: string; budget: number; actual: number }> = {};
+    const trendMap: Record<
+  string,
+  {
+    month: string;
+    budget: number;
+    actual: number;
+    count: number;
+    quantity: number;
+  }
+> = {};
 
     filteredItems.forEach((item) => {
       const monthKey = getPlanMonthKey(item.planMonth);
       if (!monthKey) return;
 
       if (!trendMap[monthKey]) {
-        trendMap[monthKey] = {
-          month: monthKey,
-          budget: 0,
-          actual: 0,
-        };
-      }
+  trendMap[monthKey] = {
+    month: monthKey,
+    budget: 0,
+    actual: 0,
+    count: 0,
+    quantity: 0,
+  };
+}
 
       trendMap[monthKey].budget += toNumber(item.budget);
-      trendMap[monthKey].actual += toNumber(item.actual);
+trendMap[monthKey].actual += toNumber(item.actual);
+trendMap[monthKey].count += 1;
+trendMap[monthKey].quantity += toNumber(item.quantity);
     });
 
     const trend = Object.values(trendMap)
