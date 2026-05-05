@@ -400,6 +400,52 @@ export default function UserAdminPage({
       setBusyAction(null);
     }
   }
+const handleArchiveBudget = async () => {
+  try {
+    setBusyAction("archive-budget");
+
+    const res = await fetch("/api/admin/archive-budget", {
+      method: "POST",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || "Archive failed");
+      return;
+    }
+
+    alert("Budget archive completed successfully");
+  } catch (err: any) {
+    alert(err.message || "Archive failed");
+  } finally {
+    setBusyAction(null);
+  }
+};
+
+const handleArchiveHeadcount = async () => {
+  try {
+    setBusyAction("archive-headcount");
+
+    const res = await fetch("/api/admin/archive-headcount", {
+      method: "POST",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data?.error || "Headcount archive failed");
+      return;
+    }
+
+    alert(data?.message || "Headcount archive completed successfully");
+  } catch (err: any) {
+    alert(err?.message || "Headcount archive failed");
+  } finally {
+    setBusyAction(null);
+  }
+};
+
 
   const stats = useMemo(() => {
     const total = users.length;
@@ -758,6 +804,74 @@ export default function UserAdminPage({
                   {busyAction === "rebuild" ? "Rebuilding..." : "Run Now"}
                 </button>
               </div>
+
+              <div
+  style={{
+    background: "linear-gradient(145deg,#0B1624,#0A1320)",
+    borderRadius: 16,
+    padding: 18,
+    border: "1px solid rgba(255,255,255,0.06)",
+    minHeight: 190,
+  }}
+>
+  <div style={{ fontSize: 28, marginBottom: 10 }}>🗂️</div>
+  <div style={{ color: "#EAF2FF", fontSize: 15, fontWeight: 800, marginBottom: 10 }}>
+    Archive Budget History
+  </div>
+  <div style={{ color: "#88A0B8", fontSize: 12, lineHeight: 1.5, marginBottom: 16 }}>
+    Move budget line items older than the 3-FY retention window into archive storage.
+  </div>
+  <button
+  onClick={handleArchiveBudget}
+  disabled={busyAction === "archive-budget"}
+  style={{
+    background: "#22c55e",
+    color: "#04120A",
+    border: "none",
+    borderRadius: 10,
+    padding: "10px 16px",
+    fontWeight: 800,
+    cursor: busyAction === "archive-budget" ? "not-allowed" : "pointer",
+    opacity: busyAction === "archive-budget" ? 0.7 : 1,
+  }}
+>
+  {busyAction === "archive-budget" ? "Archiving..." : "Run Budget Archive"}
+</button>
+</div>
+
+<div
+  style={{
+    background: "linear-gradient(145deg,#0B1624,#0A1320)",
+    borderRadius: 16,
+    padding: 18,
+    border: "1px solid rgba(255,255,255,0.06)",
+    minHeight: 190,
+  }}
+>
+  <div style={{ fontSize: 28, marginBottom: 10 }}>🧾</div>
+  <div style={{ color: "#EAF2FF", fontSize: 15, fontWeight: 800, marginBottom: 10 }}>
+    Archive Headcount History
+  </div>
+  <div style={{ color: "#88A0B8", fontSize: 12, lineHeight: 1.5, marginBottom: 16 }}>
+    Move headcount rows older than the 3-FY retention window into archive storage.
+  </div>
+  <button
+  onClick={handleArchiveHeadcount}
+  disabled={busyAction === "archive-headcount"}
+  style={{
+    background: "#22c55e",
+    color: "#04120A",
+    border: "none",
+    borderRadius: 10,
+    padding: "10px 16px",
+    fontWeight: 800,
+    cursor: busyAction === "archive-headcount" ? "not-allowed" : "pointer",
+    opacity: busyAction === "archive-headcount" ? 0.7 : 1,
+  }}
+>
+  {busyAction === "archive-headcount" ? "Archiving..." : "Run Headcount Archive"}
+</button>
+</div>
 
               <div
                 style={{
