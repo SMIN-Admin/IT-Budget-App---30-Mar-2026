@@ -4,9 +4,23 @@ import { getCurrentUser } from "../../../../src/lib/auth";
 import { isOlderThanRetention } from "../../../../src/lib/fyUtils";
 
 type HeadcountRow = {
+
   id: string;
+
   fy?: string;
+
+  fyHalf?: string;
+
+  fyAndHalf?: string;
+
+  fy_half?: string;
+
+  period?: string;
+
+  half?: string;
+
   [key: string]: any;
+
 };
 
 export async function POST(_req: NextRequest) {
@@ -65,9 +79,31 @@ export async function POST(_req: NextRequest) {
     }));
 
     // 📦 Filter rows older than retention window
-    const rowsToArchive = allRows.filter((row) =>
-      isOlderThanRetention(row.fy)
-    );
+    const rowsToArchive = allRows.filter((row) => {
+
+  const fyValue =
+
+    row.fy ||
+
+    row.fyHalf ||
+
+    row.fyAndHalf ||
+
+    row.fy_half ||
+
+    row["FY & Half"] ||
+
+    row["FY and Half"] ||
+
+    row.period ||
+
+    row.half ||
+
+    "";
+
+  return isOlderThanRetention(String(fyValue));
+
+});
 
     if (rowsToArchive.length === 0) {
       return NextResponse.json({

@@ -770,10 +770,7 @@ useEffect(() => {
   selectedEmpTypes,
 ]);
 
-const totalHeadcount = filteredSummaryRows.reduce(
-  (sum: number, row: any) => sum + Number(row.headcount || 0),
-  0
-);
+const totalHeadcount = pagedRows.length;
 
 const totalBUsInScope = getUniqueSorted(
   filteredSummaryRows.map((r: any) => String(r.businessUnit || "").trim())
