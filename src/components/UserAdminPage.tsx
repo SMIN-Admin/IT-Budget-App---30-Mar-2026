@@ -473,6 +473,49 @@ const handleArchiveHeadcount = async () => {
     setBusyAction(null);
   }
 };
+const handleRestoreHeadcount = async () => {
+
+  try {
+
+    setBusyAction("restore-headcount");
+
+    const res = await fetch("/api/admin/restore-headcount", {
+
+      method: "POST",
+
+    });
+
+    const data = await res.json();
+
+    console.log("Restore headcount response:", data);
+
+    if (!res.ok) {
+
+      alert(data?.error || `Restore failed: ${JSON.stringify(data)}`);
+
+      return;
+
+    }
+
+    alert(
+
+      data?.message ||
+
+        `Restore response: ${JSON.stringify(data)}`
+
+    );
+
+  } catch (err: any) {
+
+    alert(err?.message || "Restore failed");
+
+  } finally {
+
+    setBusyAction(null);
+
+  }
+
+};
 
 
   const stats = useMemo(() => {
@@ -923,6 +966,55 @@ const handleArchiveHeadcount = async () => {
   }}
 >
   {busyAction === "archive-headcount" ? "Archiving..." : "Run Headcount Archive"}
+</button>
+<button
+
+  onClick={handleRestoreHeadcount}
+
+  disabled={busyAction === "restore-headcount"}
+
+  style={{
+
+    background: "#3B82F6",
+
+    color: "#FFFFFF",
+
+    border: "none",
+
+    borderRadius: 10,
+
+    padding: "10px 16px",
+
+    fontWeight: 800,
+
+    cursor:
+
+      busyAction === "restore-headcount"
+
+        ? "not-allowed"
+
+        : "pointer",
+
+    opacity:
+
+      busyAction === "restore-headcount"
+
+        ? 0.7
+
+        : 1,
+
+    marginTop: 10,
+
+  }}
+
+>
+
+  {busyAction === "restore-headcount"
+
+    ? "Restoring..."
+
+    : "Restore Headcount Archive"}
+
 </button>
 </div>
 
