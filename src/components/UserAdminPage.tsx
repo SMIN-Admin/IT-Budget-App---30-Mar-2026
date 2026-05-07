@@ -423,6 +423,34 @@ const handleArchiveBudget = async () => {
   }
 };
 
+const handleRestoreBudget = async () => {
+  try {
+    setBusyAction("restore-budget");
+
+    const res = await fetch("/api/admin/restore-budget", {
+      method: "POST",
+    });
+
+    const data = await res.json();
+
+console.log("Restore budget response:", data);
+
+if (!res.ok) {
+
+  alert(data?.error || `Restore failed: ${JSON.stringify(data)}`);
+
+  return;
+
+}
+
+alert(data?.message || `Restore response: ${JSON.stringify(data)}`);
+  } catch (err: any) {
+    alert(err?.message || "Restore failed");
+  } finally {
+    setBusyAction(null);
+  }
+};
+
 const handleArchiveHeadcount = async () => {
   try {
     setBusyAction("archive-headcount");
@@ -836,6 +864,31 @@ const handleArchiveHeadcount = async () => {
   }}
 >
   {busyAction === "archive-budget" ? "Archiving..." : "Run Budget Archive"}
+</button>
+<button
+  onClick={handleRestoreBudget}
+  disabled={busyAction === "restore-budget"}
+  style={{
+    background: "#3B82F6",
+    color: "#FFFFFF",
+    border: "none",
+    borderRadius: 10,
+    padding: "10px 16px",
+    fontWeight: 800,
+    cursor:
+      busyAction === "restore-budget"
+        ? "not-allowed"
+        : "pointer",
+    opacity:
+      busyAction === "restore-budget"
+        ? 0.7
+        : 1,
+    marginTop: 10,
+  }}
+>
+  {busyAction === "restore-budget"
+    ? "Restoring..."
+    : "Restore Budget Archive"}
 </button>
 </div>
 
