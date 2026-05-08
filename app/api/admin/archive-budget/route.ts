@@ -108,6 +108,9 @@ if (!userData || userRole !== "admin" || !userIsActive) {
         archivedAt: nowIso,
         archiveBatchId: batchId,
         archiveType: "budget",
+        isRestored: false,
+        restoredAt: null,
+        restoredBy: null,
       });
 
       batch.delete(sourceRef);

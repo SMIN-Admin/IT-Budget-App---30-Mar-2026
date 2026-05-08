@@ -31,7 +31,10 @@ const userEmail = String(user.email || "")
   .toLowerCase();
   
   try {
-    const snapshot = await adminDb.collection("budgetItemsArchive").get();
+    const snapshot = await adminDb
+    .collection("budgetItemsArchive")
+    .where("isRestored", "==", false)
+    .get();
 
     if (snapshot.empty) {
       return NextResponse.json({
@@ -43,6 +46,7 @@ const userEmail = String(user.email || "")
     const batch = adminDb.batch();
 
     let restoredCount = 0;
+    const nowIso = new Date().toISOString();
 
     for (const doc of snapshot.docs) {
       const data = doc.data();
@@ -58,13 +62,21 @@ const userEmail = String(user.email || "")
         restoredAt: new Date().toISOString(),
       });
 
-      batch.delete(doc.ref);
+      batch.update(doc.ref, {
+
+  isRestored: true,
+
+  restoredAt: nowIso,
+
+  restoredBy: userEmail,
+
+});
 
       restoredCount++;
     }
 
     await batch.commit();
-const nowIso = new Date().toISOString();
+
 
 await adminDb.collection("archiveJobs").add({
 
