@@ -281,6 +281,10 @@ export default function UserAdminPage({
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+
+const [auditLoading, setAuditLoading] = useState(false);
+
   const [form, setForm] = useState<{
     email: string;
     name: string;
@@ -313,9 +317,53 @@ export default function UserAdminPage({
     }
   }
 
+  async function loadAuditLogs() {
+
+  try {
+
+    setAuditLoading(true);
+
+    const res = await fetch("/api/admin/archive-jobs", {
+
+      method: "GET",
+
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+
+      console.error("Failed to load audit logs:", data);
+
+      setAuditLogs([]);
+
+      return;
+
+    }
+
+    setAuditLogs(Array.isArray(data?.jobs) ? data.jobs : []);
+
+  } catch (error) {
+
+    console.error("Failed to load audit logs:", error);
+
+    setAuditLogs([]);
+
+  } finally {
+
+    setAuditLoading(false);
+
+  }
+
+}
+
   useEffect(() => {
-    loadUsers();
-  }, []);
+
+  loadUsers();
+
+  loadAuditLogs();
+
+}, []);
 
   async function handleCreate() {
     try {
@@ -1414,6 +1462,77 @@ const handleRestoreHeadcount = async () => {
               </div>
             )}
           </SectionCard>
+          <SectionCard
+  title="Archive & Restore Audit Log"
+  subtitle="Recent budget and headcount archive/restore activity."
+>
+  {auditLoading ? (
+    <div style={{ color: "#8EA5BC" }}>Loading audit logs...</div>
+  ) : auditLogs.length === 0 ? (
+    <div style={{ color: "#8EA5BC" }}>No audit logs found.</div>
+  ) : (
+    <div style={{ overflowX: "auto" }}>
+      <table
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          minWidth: 900,
+        }}
+      >
+        <thead>
+          <tr>
+            {["Time", "Module", "Action", "Archived", "Restored", "User", "Status"].map(
+              (h) => (
+                <th
+                  key={h}
+                  style={{
+                    textAlign: "left",
+                    padding: "12px 14px",
+                    color: "#8EA5BC",
+                    fontSize: 12,
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    borderBottom: "1px solid rgba(255,255,255,0.08)",
+                  }}
+                >
+                  {h}
+                </th>
+              )
+            )}
+          </tr>
+        </thead>
+
+        <tbody>
+          {auditLogs.map((job) => (
+            <tr key={job.id}>
+              <td style={{ padding: "12px 14px", color: "#EAF2FF", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                {job.executedAt ? formatDateTime(job.executedAt) : job.createdAt ? formatDateTime(job.createdAt) : "—"}
+              </td>
+              <td style={{ padding: "12px 14px", color: "#5EEAD4", fontWeight: 800, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                {job.archiveType || job.module || "—"}
+              </td>
+              <td style={{ padding: "12px 14px", color: "#93C5FD", fontWeight: 800, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                {job.type || "archive"}
+              </td>
+              <td style={{ padding: "12px 14px", color: "#EAF2FF", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                {job.archivedCount ?? 0}
+              </td>
+              <td style={{ padding: "12px 14px", color: "#EAF2FF", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                {job.restoredCount ?? 0}
+              </td>
+              <td style={{ padding: "12px 14px", color: "#8EA5BC", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                {job.executedBy || job.userEmail || "—"}
+              </td>
+              <td style={{ padding: "12px 14px", color: "#4ADE80", fontWeight: 800, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                {job.status || "completed"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</SectionCard>
         </div>
       </div>
     </main>

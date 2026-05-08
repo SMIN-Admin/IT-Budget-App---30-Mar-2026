@@ -10,6 +10,26 @@ type ArchiveRow = {
 };
 
 export async function POST(_req: NextRequest) {
+  const user = await getCurrentUser();
+
+if (!user) {
+
+  return NextResponse.json(
+
+    { ok: false, error: "Unauthorized" },
+
+    { status: 401 }
+
+  );
+
+}
+
+const userEmail = String(user.email || "")
+
+  .trim()
+
+  .toLowerCase();
+  
   try {
     const snapshot = await adminDb.collection("budgetItemsArchive").get();
 
@@ -44,6 +64,28 @@ export async function POST(_req: NextRequest) {
     }
 
     await batch.commit();
+const nowIso = new Date().toISOString();
+
+await adminDb.collection("archiveJobs").add({
+
+  archiveType: "budget",
+
+  type: "restore",
+
+  archivedCount: 0,
+
+  restoredCount,
+
+  keptCount: 0,
+
+  executedBy: userEmail,
+
+  executedAt: nowIso,
+
+  status: "completed",
+
+});
+
 
     return NextResponse.json({
       ok: true,

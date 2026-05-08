@@ -139,7 +139,7 @@ if (!userData || userRole !== "admin" || !userIsActive) {
       archiveBatchId: batchId,
       archivedCount: rowsToArchive.length,
       keptCount: keptRows,
-      message: "Budget archive completed successfully.",
+      message: `Budget archive completed successfully. Archived ${rowsToArchive.length} records. Kept ${keptRows} records.`,
     });
   } catch (error: any) {
     console.error("archive-budget POST error:", error);

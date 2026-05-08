@@ -133,6 +133,27 @@ export async function POST(_req: NextRequest) {
     });
 
     await batch.commit();
+    const nowIso = new Date().toISOString();
+
+await adminDb.collection("archiveJobs").add({
+
+  archiveType: "headcount",
+
+  type: "archive",
+
+  archivedCount: rowsToArchive.length,
+
+  restoredCount: 0,
+
+  keptCount: 0,
+
+  executedBy: userEmail,
+
+  executedAt: nowIso,
+
+  status: "completed",
+
+});
 
     return NextResponse.json({
       ok: true,
