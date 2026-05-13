@@ -9,7 +9,7 @@ type ArchiveRow = {
   [key: string]: any;
 };
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
 
 if (!user) {
