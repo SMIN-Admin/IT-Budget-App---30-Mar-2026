@@ -31,10 +31,27 @@ const userEmail = String(user.email || "")
   .toLowerCase();
   
   try {
-    const snapshot = await adminDb
-    .collection("budgetItemsArchive")
-    .where("isRestored", "==", false)
-    .get();
+    const body = await req.json().catch(() => ({}));
+  const restoreAll = body?.restoreAll === true;
+  const fy = String(body?.fy || "").trim();
+  const half = String(body?.half || "").trim();
+  if (!restoreAll && !fy) {
+    return NextResponse.json(
+      { ok: false, error: "Please select FY or choose Restore All." },
+      { status: 400 }
+    );
+
+  }
+    let query: any = adminDb
+.collection("budgetItemsArchive")
+  .where("isRestored", "==", false);
+if (!restoreAll && fy) {
+  query = query.where("fy", "==", fy);
+  if (half && half !== "ALL") {
+  query = query.where("fyHalf", "==", `${fy}-${half}`);
+}
+}
+const snapshot = await query.get();
 
     if (snapshot.empty) {
       return NextResponse.json({

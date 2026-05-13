@@ -276,7 +276,13 @@ export default function UserAdminPage({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
-
+  const [restoreModalOpen, setRestoreModalOpen] = useState(false);
+const [restoreType, setRestoreType] = useState<
+  "budget" | "headcount" | null
+>(null);
+const [restoreFY, setRestoreFY] = useState("");
+const [restoreHalf, setRestoreHalf] = useState("ALL");
+const [restoreAll, setRestoreAll] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -470,6 +476,13 @@ const handleArchiveBudget = async () => {
     setBusyAction(null);
   }
 };
+function openRestoreModal(type: "budget" | "headcount") {
+  setRestoreType(type);
+  setRestoreAll(true);
+  setRestoreFY("");
+  setRestoreHalf("ALL");
+  setRestoreModalOpen(true);
+}
 
 const handleRestoreBudget = async () => {
   try {
