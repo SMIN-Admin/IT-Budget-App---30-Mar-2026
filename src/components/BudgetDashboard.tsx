@@ -6,10 +6,22 @@ import {
   deleteBudgetItem,
   bulkDeleteBudgetItems,
 } from "../lib/budget-api";
-import AIInsights from "./AIInsights";
-import HeadcountPage from "./HeadcountPage";
-import HeadcountTrendPage from "./HeadcountTrendPage";
-import TrendAnalysisPage from "./TrendAnalysisPage";
+const AIInsights = dynamic(() => import("./AIInsights"), {
+  loading: () => <div style={{ color: "#aaa" }}>Loading AI Insights...</div>,
+  ssr: false,
+});
+const HeadcountPage = dynamic(() => import("./HeadcountPage"), {
+  loading: () => <div style={{ color: "#aaa" }}>Loading Headcount...</div>,
+  ssr: false,
+});
+const HeadcountTrendPage = dynamic(() => import("./HeadcountTrendPage"), {
+  loading: () => <div style={{ color: "#aaa" }}>Loading Headcount Trend...</div>,
+  ssr: false,
+});
+const TrendAnalysisPage = dynamic(() => import("./TrendAnalysisPage"), {
+  loading: () => <div style={{ color: "#aaa" }}>Loading Trend Analysis...</div>,
+  ssr: false,
+});
 import dynamic from "next/dynamic";
 import { useState, useEffect, useMemo, useCallback, useRef, createContext, useContext } from "react";
 import {
@@ -8244,7 +8256,7 @@ const loadInitialItems = async () => {
     });
 
     const res = await fetch(
-  `/api/budget-items?limit=100&fy=${encodeURIComponent(filterFY)}&businessUnit=${encodeURIComponent(filterBU)}&status=${encodeURIComponent(apiStatus)}&planMonth=${encodeURIComponent(filterPlanMonth)}&category=${encodeURIComponent(filterCategory)}`,
+  `/api/budget-items?limit=50&fy=${encodeURIComponent(filterFY)}&businessUnit=${encodeURIComponent(filterBU)}&status=${encodeURIComponent(apiStatus)}&planMonth=${encodeURIComponent(filterPlanMonth)}&category=${encodeURIComponent(filterCategory)}`,
   {
     method: "GET",
     cache: "no-store",
@@ -8342,7 +8354,7 @@ const loadMoreItems = async () => {
       filterStatus;
 
     const res = await fetch(
-      `/api/budget-items?limit=100&fy=${encodeURIComponent(filterFY)}&businessUnit=${encodeURIComponent(filterBU)}&status=${encodeURIComponent(apiStatus)}&cursor=${encodeURIComponent(itemsNextCursor)}`,
+      `/api/budget-items?limit=50&fy=${encodeURIComponent(filterFY)}&businessUnit=${encodeURIComponent(filterBU)}&status=${encodeURIComponent(apiStatus)}&cursor=${encodeURIComponent(itemsNextCursor)}`,
       {
         method: "GET",
         cache: "no-store",
