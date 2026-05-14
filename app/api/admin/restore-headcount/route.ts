@@ -24,7 +24,25 @@ const userEmail = String(user.email || "")
   .toLowerCase();
     
   try {
-    const snapshot = await adminDb.collection("headcountArchive").get();
+    const body = await _req.json().catch(() => ({}));
+
+const restoreAll = body?.restoreAll === true;
+const fy = String(body?.fy || "").trim();
+const half = String(body?.half || "").trim();
+
+let query: any = adminDb
+  .collection("headcountArchive")
+  .where("isRestored", "==", false);
+
+if (!restoreAll && fy) {
+  query = query.where("fy", "==", fy);
+
+  if (half && half !== "ALL") {
+    query = query.where("fyHalf", "==", `${fy}-${half}`);
+  }
+}
+
+const snapshot = await query.get();
 
     if (snapshot.empty) {
       return NextResponse.json({
@@ -59,7 +77,11 @@ const userEmail = String(user.email || "")
         restoredAt: new Date().toISOString(),
       });
 
-      batch.delete(doc.ref);
+      batch.update(doc.ref, {
+  isRestored: true,
+  restoredAt: new Date().toISOString(),
+  restoredBy: userEmail,
+});
       restoredCount++;
     }
 

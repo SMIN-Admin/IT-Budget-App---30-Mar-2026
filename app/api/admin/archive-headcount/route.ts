@@ -123,12 +123,13 @@ export async function POST(_req: NextRequest) {
       const originalRef = adminDb
         .collection("headcountRecords")
         .doc(row.id);
-
       batch.set(archiveRef, {
         ...row,
         archivedAt: new Date().toISOString(),
+        isRestored: false,
+restoredAt: null,
+restoredBy: null,
       });
-
       batch.delete(originalRef);
     });
 

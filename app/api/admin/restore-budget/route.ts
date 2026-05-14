@@ -55,9 +55,9 @@ const snapshot = await query.get();
 
     if (snapshot.empty) {
       return NextResponse.json({
-        ok: false,
-        error: "No archived budget records found",
-      });
+  ok: true,
+  message: "No archived budget records found to restore",
+});
     }
 
     const batch = adminDb.batch();

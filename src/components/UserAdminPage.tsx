@@ -489,22 +489,28 @@ const handleRestoreBudget = async () => {
     setBusyAction("restore-budget");
 
     const res = await fetch("/api/admin/restore-budget", {
-      method: "POST",
-    });
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    restoreAll,
+    fy: restoreFY,
+    half: restoreHalf,
+  }),
+});
 
     const data = await res.json();
 
 console.log("Restore budget response:", data);
 
 if (!res.ok) {
-
-  alert(data?.error || `Restore failed: ${JSON.stringify(data)}`);
-
+  alert(data?.error || "Budget restore could not be completed.");
+  setRestoreModalOpen(false);
   return;
-
 }
-
-alert(data?.message || `Restore response: ${JSON.stringify(data)}`);
+alert(data?.message || "Budget restore completed.");
+setRestoreModalOpen(false);
   } catch (err: any) {
     alert(err?.message || "Restore failed");
   } finally {
@@ -535,36 +541,31 @@ const handleArchiveHeadcount = async () => {
   }
 };
 const handleRestoreHeadcount = async () => {
-
   try {
-
     setBusyAction("restore-headcount");
-
     const res = await fetch("/api/admin/restore-headcount", {
-
-      method: "POST",
-
-    });
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    restoreAll,
+    fy: restoreFY,
+    half: restoreHalf,
+  }),
+});
 
     const data = await res.json();
 
     console.log("Restore headcount response:", data);
 
     if (!res.ok) {
-
-      alert(data?.error || `Restore failed: ${JSON.stringify(data)}`);
-
-      return;
-
-    }
-
-    alert(
-
-      data?.message ||
-
-        `Restore response: ${JSON.stringify(data)}`
-
-    );
+  alert(data?.error || "Headcount restore could not be completed.");
+  setRestoreModalOpen(false);
+  return;
+}
+alert(data?.message || "Headcount restore completed.");
+setRestoreModalOpen(false);
 
   } catch (err: any) {
 
@@ -970,7 +971,7 @@ const handleRestoreHeadcount = async () => {
   {busyAction === "archive-budget" ? "Archiving..." : "Run Budget Archive"}
 </button>
 <button
-  onClick={handleRestoreBudget}
+  onClick={() => openRestoreModal("budget")}
   disabled={busyAction === "restore-budget"}
   style={{
     background: "#3B82F6",
@@ -1029,53 +1030,29 @@ const handleRestoreHeadcount = async () => {
   {busyAction === "archive-headcount" ? "Archiving..." : "Run Headcount Archive"}
 </button>
 <button
-
-  onClick={handleRestoreHeadcount}
-
+  onClick={() => openRestoreModal("headcount")}
   disabled={busyAction === "restore-headcount"}
-
   style={{
-
     background: "#3B82F6",
-
     color: "#FFFFFF",
-
     border: "none",
-
     borderRadius: 10,
-
     padding: "10px 16px",
-
     fontWeight: 800,
-
     cursor:
-
       busyAction === "restore-headcount"
-
         ? "not-allowed"
-
         : "pointer",
-
     opacity:
-
       busyAction === "restore-headcount"
-
         ? 0.7
-
         : 1,
-
     marginTop: 10,
-
   }}
-
 >
-
   {busyAction === "restore-headcount"
-
     ? "Restoring..."
-
     : "Restore Headcount Archive"}
-
 </button>
 </div>
 
@@ -1548,6 +1525,183 @@ const handleRestoreHeadcount = async () => {
 </SectionCard>
         </div>
       </div>
+      {restoreModalOpen && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,0.75)",
+      zIndex: 9999,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    <div
+      style={{
+        width: 520,
+        background: "#0F1B2B",
+        border: "1px solid rgba(94,234,212,0.35)",
+        borderRadius: 16,
+        padding: 24,
+        color: "#E5E7EB",
+      }}
+    >
+      <h2 style={{ marginTop: 0 }}>
+        Restore {restoreType === "budget" ? "Budget" : "Headcount"} Archive
+      </h2>
+
+      <p style={{ color: "#8AA0B7" }}>
+        Select what you want to restore.
+      </p>
+      <div
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+    marginTop: 20,
+  }}
+>
+  <label
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      fontSize: 14,
+    }}
+  >
+    <input
+      type="checkbox"
+      checked={restoreAll}
+      onChange={(e) => setRestoreAll(e.target.checked)}
+    />
+
+    Restore Entire Archive
+  </label>
+
+  {!restoreAll && (
+    <>
+      <div>
+        <div
+          style={{
+            marginBottom: 6,
+            fontSize: 13,
+            color: "#8AA0B7",
+          }}
+        >
+          Financial Year
+        </div>
+
+        <select
+          value={restoreFY}
+          onChange={(e) => setRestoreFY(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "10px 12px",
+            borderRadius: 8,
+            background: "#111827",
+            color: "#fff",
+            border: "1px solid #334155",
+          }}
+        >
+          <option value="">Select FY</option>
+
+          <option value="2024">2024</option>
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+          <option value="2027">2027</option>
+          <option value="2028">2028</option>
+        </select>
+      </div>
+
+      <div>
+        <div
+          style={{
+            marginBottom: 6,
+            fontSize: 13,
+            color: "#8AA0B7",
+          }}
+        >
+          Half
+        </div>
+
+        <select
+          value={restoreHalf}
+          onChange={(e) => setRestoreHalf(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "10px 12px",
+            borderRadius: 8,
+            background: "#111827",
+            color: "#fff",
+            border: "1px solid #334155",
+          }}
+        >
+          <option value="ALL">Entire FY</option>
+          <option value="H1">H1</option>
+          <option value="H2">H2</option>
+        </select>
+      </div>
+    </>
+  )}
+</div>
+
+      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+        <button
+  disabled={
+    (!restoreAll && !restoreFY) ||
+  busyAction === "restore-budget" ||
+  busyAction === "restore-headcount"
+}
+  onClick={() => {
+    if (restoreType === "budget") {
+      handleRestoreBudget();
+    }
+    if (restoreType === "headcount") {
+      handleRestoreHeadcount();
+    }
+  }}
+  style={{
+    background:
+  (!restoreAll && !restoreFY) ||
+  busyAction === "restore-budget" ||
+  busyAction === "restore-headcount"
+    ? "#374151"
+    : "#2563EB",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    padding: "10px 16px",
+    cursor:
+  (!restoreAll && !restoreFY) ||
+  busyAction === "restore-budget" ||
+  busyAction === "restore-headcount"
+    ? "not-allowed"
+    : "pointer",
+  }}
+>
+  {busyAction === "restore-budget" ||
+busyAction === "restore-headcount"
+  ? "Restoring..."
+  : "Confirm Restore"}
+</button>
+        <button
+          onClick={() => setRestoreModalOpen(false)}
+          style={{
+            background: "#374151",
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            padding: "10px 16px",
+            cursor: "pointer",
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </main>
   );
 }
